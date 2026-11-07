@@ -36,10 +36,26 @@ def fetch_llama_server():
             os.chmod(f, os.stat(f).st_mode | stat.S_IEXEC)
     return glob.glob(f"{BIN_DIR}/**/llama-server", recursive=True)[0]
 
+LORA_URL = "https://raw.githubusercontent.com/nadim7009/krishiguard/main/models/krishiguard_lora_06_q8_0.gguf"
+LORA = "/tmp/krishiguard_lora.gguf"
+
+def fetch_lora():
+    """KrishiGuard fine-tune (notebook 06, converted in notebook 09). Without it the Space still runs the base model."""
+    try:
+        if not os.path.exists(LORA):
+            r = httpx.get(LORA_URL, timeout=300, follow_redirects=True)
+            r.raise_for_status()
+            open(LORA, "wb").write(r.content)
+        print("LoRA:", os.path.getsize(LORA), "bytes", flush=True)
+        return ["--lora", LORA]
+    except Exception as e:
+        print("LoRA not loaded, base model only:", e, flush=True)
+        return []
+
 def start_llama():
     exe = fetch_llama_server()
     env = dict(os.environ, LLAMA_CACHE="/tmp/llama-cache", LD_LIBRARY_PATH=os.path.dirname(exe))
-    subprocess.Popen([exe, "-hf", MODEL, "--no-mmproj", "--host", "127.0.0.1", "--port", "8080",
+    subprocess.Popen([exe, "-hf", MODEL, "--no-mmproj", *fetch_lora(), "--host", "127.0.0.1", "--port", "8080",
                       "-c", "4096", "-t", "2", "--parallel", "1", "--no-webui"], env=env)
 
 threading.Thread(target=start_llama, daemon=True).start()
@@ -54,7 +70,7 @@ CORS = {}  # Gradio's middleware adds the CORS headers
 async def health(request: Request):
     try:
         r = httpx.get(f"{LLAMA}/health", timeout=3)
-        return JSONResponse({"model": MODEL, "llama": r.json()}, status_code=r.status_code, headers=CORS)
+        return JSONResponse({"model": MODEL, "lora": os.path.exists(LORA), "llama": r.json()}, status_code=r.status_code, headers=CORS)
     except Exception:
         return JSONResponse({"model": MODEL, "llama": "starting"}, status_code=503, headers=CORS)
 
