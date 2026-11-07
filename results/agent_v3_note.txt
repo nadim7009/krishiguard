@@ -1,0 +1,1 @@
+# v3 scoring (formulation codes masked, 3 flawed registration questions left out); C v2 from the v2 run with the old scoring. Kaggle nb04 version 3, 3875 s.

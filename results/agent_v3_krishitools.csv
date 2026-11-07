@@ -1,0 +1,5 @@
+type,A_closed_book,B_rag,C_agent_v2,C_agent_v3
+dose,0.000,0.17,0.50,1.00
+product,0.010,0.19,0.36,0.82
+registration,0.031,0.00,0.75,1.00
+number_hallucination,0.067,0.007,0.000,0.003
