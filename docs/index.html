@@ -331,7 +331,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
               <div class="mast-copy">
                 <div class="season-pill" id="seasonPill"></div>
                 <p class="hello" id="helloLine" hidden></p>
-                <h1 class="mast-title" data-bn="আজ খেতে কী দেখছেন?" data-en="What are you seeing in your field today?">আজ খেতে কী দেখছেন?</h1>
+                <h1 class="mast-title" data-bn="আজ জমিতে কী দেখছেন?" data-en="What are you seeing in your field today?">আজ জমিতে কী দেখছেন?</h1>
                 <p class="mast-sub" data-bn="নিজের ভাষায় লিখুন। ওষুধের নাম আর মাত্রা আসবে শুধু সরকারি নিবন্ধন তালিকা থেকে, সাথে নিবন্ধন নম্বর। কিছু অস্পষ্ট থাকলে আগে জিজ্ঞেস করে নেব।" data-en="Write the way you talk. Pesticide names and doses come only from the government registration list, with the registration number. If something is unclear, I'll ask first.">নিজের ভাষায় লিখুন। ওষুধের নাম আর মাত্রা আসবে শুধু সরকারি নিবন্ধন তালিকা থেকে, সাথে নিবন্ধন নম্বর। কিছু অস্পষ্ট থাকলে আগে জিজ্ঞেস করে নেব।</p>
                 <div id="heroSlot"></div>
                 <div class="mast-chips" id="ideas"></div>
@@ -672,18 +672,18 @@ function answer(q){
   if (!DAE) return `<p>${L("বালাইনাশক তালিকা লোড হয়নি। পাতাটি আবার খুলুন।","The pesticide list did not load. Reload the page.")}</p>`;
   const farmy = cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q);
   if (!farmy && GREET.test(q) && q.length < 40)
-    return `<p>${hello()}${L("ভালো আছি, ধন্যবাদ। আপনার খেতের খবর কী? ফসল, পোকা, রোগ, ওষুধ বা আবহাওয়া, যা নিয়ে ভাবছেন লিখুন। মনের কথাও বলতে পারেন, আমি শুনব।","I'm well, thank you. How is your field? Write about crops, pests, disease, pesticides or the weather. You can also just tell me how you're doing.")}</p>`;
+    return `<p>${hello()}${L("ভালো আছি, ধন্যবাদ। আপনার জমির খবর কী? ফসল, পোকা, রোগ, ওষুধ বা আবহাওয়া, যা নিয়ে ভাবছেন লিখুন। মনের কথাও বলতে পারেন, আমি শুনব।","I'm well, thank you. How is your field? Write about crops, pests, disease, pesticides or the weather. You can also just tell me how you're doing.")}</p>`;
   if (!farmy && THANKS.test(q) && q.length < 40) return `<p>${hello()}${L("আপনাকেও ধন্যবাদ। আর কিছু জানতে চাইলে লিখুন। ভালো ফলন হোক।","Thank you too. Write any time you need something. I hope the harvest goes well.")}</p>`;
   const feelings = () => `<p>${hello()}${L("শুনে খারাপ লাগছে। ফসলের ক্ষতি আর টাকার চাপ অনেক ভারী জিনিস, আর এটা নিয়ে কথা বলা ঠিক কাজ।","I'm sorry to hear that. Crop losses and money worries are heavy, and it's good that you're talking about it.")}</p>
-      <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। খেতের কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;
+      <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। জমির কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;
   assumed = null;
   const body = farmAnswer(q);
   if (body === null){
     if (FEEL.test(q)) return feelings();
-    if (factsIn(q).length) return `<p>${hello()}${L("জানানোর জন্য ধন্যবাদ। নিচে থেকে মনে রাখতে বললে পরের উত্তরগুলো আপনার জমি আর ফসল মিলিয়ে দেব। খেতে কোনো সমস্যা দেখলে লিখুন।","Thanks for telling me. Tap below to save it, and later answers will fit your land and crops. Tell me if you see any problem in the field.")}</p>`;
+    if (factsIn(q).length) return `<p>${hello()}${L("জানানোর জন্য ধন্যবাদ। নিচে থেকে মনে রাখতে বললে পরের উত্তরগুলো আপনার জমি আর ফসল মিলিয়ে দেব। জমিতে কোনো সমস্যা দেখলে লিখুন।","Thanks for telling me. Tap below to save it, and later answers will fit your land and crops. Tell me if you see any problem in the field.")}</p>`;
     return null;
   }
-  const care = FEEL.test(q) ? `<p class="muted">${L("শুনে খারাপ লাগছে। আগে খেতের সমস্যাটা দেখি।","I'm sorry you're dealing with this. Let's look at the field problem first.")}</p>` : "";
+  const care = FEEL.test(q) ? `<p class="muted">${L("শুনে খারাপ লাগছে। আগে জমির সমস্যাটা দেখি।","I'm sorry you're dealing with this. Let's look at the field problem first.")}</p>` : "";
   const note = assumed ? `<p class="muted small">${L(`আপনার খামারের তথ্য থেকে ${assumed.bn} ধরে নিলাম। অন্য ফসল হলে বলুন।`, `Going by My farm, I assumed ${assumed.en}. Tell me if it's another crop.`)}</p>` : "";
   return care + note + body;
 }
@@ -823,7 +823,7 @@ function systemPrompt(evidence, weather){
   return [
 `তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের পাশে থাকা একজন বন্ধুর মতো সহকারী। নিয়মগুলো মেনে চলবে:
 ১. সহজ, ছোট বাংলায় উত্তর দেবে। কৃষককে "আপনি" বলবে। প্রশ্ন ইংরেজিতে হলে ইংরেজিতে উত্তর দেবে।
-২. কৃষক যেকোনো বিষয়ে কথা বলতে পারেন: খেত, বাজার, পরিবার, টাকা, মন খারাপ বা একেবারে ব্যক্তিগত কথা। মন দিয়ে শুনবে, সহানুভূতি দেখাবে, বিচার করবে না, আর প্রয়োজনে একটা প্রশ্ন করে আরও জানতে চাইবে।
+২. কৃষক যেকোনো বিষয়ে কথা বলতে পারেন: জমি, বাজার, পরিবার, টাকা, মন খারাপ বা একেবারে ব্যক্তিগত কথা। মন দিয়ে শুনবে, সহানুভূতি দেখাবে, বিচার করবে না, আর প্রয়োজনে একটা প্রশ্ন করে আরও জানতে চাইবে।
 ৩. বালাইনাশকের নাম, মাত্রা বা কোনো পরিমাণ কখনো নিজে বানিয়ে বলবে না। শুধু নিচে দেওয়া DAE তথ্য থেকে বলবে। তথ্য না থাকলে ফসল আর পোকা বা রোগের নাম জিজ্ঞেস করবে।
 ৪. নিশ্চিত না হলে অনুমান না করে জিজ্ঞেস করবে।
 ৫. কেউ নিজের ক্ষতি করার কথা বললে নরমভাবে কথা বলবে, পরিবারের কাউকে পাশে ডাকতে বলবে, বিপদে ৯৯৯ নম্বরে ফোন করতে বলবে, কীটনাশক দূরে তালা দিয়ে রাখতে বলবে। এমন সময় কোনো ওষুধ বা বিষের তথ্য দেবে না।
@@ -1111,7 +1111,7 @@ function renderDate(){
 
 /* ---------- real field strip along the bottom of the home cover, picked by season ---------- */
 const STRIP_ALT = {
-  rabi: ["হলুদ সরিষা ফুলের খেত", "Mustard field in yellow bloom"],
+  rabi: ["হলুদ সরিষা ফুলের জমি", "Mustard field in yellow bloom"],
   kharif1: ["পানিতে দাঁড়ানো কচি ধানের চারা", "Young rice seedlings standing in water"],
   kharif2: ["পাকা সোনালি ধানের শীষ", "Ripe golden rice panicles"],
 };
