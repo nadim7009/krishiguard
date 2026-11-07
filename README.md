@@ -64,17 +64,20 @@ New benchmark built for this project (released with the paper):
 
 ## Notebooks
 
+The Kaggle runs use the .ipynb files at the repo root; src/ holds the same code as plain scripts.
+
 | Notebook | What it does | Hardware | Status |
 |----------|--------------|----------|--------|
-| 01_data_and_retrieval | KrishokChat loading, BM25 / dense / hybrid search, Recall@k by dialect | CPU or T4 | ready |
-| 02_baselines | Systems A and B (v6: general, treatment, farmer; v7: safety with the real prompts) | T4 | done |
-| 03_tools | DAE pesticide checker, safety gate, FRG formula, safety metric, each with tests | CPU | done (FRG tables pending) |
-| 04_agent | System C: router (ask / refuse / answer), DAE tool evidence, number guard; reruns A and B with the fixed number metric | T4 | running |
-| 05_finetune | Systems D and E, QLoRA with safety data and tool traces | T4 | |
-| 06_krishitools_benchmark | Build and check the 300 tool-use scenarios | CPU | |
-| 07_crop_doctor | Vision fine-tune and photo-to-treatment flow | T4 | phase 2 |
-| 08_weather_and_methane | Open-Meteo and IPCC tools | CPU | phase 2 |
-| 09_export_and_deploy | GGUF Q4_K_M, Gradio Space with voice | CPU | phase 3 |
+| 01_data_and_retrieval | KrishokChat loading, BM25 / dense / hybrid search, Recall@k by dialect | CPU or T4 | done |
+| 02_baselines | Systems A and B | T4 | superseded by 04 |
+| 03_tools | DAE pesticide checker, safety gate, FRG formula, safety metric | CPU | done (FRG tables pending) |
+| 04_agent | Systems A, B, C; router, DAE lookup first, number guard (v3) | T4 | done |
+| 05_krishitools | KrishiTools-300 benchmark from the DAE list | CPU | done |
+| 06_finetune | QLoRA on Gemma 4 E2B: DAE answers, KrishokChat, safety, personal talk | T4 | done |
+| 07_eval_finetuned | Systems D (fine-tuned alone) and E (fine-tuned + agent) | T4 | done |
+| 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 | T4 | running |
+| 09_export_lora | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
+| 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | running |
 
 ## Metric note
 
@@ -99,34 +102,41 @@ Notebook 02 counted list markers ("১.", "২.") as numbers, which inflated its
 
 This is a research prototype. Chemical and dosage advice must be checked with a Department of Agricultural Extension officer before use in the field.
 
-## Where things stand (7 Nov 2026)
+## Where things stand (8 Nov 2026)
 
-Done on Kaggle (all committed, nothing running):
-- 01 retrieval: fine-tuned bge-m3 is the retriever.
-- 02 baselines: superseded by 04 because of the list-marker metric bug.
-- 03 tools: DAE pesticide parser and checker, safety gate, FRG formula, safety metric.
-- 04 agent v1 (5 Nov): A, B, C on 50 questions per set.
-- 05 KrishiTools-300: 100 dose, 100 product and 100 registration questions built from the DAE list.
-- 04 agent v2 (Kaggle version 3, 7 Nov, 4 h 12 min on T4 x2): product-name lookup, router retrained with real farmer questions, scored on KrishiTools-300. Results in results/agent_v2_*.csv (copied from the run log; the per-question file is still on Kaggle).
+KrishiTools-300, share correct (v3 scoring: formulation codes masked, 3 flawed registration questions left out):
 
-KrishiTools-300, share correct:
+| Type | A base | B base + RAG | C base + agent | D fine-tuned | E fine-tuned + agent |
+|---|---|---|---|---|---|
+| dose | 0.00 | 0.17 | 1.00 | 0.06 | 1.00 |
+| product | 0.01 | 0.19 | 0.82 (1.00 with fixed gold lists) | 0.00 | 0.82 (1.00) |
+| registration | 0.03 | 0.00 | 1.00 | 0.00 | 1.00 |
+| number hallucination | 6.7% | 0.7% | 0.3% | 55% | 0% |
 
-| Type | A closed book | B RAG | C agent |
-|---|---|---|---|
-| dose | 0.00 | 0.16 | 0.50 |
-| product | 0.01 | 0.19 | 0.36 |
-| registration | 0.03 | 0.00 | 0.75 |
+- The product gold lists from notebook 05 missed DAE rows that name several pests at once, and the scorer read "metalaxyl" inside "Metalaxyl M" as unregistered. Every one of the 18 product "misses" names products the DAE list registers for that crop and pest. Notebook 08 rebuilds the lists and fixes the scorer.
+- Fine-tuning without tools is unsafe: D states unsupported numbers in 55% of pesticide answers and 54% of treatment answers (A: 6.7% and 2%). Inside the agent (E) this falls to 0%.
+- Fine-tuning helped safety without tools (safe behaviour A 0.78, D 0.94; asking back 0.64 to 0.96) and treatment answers inside the agent (token F1 C 0.15, E 0.19). Farmer answers got shorter (token F1 C 0.15, E 0.06).
 
-Number hallucination on KrishiTools: A 6.7%, B 0.7%, C 0%. C's tool fired on 100% of these questions; the number guard dropped a sentence in 0.7% of answers.
-Farmer set: the router now asks back on 5/50 questions (14/50 in v1); C token F1 0.151 (v1 0.124, B 0.160).
+Lookup only (no model), KrishiTools-Messy held-out seed 7, share of questions where the DAE lookup returns the right answer:
 
-Deployment started:
-- Website (docs/, served by GitHub Pages): Bangla-first chat, pesticide checker over the parsed DAE list, leaf photo page (model pending), weather and spray windows, My farm profile kept on the phone, personal conversation, number guard on model text.
-- Model server: Hugging Face Space mahmudnadim479/krishiguard (Gradio on ZeroGPU hardware, llama.cpp on CPU, Gemma 4 E2B Q4_0, thinking off). About 15 tokens per second; first token in about 1.3 s. Code in space/.
+| Change | v3 lookup | v4 lookup |
+|---|---|---|
+| formulation code dropped | 0.07 | 1.00 |
+| joined or lower case | 0.03 | 1.00 |
+| one typo | 0.03 | 0.97 |
+| pest spelling or loanword | 0.50 | 1.00 |
+| dialect crop name | 0.48 | 0.98 |
+| crop missing (should ask) | 1.00 | 1.00 |
+| all | 0.33 | 0.99 |
 
-Next steps, in order:
-1. Look at C's wrong dose and product answers on KrishiTools-300 (per-question file) and fix the tool or the prompt.
-2. Publish the website on GitHub Pages (needs a repo name).
-3. Notebook 05 fine-tune (systems D and E): safety data, tool traces, everyday and personal Bangla conversation, profile in the prompt, no "ভাই" unless the farmer uses it.
-4. FRG 2024 tables (needs the BARC guide PDF).
-5. Bottle check, rotation advice, pest radar, then voice and offline.
+The pest and crop variants and the lexicon that reads them were both written by us, so those two rows are not independent; the product-name rows are.
+
+Deployment:
+- Website: nadim7009.github.io/krishiguard (docs/).
+- Model server: Hugging Face Space mahmudnadim479/krishiguard, llama.cpp on CPU with Gemma 4 E2B Q4_0. space/app.py now loads the fine-tuned LoRA (notebook 09, 39 MB) from models/ when that file is in this repo, and falls back to the base model otherwise.
+
+Next:
+1. Read notebooks 08 and 10 and add their tables here.
+2. Put models/krishiguard_lora_06_q8_0.gguf in the repo and redeploy the Space.
+3. Real farmer questions (even 50) and a small human rating of answers.
+4. FRG fertilizer tables (needs the BARC guide PDF).
