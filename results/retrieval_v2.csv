@@ -1,0 +1,19 @@
+set,retriever,n,R@1,R@5,R@10,MRR@10
+general_test,bm25,358,0.075,0.142,0.184,0.105
+general_test,e5-small,358,0.034,0.067,0.075,0.045
+general_test,hybrid bm25+e5,358,0.034,0.073,0.101,0.051
+general_test,bge-m3,358,0.081,0.207,0.265,0.130
+general_test,hybrid bm25+bge,358,0.056,0.145,0.182,0.091
+general_test,e5-small-ft,358,0.098,0.184,0.246,0.134
+general_test,hybrid bm25+e5-ft,358,0.073,0.170,0.232,0.116
+general_test,bge-m3-ft,358,0.212,0.383,0.475,0.287
+general_test,fusion (dev-tuned 1/2/1),358,0.117,0.226,0.293,0.170
+treatment_test,bm25,346,0.347,0.480,0.512,0.404
+treatment_test,e5-small,346,0.191,0.272,0.318,0.231
+treatment_test,hybrid bm25+e5,346,0.254,0.358,0.410,0.298
+treatment_test,bge-m3,346,0.240,0.367,0.408,0.292
+treatment_test,hybrid bm25+bge,346,0.286,0.402,0.468,0.339
+treatment_test,e5-small-ft,346,0.329,0.413,0.465,0.371
+treatment_test,hybrid bm25+e5-ft,346,0.347,0.465,0.512,0.393
+treatment_test,bge-m3-ft,346,0.402,0.523,0.569,0.457
+treatment_test,fusion (dev-tuned 1/2/1),346,0.355,0.506,0.558,0.418

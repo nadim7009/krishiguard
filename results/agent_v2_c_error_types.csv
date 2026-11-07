@@ -1,0 +1,11 @@
+type,why,n
+dose,asked back although question was complete,9
+dose,said info missing although tool row was there,16
+dose,"used a product or dose from retrieved passages, not the tool row",25
+product,said info missing although tool row was there,14
+product,"used a product or dose from retrieved passages, not the tool row",50
+registration,asked back although question was complete,6
+registration,benchmark: empty product name,1
+registration,said info missing although tool row was there,2
+registration,"said not registered, then added another dose or product",12
+registration,said yes (tool showed a different pest on the same crop),4

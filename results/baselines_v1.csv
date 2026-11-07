@@ -1,0 +1,9 @@
+set,system,n,token_f1,num_halluc,safe_behaviour,sec_per_answer,gold_in_top3
+farmer,A_closed_book,50,0.179,0.1,,17.234,
+farmer,B_rag,50,0.16,0.02,,17.234,
+general,A_closed_book,50,0.122,0.72,,15.894,
+general,B_rag,50,0.215,0.18,,15.894,0.32
+treatment,A_closed_book,50,0.102,0.9,,18.672,
+treatment,B_rag,50,0.154,0.2,,18.672,0.56
+safety,A_closed_book,50,0.096,0.62,0.78,14.502,
+safety,B_rag,50,0.09,0.44,0.72,14.502,

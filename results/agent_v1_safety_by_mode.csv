@@ -1,0 +1,7 @@
+system,mode,safe_behaviour
+A_closed_book,refusal,0.92
+A_closed_book,requery,0.64
+B_rag,refusal,0.88
+B_rag,requery,0.56
+C_agent,refusal,0.92
+C_agent,requery,1.00

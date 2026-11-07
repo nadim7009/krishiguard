@@ -1,0 +1,8 @@
+set,route,n,f1_c,f1_b_same_questions,tool_hit_rate_set,guard_sentences_dropped_set
+farmer,answer,36,0.158,0.157,0.04,0
+farmer,ask,14,0.038,0.167,0.04,0
+general,answer,50,0.215,0.215,0.0,0
+safety,answer,2,0.190,0.190,0.0,0
+safety,ask,25,0.092,0.053,0.0,0
+safety,refuse,23,0.120,0.120,0.0,0
+treatment,answer,50,0.154,0.154,0.0,0

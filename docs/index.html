@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KrishiGuard</title>
+<meta name="description" content="KrishiGuard: Bangla farm assistant with registered pesticide doses, weather spray windows and crop advice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..125,400..800&family=Hind+Siliguri:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a quiet field notebook. One light top bar, then a single calm column per page.
+   Deep paddy green carries the brand: header and cover in green, working pages light. */
+:root{
+  --bg:#EFF5EC; --surface:#FFFFFF; --sunk:#EFF0E7; --ink:#1A2920; --muted:#5F6C62; --line:#E3E5DA;
+  --forest:#22573A; --forest-ink:#FFFFFF; --forest-soft:#E2ECDF; --leaf:#6F9E3E; --mustard:#D6A11C; --mustard-soft:#F6EBC9; --soil:#8B6642;
+  --ok:#2E7A47; --ok-bg:#E1F0DF; --warn:#9A6408; --warn-bg:#F8EDD0; --bad:#B03A2A; --bad-bg:#F8E1DC; --night:#E0E3D8;
+  --shadow:0 1px 2px rgba(26,41,32,.05),0 10px 30px rgba(26,41,32,.06);
+  --on-photo:#FFFFFF; --on-photo-soft:rgba(255,255,255,.84);
+  --deep:#0E3B24; --deep-2:#16583A; --deep-glow:#2F8A55;
+  --display:"Anek Bangla","Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;
+  --body:"Hind Siliguri","Anek Bangla","Noto Sans Bengali",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1612; --surface:#161F19; --sunk:#121A15; --ink:#E5ECE2; --muted:#98A69B; --line:#25312A;
+  --forest:#82C49A; --forest-ink:#0F1612; --forest-soft:#1C2E22; --leaf:#9DCB66; --mustard:#E6B53C; --mustard-soft:#3A3117; --soil:#C9A077;
+  --ok:#72C68F; --ok-bg:#183323; --warn:#E3B44B; --warn-bg:#382D13; --bad:#EE8576; --bad-bg:#3B1D18; --night:#1B2620;
+  --deep:#0A2618; --deep-2:#0F3A24; --deep-glow:#1F6640;
+  --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1612; --surface:#161F19; --sunk:#121A15; --ink:#E5ECE2; --muted:#98A69B; --line:#25312A;
+  --forest:#82C49A; --forest-ink:#0F1612; --forest-soft:#1C2E22; --leaf:#9DCB66; --mustard:#E6B53C; --mustard-soft:#3A3117; --soil:#C9A077;
+  --ok:#72C68F; --ok-bg:#183323; --warn:#E3B44B; --warn-bg:#382D13; --bad:#EE8576; --bad-bg:#3B1D18; --night:#1B2620;
+  --deep:#0A2618; --deep-2:#0F3A24; --deep-glow:#1F6640;
+  --shadow:none; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2.5px solid var(--mustard);outline-offset:2px;border-radius:8px}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0;font-weight:650}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.note{font-size:.86rem;color:var(--muted)}
+.small{font-size:.86rem}
+
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+
+/* top bar */
+.top{background:var(--deep);color:var(--on-photo)}
+.bar{max-width:1160px;margin:0 auto;height:68px;display:flex;align-items:center;gap:24px;
+  padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--on-photo)}
+.brand b{font-family:var(--display);font-size:1.35rem;font-weight:700;letter-spacing:.005em}
+.brand svg{color:var(--on-photo)}
+.tabs{display:flex;gap:4px;margin:0 auto}
+.tab{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:8px 15px;border-radius:999px;color:var(--on-photo-soft);font-family:var(--display);font-size:1rem;font-weight:550;transition:background .15s,color .15s}
+.tab:hover{color:var(--on-photo);background:rgba(255,255,255,.08)}
+.tab[aria-current="page"]{background:rgba(255,255,255,.14);color:var(--on-photo)}
+.tools{display:flex;align-items:center;gap:8px}
+.today{font-size:.86rem;color:var(--on-photo-soft);text-align:right;line-height:1.3;margin-right:6px}
+.today b{display:block;color:var(--on-photo);font-weight:600}
+.ghost{color:var(--on-photo);border:1px solid rgba(255,255,255,.3);background:transparent;border-radius:999px;padding:6px 14px;font-size:.88rem;font-weight:500}
+.ghost:hover{background:rgba(255,255,255,.12)}
+.round{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:transparent;display:grid;place-items:center;color:var(--on-photo)}
+.round:hover{background:rgba(255,255,255,.12)}
+
+main{min-width:0;overflow:auto}
+.view{padding-block:40px 64px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.page{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.head h2{font-size:clamp(1.75rem,3.4vw,2.4rem)}
+.head p{color:var(--muted);margin:8px 0 0;max-width:60ch}
+.kicker{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soil);font-weight:600;margin-bottom:6px}
+.card{color:var(--ink);background:var(--surface);border-radius:20px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--forest);color:var(--forest-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.06)}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn.soft{background:var(--forest-soft);color:var(--forest)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:.88rem;color:var(--muted);font-weight:500;min-width:0}
+input[type=text],input[type=search],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;min-width:0;color:var(--ink)}
+input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;box-shadow:0 0 0 3px var(--forest-soft)}
+
+/* home / chat */
+#v-chat{height:100%;display:flex;flex-direction:column;padding:0}
+.chatscroll{flex:1;min-height:0;overflow:auto}
+.col{max-width:780px;margin:0 auto}
+#home{display:flex;flex-direction:column}
+.mast{position:relative;min-height:clamp(520px,74vh,700px);display:flex;padding:12px;overflow:hidden;isolation:isolate;background:radial-gradient(900px 420px at 88% 8%,var(--deep-glow) 0%,transparent 62%),linear-gradient(165deg,var(--deep-2) 0%,var(--deep) 70%)}
+.strip{position:absolute;left:0;right:0;bottom:0;height:38%;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(to top,#000 45%,transparent);mask-image:linear-gradient(to top,#000 45%,transparent)}
+.strip img{width:100%;height:100%;object-fit:cover;object-position:center 70%}
+.strip::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(10,42,25,.72),rgba(10,42,25,.38))}
+.photo{position:relative;border-radius:24px;overflow:hidden;display:flex;align-items:flex-end;isolation:isolate;background:radial-gradient(900px 420px at 88% 8%,var(--deep-glow) 0%,transparent 62%),linear-gradient(165deg,var(--deep-2) 0%,var(--deep) 70%)}
+.photo .over{padding:30px 32px;color:var(--on-photo);max-width:680px}
+.photo .over .kicker{color:var(--on-photo-soft)}
+.photo h2{color:var(--on-photo)}
+.photo .over p{color:var(--on-photo-soft);margin:10px 0 0;max-width:56ch}
+.banner{min-height:220px}
+.banner h2{font-size:clamp(1.75rem,3.4vw,2.4rem)}
+.onphoto{margin-top:16px;max-width:260px}.onphoto span{color:var(--on-photo-soft)}
+.mast-in{width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;justify-content:space-between;gap:40px;
+  padding-block:44px 16px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.mast-copy{max-width:660px;display:flex;flex-direction:column;align-items:flex-start;gap:18px;margin-block:auto}
+.season-pill{display:inline-block;background:rgba(255,255,255,.94);color:#1A2920;border-radius:999px;padding:5px 14px;font-size:.88rem;font-weight:500}
+.season-pill b{color:#22573A;font-weight:600}
+.mast-title{color:var(--on-photo);font-size:clamp(2.6rem,6vw,4.7rem);font-weight:720;line-height:1.05;letter-spacing:-.01em;font-variation-settings:"wdth" 104}
+.mast-sub{color:var(--on-photo-soft);margin:0;font-size:1.08rem;max-width:54ch}
+#heroSlot{width:100%}
+#heroSlot .box{border:0;box-shadow:0 24px 60px rgba(0,0,0,.32);padding:10px;border-radius:24px}
+#heroSlot .box textarea{font-size:1.05rem}
+.mast-chips{display:flex;flex-wrap:wrap;gap:8px}
+.mchip{border:1px solid rgba(255,255,255,.4);background:rgba(14,59,36,.55);color:var(--on-photo);border-radius:999px;padding:7px 15px;font-size:.92rem;display:inline-flex;align-items:center;gap:8px;transition:background .15s,color .15s}
+.mchip:hover{background:#FFFFFF;color:#1A2920}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;border-top:1px solid rgba(255,255,255,.28);padding-top:20px;color:var(--on-photo)}
+.facts b{display:block;font-family:var(--display);font-size:1.6rem;font-weight:680;line-height:1.1;font-variation-settings:"wdth" 92}
+.facts span{font-size:.86rem;color:var(--on-photo-soft);line-height:1.4;display:block;margin-top:4px}
+.below{max-width:1200px;width:100%;margin:0 auto;padding-block:56px 72px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:24px}
+.below-head h2{font-size:clamp(1.5rem,2.8vw,2rem)}
+.below-head p{margin:8px 0 0;max-width:60ch}
+.tools-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.tool-card{color:var(--ink);text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:22px;overflow:hidden;padding:0;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
+.tool-card:hover{transform:translateY(-3px);border-color:var(--forest)}
+.tc-img{display:grid;place-items:center;height:132px;color:var(--on-photo);background:radial-gradient(900px 420px at 88% 8%,var(--deep-glow) 0%,transparent 62%),linear-gradient(165deg,var(--deep-2) 0%,var(--deep) 70%)}
+.tc-img svg{transition:transform .3s}
+.tool-card:hover .tc-img svg{transform:scale(1.08)}
+.tc-body{padding:18px 20px 22px;display:flex;flex-direction:column;gap:6px}
+.tc-body b{font-family:var(--display);font-size:1.15rem;font-weight:650}
+.tc-body span{color:var(--muted);font-size:.94rem;line-height:1.5}
+.convo{padding-block:32px 8px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));width:100%}
+.thread{display:flex;flex-direction:column;gap:22px}
+.msg.user{align-self:flex-end;max-width:min(560px,88%);background:var(--forest);color:var(--forest-ink);padding:11px 17px;border-radius:20px 20px 6px 20px}
+.msg.bot{display:flex;gap:12px;align-items:flex-start}
+.msg.bot .mark{width:32px;height:32px;flex:none;color:var(--forest);margin-top:4px}
+.answer{color:var(--ink);flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:6px 20px 20px 20px;padding:18px 20px}
+.answer p{margin:0 0 10px}.answer p:last-child{margin:0}
+.answer ul{margin:4px 0 0;padding-left:20px}
+.doses{margin:6px 0 10px;border-top:1px solid var(--line)}
+.dose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 18px;padding:13px 0;border-bottom:1px solid var(--line)}
+.dose .nm{font-weight:600}
+.dose .meta{font-size:.86rem;color:var(--muted);grid-column:1}
+.dose .amt{grid-row:1/3;grid-column:2;align-self:center;text-align:right;font-family:var(--display);font-weight:650;font-size:1.2rem;color:var(--forest);line-height:1.2;white-space:nowrap}
+.dose .amt small{display:block;font-family:var(--body);font-weight:400;color:var(--muted);font-size:.76rem}
+.flag{grid-column:1/-1;font-size:.84rem;color:var(--bad);margin-top:4px}
+.verdict{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;margin:0 0 12px}
+.verdict .vi{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:700;font-size:.85rem}
+.verdict.no{background:var(--bad-bg)}.verdict.no .vi{background:var(--bad);color:var(--surface)}
+.verdict.yes{background:var(--ok-bg)}.verdict.yes .vi{background:var(--ok);color:var(--surface)}
+.sources{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:12px;align-items:center;font-size:.84rem;color:var(--muted)}
+.src{font-family:var(--mono);font-size:.78rem;border:0;background:transparent;padding:0;color:var(--forest);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+.caution{font-size:.84rem;color:var(--muted);margin-top:12px;line-height:1.55}
+.followups{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{color:var(--ink);border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 14px;font-size:.92rem;text-align:left;line-height:1.35}
+.chip:hover{border-color:var(--forest);color:var(--forest)}
+.dock{padding-block:12px 18px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.box{color:var(--ink);display:flex;gap:6px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:22px;padding:8px}
+.box:focus-within{border-color:var(--forest)}
+.box textarea{border:0;background:transparent;resize:none;max-height:170px;min-height:46px;padding:11px 8px;box-shadow:none}
+.box textarea:focus{box-shadow:none}
+.icon-btn{width:46px;height:46px;border-radius:15px;border:0;display:grid;place-items:center;flex:none;background:transparent;color:var(--muted)}
+.icon-btn:hover{background:var(--sunk);color:var(--ink)}
+.icon-btn.send{background:var(--forest);color:var(--forest-ink)}
+.dock-foot{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px;padding:0 6px}
+.dock-foot p{margin:0;font-size:.82rem;color:var(--muted)}
+.linkish{border:0;background:transparent;color:var(--forest);font-size:.86rem;font-weight:600;padding:0;white-space:nowrap}
+.typing{display:inline-flex;gap:4px}.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:b 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%{opacity:.25}40%{opacity:1}}
+
+.withicon{display:inline-flex;align-items:center;gap:7px}
+.hello{margin:0;color:var(--on-photo);font-family:var(--display);font-size:1.15rem;font-weight:550}
+.mine{grid-column:1/-1;font-size:.88rem;color:var(--forest);font-weight:600;margin-top:4px}
+.mine .linkish{font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.toolbox{margin-top:14px;padding:14px 16px 4px;border-radius:14px;background:var(--sunk)}
+.toolbox .doses{border-top:0}
+.remember{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:.88rem;color:var(--muted)}
+.dlg{border:0;border-radius:22px;padding:0;width:min(540px,calc(100% - 32px));max-height:calc(100% - 32px);background:var(--surface);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.3)}
+.dlg::backdrop{background:rgba(6,24,14,.55)}
+.dlg form{display:flex;flex-direction:column;gap:16px;padding:26px}
+.dlg h3{font-size:1.35rem;margin-bottom:6px}
+.cropset{border:0;padding:0;margin:0}
+.cropset legend{padding:0;margin-bottom:8px}
+.cropchips{display:flex;flex-wrap:wrap;gap:8px}
+.cchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink);font-size:.92rem;background:var(--bg)}
+.cchip input{accent-color:var(--forest);margin:0}
+.cchip:has(input:checked){border-color:var(--forest);background:var(--forest-soft);color:var(--forest)}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.dlg-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.grow{flex:1}
+.danger{color:var(--bad)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.92rem;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100% - 32px);text-align:center}
+
+/* checker */
+.search{padding:20px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:end}
+.sfield{position:relative}
+.sfield svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.sfield input{padding-left:44px}
+.counts{font-size:.9rem;color:var(--muted)}
+.counts b{color:var(--ink);font-weight:600}
+.rlist{overflow:hidden}
+.rrow{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) minmax(0,1.1fr) auto;gap:4px 18px;padding:16px 20px;border-top:1px solid var(--line);align-items:center}
+.rrow:first-child{border-top:0}
+.rrow .b{font-weight:600}
+.rrow .sub{font-size:.84rem;color:var(--muted)}
+.rrow .d{font-family:var(--display);font-weight:650;font-size:1.08rem;color:var(--forest);text-align:right;white-space:nowrap}
+.rrow .d small{display:block;font-family:var(--body);color:var(--muted);font-weight:400;font-size:.74rem}
+.rrow.flagged{background:color-mix(in srgb,var(--bad-bg) 60%,transparent)}
+.rhead{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-block:12px;background:var(--sunk)}
+.more,.empty{padding:16px 20px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+.empty{text-align:center;padding:36px 20px;border:0}
+#verdictBox:empty{display:none}
+#verdictBox .verdict{margin:0}
+
+/* leaf */
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:22px;align-items:start}
+.drop{color:var(--ink);border:1.5px dashed color-mix(in srgb,var(--forest) 35%,var(--line));border-radius:22px;min-height:340px;display:grid;place-items:center;text-align:center;padding:28px;position:relative;overflow:hidden;background:var(--surface);cursor:pointer}
+.drop.over{background:var(--forest-soft)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop .hint{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted)}
+.drop .hint .ic{width:64px;height:64px;border-radius:20px;background:var(--forest-soft);color:var(--forest);display:grid;place-items:center}
+.drop .hint b{color:var(--ink);font-family:var(--display);font-weight:600;font-size:1.1rem}
+.panel{padding:22px;display:flex;flex-direction:column;gap:16px}
+.panel h3{font-size:1.1rem}
+.soon{background:var(--mustard-soft);border-radius:14px;padding:12px 14px;font-size:.92rem;line-height:1.55}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;font-size:.95rem}
+.steps li span{width:28px;height:28px;border-radius:50%;background:var(--forest-soft);color:var(--forest);display:grid;place-items:center;font-weight:600;font-size:.85rem}
+
+/* weather */
+.wgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:22px}
+.now{padding:24px;display:flex;flex-direction:column;gap:6px}
+.now .t{font-family:var(--display);font-size:4rem;font-weight:650;line-height:1;color:var(--ink);font-variation-settings:"wdth" 90}
+.now .c{font-size:1.1rem;font-weight:500}
+.now .m{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:.9rem;margin-top:6px}
+.advice{padding:24px;display:flex;flex-direction:column;gap:14px}
+.advice h3{font-size:1.1rem}
+.adv{display:grid;grid-template-columns:10px 1fr;gap:12px;align-items:start;line-height:1.55}
+.adv i{width:10px;height:10px;border-radius:50%;margin-top:9px}
+.spray{padding:24px;display:flex;flex-direction:column;gap:14px}
+.spray h3{font-size:1.1rem}
+.hours-wrap{overflow-x:auto;padding-bottom:4px}
+.hours{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(16px,1fr);gap:3px;min-width:600px}
+.hr{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.7rem;color:var(--muted)}
+.hr b{display:block;width:100%;height:34px;border-radius:6px}
+.s-g{background:var(--ok)}.s-c{background:var(--mustard)}.s-x{background:var(--bad)}.s-o{background:var(--night)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.86rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.day{padding:16px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid var(--line)}
+.day:first-child{border-left:0}
+.day .n{font-weight:600;font-size:.9rem}
+.day .hi{font-weight:600}
+.day .lo{color:var(--muted);font-size:.86rem}
+.day .rp{font-size:.78rem;color:var(--muted)}
+.notice{background:var(--mustard-soft);border-radius:14px;padding:10px 14px;font-size:.88rem}
+.rules{margin:0;font-size:.84rem;color:var(--muted);line-height:1.6}
+
+.bottomnav{display:none}
+@media (max-width:900px){
+  .top .tabs,.today{display:none}
+  #profileBtn span{display:none}
+  #profileBtn{padding:8px 10px}
+  .bar{height:60px;justify-content:space-between}
+  .bottomnav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);
+    padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
+  .bottomnav .tab{flex-direction:column;gap:2px;font-size:.78rem;padding:8px 2px 10px;border-radius:0;justify-content:center}
+  .bottomnav .tab{color:var(--muted)}
+  .bottomnav .tab:hover{color:var(--ink);background:transparent}
+  .bottomnav .tab[aria-current="page"]{background:transparent;color:var(--forest)}
+  .search{grid-template-columns:1fr 1fr}.search .sfield-wrap{grid-column:1/-1}
+  .rrow{grid-template-columns:minmax(0,1fr) auto}
+  .rrow .c2,.rrow .c3{grid-column:1}
+  .rrow .d{grid-row:1/4;grid-column:2}
+  .rhead{display:none}
+  .two,.wgrid{grid-template-columns:minmax(0,1fr)}
+  .days{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:8px}
+  .day:nth-child(5){border-left:0}
+  .view{padding-top:26px}
+  .mast{min-height:auto}.mast-in{padding-block:36px 24px;gap:28px}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.tools-grid{grid-template-columns:minmax(0,1fr)}.below{padding-block:40px 56px}.photo .over{padding:22px 20px}.banner{min-height:210px}
+}
+@media (max-width:520px){.mast-title{font-size:2.35rem}.mast-sub{font-size:1rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bottle" viewBox="0 0 24 24"><path d="M10 2.5h4M10.5 2.5v3.2L8 9v10.5A2 2 0 0 0 10 21.5h4a2 2 0 0 0 2-2V9l-2.5-3.3V2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 13h8" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M4.5 19.5C4 11 9 4.5 20 4c.5 10.5-5.5 16-15.5 15.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M4.5 19.5C9 15 12 12 15.5 8.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-sky" viewBox="0 0 24 24"><circle cx="8.5" cy="8.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 2v1.6M2 8.5h1.6M3.9 3.9l1.1 1.1M13 3.9l-1.1 1.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8 19.5h9.5a3.5 3.5 0 0 0 .2-7 5 5 0 0 0-9.3 1A3 3 0 0 0 8 19.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bug" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="5" ry="6.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v13M9.5 6.5L8 4M14.5 6.5L16 4M7 11H4M7 15H4M17 11h3M17 15h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.5-3 8-7 9.5-4-1.5-7-5-7-9.5V6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.8 12l2.2 2.2 4.2-4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l1.8-2.5h6.4L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="logo" viewBox="0 0 40 40"><path d="M20 3l14 5v11c0 9-6 15.5-14 18C12 34.5 6 28 6 19V8z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M20 31V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20 21c-4-.3-6.3-2.8-6.5-6.5 4 .2 6.3 2.6 6.5 6.5zM20 17.5c4-.3 6.3-2.8 6.5-6.5-4 .2-6.3 2.6-6.5 6.5zM20 26c-3.4-.3-5.4-2.3-5.6-5.5 3.4.2 5.4 2.2 5.6 5.5z" fill="var(--mustard)"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="#chat"><svg width="34" height="34"><use href="#logo"/></svg><b data-bn="কৃষিগার্ড" data-en="KrishiGuard">কৃষিগার্ড</b></a>
+      <nav class="tabs" aria-label="Sections">
+        <button class="tab" data-go="chat"><svg width="19" height="19"><use href="#i-chat"/></svg><span data-bn="সহকারী" data-en="Assistant">সহকারী</span></button>
+        <button class="tab" data-go="pesticide"><svg width="19" height="19"><use href="#i-bottle"/></svg><span data-bn="বালাইনাশক যাচাই" data-en="Pesticide check">বালাইনাশক যাচাই</span></button>
+        <button class="tab" data-go="leaf"><svg width="19" height="19"><use href="#i-leaf"/></svg><span data-bn="পাতার ছবি" data-en="Leaf photo">পাতার ছবি</span></button>
+        <button class="tab" data-go="weather"><svg width="19" height="19"><use href="#i-sky"/></svg><span data-bn="আবহাওয়া" data-en="Weather">আবহাওয়া</span></button>
+      </nav>
+      <div class="tools">
+        <div class="today" id="today"></div>
+        <button class="ghost withicon" id="profileBtn"><svg width="17" height="17"><use href="#i-user"/></svg><span data-bn="আমার খামার" data-en="My farm">আমার খামার</span></button>
+        <button class="ghost" id="langBtn">English</button>
+        <button class="round" id="themeBtn" aria-label="Dark or light"><svg width="18" height="18"><use href="#i-moon"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- HOME / ASSISTANT -->
+    <section class="view" id="v-chat" hidden>
+      <div class="chatscroll" id="chatScroll">
+        <div id="home">
+          <div class="mast">
+            <div class="strip"><img id="stripImg" src="img/strip-rabi-1600.webp" srcset="img/strip-rabi-800.webp 800w, img/strip-rabi-1600.webp 1600w" sizes="100vw" alt="" fetchpriority="high"></div>
+            <div class="mast-in">
+              <div class="mast-copy">
+                <div class="season-pill" id="seasonPill"></div>
+                <p class="hello" id="helloLine" hidden></p>
+                <h1 class="mast-title" data-bn="আজ খেতে কী দেখছেন?" data-en="What are you seeing in your field today?">আজ খেতে কী দেখছেন?</h1>
+                <p class="mast-sub" data-bn="নিজের ভাষায় লিখুন। ওষুধের নাম আর মাত্রা আসবে শুধু সরকারি নিবন্ধন তালিকা থেকে, সাথে নিবন্ধন নম্বর। কিছু অস্পষ্ট থাকলে আগে জিজ্ঞেস করে নেব।" data-en="Write the way you talk. Pesticide names and doses come only from the government registration list, with the registration number. If something is unclear, I'll ask first.">নিজের ভাষায় লিখুন। ওষুধের নাম আর মাত্রা আসবে শুধু সরকারি নিবন্ধন তালিকা থেকে, সাথে নিবন্ধন নম্বর। কিছু অস্পষ্ট থাকলে আগে জিজ্ঞেস করে নেব।</p>
+                <div id="heroSlot"></div>
+                <div class="mast-chips" id="ideas"></div>
+              </div>
+              <div class="facts" id="facts"></div>
+            </div>
+          </div>
+          <div class="below">
+            <div class="below-head">
+              <h2 data-bn="মাঠের কাজে আরও তিনটি টুল" data-en="Three more tools for the field">মাঠের কাজে আরও তিনটি টুল</h2>
+              <p class="muted" data-bn="সবগুলো একই সরকারি তথ্যের ওপর চলে, তাই চ্যাটের উত্তর আর এখানকার সংখ্যা সবসময় মিলবে।" data-en="All of them run on the same government data, so the chat and these pages always agree.">সবগুলো একই সরকারি তথ্যের ওপর চলে, তাই চ্যাটের উত্তর আর এখানকার সংখ্যা সবসময় মিলবে।</p>
+            </div>
+            <div class="tools-grid">
+              <button class="tool-card" data-go="pesticide"><span class="tc-img"><svg width="44" height="44"><use href="#i-bottle"/></svg></span>
+                <span class="tc-body"><b data-bn="বালাইনাশক যাচাই" data-en="Pesticide check">বালাইনাশক যাচাই</b><span data-bn="কোন ওষুধ কোন ফসলে নিবন্ধিত, আর কত মাত্রায়। ৪,৭০৬টি পণ্য।" data-en="Which product is registered for which crop, and at what dose. 4,706 products.">কোন ওষুধ কোন ফসলে নিবন্ধিত, আর কত মাত্রায়। ৪,৭০৬টি পণ্য।</span></span></button>
+              <button class="tool-card" data-go="leaf"><span class="tc-img"><svg width="44" height="44"><use href="#i-leaf"/></svg></span>
+                <span class="tc-body"><b data-bn="পাতার ছবি" data-en="Leaf photo">পাতার ছবি</b><span data-bn="আক্রান্ত পাতার ছবি দিন, ছবির মডেল রোগ চিনবে।" data-en="Add a photo of an affected leaf and the photo model names the disease.">আক্রান্ত পাতার ছবি দিন, ছবির মডেল রোগ চিনবে।</span></span></button>
+              <button class="tool-card" data-go="weather"><span class="tc-img"><svg width="44" height="44"><use href="#i-sky"/></svg></span>
+                <span class="tc-body"><b data-bn="আবহাওয়া ও স্প্রে" data-en="Weather and spraying">আবহাওয়া ও স্প্রে</b><span data-bn="১৬টি জেলার পূর্বাভাস, আর আগামী ৪৮ ঘণ্টায় কখন স্প্রে করা নিরাপদ।" data-en="Forecasts for 16 districts, and when it is safe to spray in the next 48 hours.">১৬টি জেলার পূর্বাভাস, আর আগামী ৪৮ ঘণ্টায় কখন স্প্রে করা নিরাপদ।</span></span></button>
+            </div>
+          </div>
+        </div>
+        <div class="col convo"><div class="thread" id="thread" aria-live="polite"></div></div>
+      </div>
+      <div class="dock" id="dock" hidden>
+        <div class="col" id="dockSlot">
+          <form class="box" id="askForm">
+            <button type="button" class="icon-btn" id="toLeaf" data-title-bn="পাতার ছবি দিন" data-title-en="Add a leaf photo" title="পাতার ছবি দিন"><svg width="22" height="22"><use href="#i-cam"/></svg></button>
+            <textarea id="q" rows="1" aria-label="Question" data-ph-bn="ধানে কারেন্ট পোকা, কী দিব?" data-ph-en="For example: brown planthopper on my rice, what should I use?"></textarea>
+            <button class="icon-btn send" type="submit" aria-label="Send"><svg width="20" height="20"><use href="#i-send"/></svg></button>
+          </form>
+          <div class="dock-foot"><p id="chatNote"></p><button class="linkish" id="newChat" data-bn="নতুন প্রশ্ন" data-en="New question">নতুন প্রশ্ন</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTICIDE -->
+    <section class="view" id="v-pesticide" hidden>
+      <div class="page">
+        <div class="head">
+          <div class="kicker" data-bn="DAE নিবন্ধন তালিকা" data-en="DAE registration list">DAE নিবন্ধন তালিকা</div>
+          <h2 data-bn="বালাইনাশক যাচাই" data-en="Check a pesticide">বালাইনাশক যাচাই</h2>
+          <p data-bn="পণ্যের নাম, উপাদান বা নিবন্ধন নম্বর লিখুন। ফসল ও বালাই বেছে নিলে দেখাবে কোন পণ্য সেই কাজে নিবন্ধিত, আর কত মাত্রায়।" data-en="Type a product name, active ingredient or registration number. Pick a crop and pest to see which products are registered for that job, and at what dose.">পণ্যের নাম, উপাদান বা নিবন্ধন নম্বর লিখুন। ফসল ও বালাই বেছে নিলে দেখাবে কোন পণ্য সেই কাজে নিবন্ধিত, আর কত মাত্রায়।</p>
+        </div>
+        <form class="card search" id="checkForm">
+          <label class="f sfield-wrap" for="pq"><span data-bn="পণ্য, উপাদান বা নিবন্ধন নং" data-en="Product, ingredient or reg. no.">পণ্য, উপাদান বা নিবন্ধন নং</span>
+            <span class="sfield"><svg width="19" height="19"><use href="#i-search"/></svg><input type="search" id="pq" autocomplete="off" data-ph-bn="যেমন Taba 25WDG বা Imidacloprid" data-ph-en="e.g. Taba 25WDG or Imidacloprid"></span></label>
+          <label class="f" for="pcrop"><span data-bn="ফসল" data-en="Crop">ফসল</span><select id="pcrop"></select></label>
+          <label class="f" for="ppest"><span data-bn="বালাই বা রোগ" data-en="Pest or disease">বালাই বা রোগ</span><select id="ppest"></select></label>
+        </form>
+        <div id="verdictBox"></div>
+        <div>
+          <p class="counts" id="counts" style="margin:0 0 10px 4px"></p>
+          <div class="card rlist" id="results"></div>
+        </div>
+        <p class="small muted" id="srcNote" style="margin:0"></p>
+      </div>
+    </section>
+
+    <!-- LEAF -->
+    <section class="view" id="v-leaf" hidden>
+      <div class="page">
+        <div class="photo banner">
+          <div class="over">
+          <div class="kicker" data-bn="ফসলের ডাক্তার" data-en="Crop doctor">ফসলের ডাক্তার</div>
+          <h2 data-bn="পাতার ছবি দেখে রোগ চেনা" data-en="Name the disease from a leaf photo">পাতার ছবি দেখে রোগ চেনা</h2>
+          <p data-bn="আক্রান্ত পাতার একটি পরিষ্কার ছবি দিন। ছবির মডেল রোগের নাম বলবে, তারপর বালাইনাশক যাচাই থেকে নিবন্ধিত চিকিৎসা দেখাবে।" data-en="Add one clear photo of an affected leaf. The photo model names the disease, then the pesticide check shows registered treatments.">আক্রান্ত পাতার একটি পরিষ্কার ছবি দিন। ছবির মডেল রোগের নাম বলবে, তারপর বালাইনাশক যাচাই থেকে নিবন্ধিত চিকিৎসা দেখাবে।</p>
+          </div>
+        </div>
+        <div class="two">
+          <label class="drop" id="drop" for="leafFile">
+            <span class="hint" id="dropHint"><span class="ic"><svg width="30" height="30"><use href="#i-cam"/></svg></span>
+              <b data-bn="ছবি দিন" data-en="Add a photo">ছবি দিন</b>
+              <span class="small" data-bn="এখানে টেনে আনুন বা চাপ দিয়ে বেছে নিন" data-en="Drag it here or tap to choose">এখানে টেনে আনুন বা চাপ দিয়ে বেছে নিন</span></span>
+            <input type="file" id="leafFile" accept="image/*" hidden>
+          </label>
+          <div class="card panel">
+            <label class="f" for="leafCrop"><span data-bn="কোন ফসলের পাতা?" data-en="Which crop is this?">কোন ফসলের পাতা?</span><select id="leafCrop"></select></label>
+            <button class="btn" id="diagnose" disabled data-bn="রোগ শনাক্ত করুন" data-en="Identify the disease">রোগ শনাক্ত করুন</button>
+            <div class="soon" data-bn="ছবির মডেল এখনো যুক্ত হয়নি, এটি প্রকল্পের দ্বিতীয় ধাপে আসবে। ছবি এখানে দেখা যাবে, কিন্তু রোগের নাম এখনই বলা যাবে না।" data-en="The photo model is not connected yet; it arrives in phase 2 of the project. Your photo shows here, but no diagnosis is made yet.">ছবির মডেল এখনো যুক্ত হয়নি, এটি প্রকল্পের দ্বিতীয় ধাপে আসবে। ছবি এখানে দেখা যাবে, কিন্তু রোগের নাম এখনই বলা যাবে না।</div>
+            <h3 data-bn="ভালো ছবি তোলার নিয়ম" data-en="How to take a useful photo">ভালো ছবি তোলার নিয়ম</h3>
+            <ol class="steps" id="tips"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WEATHER -->
+    <section class="view" id="v-weather" hidden>
+      <div class="page">
+        <div class="photo banner">
+          <div class="over">
+            <div class="kicker" data-bn="Open-Meteo পূর্বাভাস" data-en="Open-Meteo forecast">Open-Meteo পূর্বাভাস</div>
+            <h2 data-bn="আবহাওয়া ও স্প্রে করার সময়" data-en="Weather and spray times">আবহাওয়া ও স্প্রে করার সময়</h2>
+            <p data-bn="জেলা বেছে নিন। সাত দিনের পূর্বাভাসের সাথে দেখাবে আগামী দুই দিনে কোন সময় স্প্রে করা নিরাপদ।" data-en="Choose a district. Next to the 7-day forecast you see which hours in the next two days are safe for spraying.">জেলা বেছে নিন। সাত দিনের পূর্বাভাসের সাথে দেখাবে আগামী দুই দিনে কোন সময় স্প্রে করা নিরাপদ।</p>
+            <label class="f onphoto" for="district"><span data-bn="জেলা" data-en="District">জেলা</span><select id="district"></select></label>
+          </div>
+        </div>
+        <div id="wSample"></div>
+        <div class="wgrid">
+          <div class="card now" id="wNow"></div>
+          <div class="card advice" id="wAdvice"></div>
+        </div>
+        <div class="card spray">
+          <h3 data-bn="আগামী ৪৮ ঘণ্টায় কখন স্প্রে করা যাবে" data-en="When you can spray in the next 48 hours">আগামী ৪৮ ঘণ্টায় কখন স্প্রে করা যাবে</h3>
+          <div class="hours-wrap"><div class="hours" id="hours"></div></div>
+          <div class="legend" id="legend"></div>
+          <p class="rules" data-bn="সবুজ: বৃষ্টির সম্ভাবনা ৩০% এর কম এবং পরের ৩ ঘণ্টাও শুকনো, বাতাস ৩ থেকে ১৫ কিমি/ঘণ্টা, তাপমাত্রা ৩২°সে এর নিচে, দিনের আলো আছে। লাল: বৃষ্টির সম্ভাবনা ৫০% বা বেশি, অথবা বাতাস ২০ কিমি/ঘণ্টার বেশি। এটি সাধারণ লেবেল নির্দেশনা, প্রতিটি বোতলের লেবেল আগে পড়ুন।" data-en="Green: rain chance under 30% and the next 3 hours dry, wind 3 to 15 km/h, under 32°C, daylight. Red: rain chance 50% or more, or wind over 20 km/h. This is general label guidance; read each product label first.">সবুজ: বৃষ্টির সম্ভাবনা ৩০% এর কম এবং পরের ৩ ঘণ্টাও শুকনো, বাতাস ৩ থেকে ১৫ কিমি/ঘণ্টা, তাপমাত্রা ৩২°সে এর নিচে, দিনের আলো আছে। লাল: বৃষ্টির সম্ভাবনা ৫০% বা বেশি, অথবা বাতাস ২০ কিমি/ঘণ্টার বেশি। এটি সাধারণ লেবেল নির্দেশনা, প্রতিটি বোতলের লেবেল আগে পড়ুন।</p>
+        </div>
+        <div class="card days" id="days"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottomnav" aria-label="Sections">
+    <button class="tab" data-go="chat"><svg width="22" height="22"><use href="#i-chat"/></svg><span data-bn="সহকারী" data-en="Assistant">সহকারী</span></button>
+    <button class="tab" data-go="pesticide"><svg width="22" height="22"><use href="#i-bottle"/></svg><span data-bn="যাচাই" data-en="Check">যাচাই</span></button>
+    <button class="tab" data-go="leaf"><svg width="22" height="22"><use href="#i-leaf"/></svg><span data-bn="পাতা" data-en="Leaf">পাতা</span></button>
+    <button class="tab" data-go="weather"><svg width="22" height="22"><use href="#i-sky"/></svg><span data-bn="আবহাওয়া" data-en="Weather">আবহাওয়া</span></button>
+  </nav>
+</div>
+
+<dialog class="dlg" id="profileDlg" aria-labelledby="pfTitle">
+  <form id="profileForm" method="dialog">
+    <div>
+      <h3 id="pfTitle" data-bn="আমার খামার" data-en="My farm">আমার খামার</h3>
+      <p class="muted small" data-bn="এগুলো শুধু এই ফোনে থাকে। উত্তর আপনার জমি আর ফসল মিলিয়ে দেওয়ার জন্য লাগে। যেকোনো সময় মুছে দিতে পারবেন।" data-en="This stays on this phone only. It lets answers fit your own land and crops. You can delete it any time.">এগুলো শুধু এই ফোনে থাকে। উত্তর আপনার জমি আর ফসল মিলিয়ে দেওয়ার জন্য লাগে। যেকোনো সময় মুছে দিতে পারবেন।</p>
+    </div>
+    <label class="f" for="pfName"><span data-bn="নাম (না দিলেও চলবে)" data-en="Name (optional)">নাম (না দিলেও চলবে)</span><input type="text" id="pfName" autocomplete="given-name"></label>
+    <label class="f" for="pfDistrict"><span data-bn="জেলা" data-en="District">জেলা</span><select id="pfDistrict"></select></label>
+    <fieldset class="f cropset"><legend data-bn="কোন কোন ফসল চাষ করেন" data-en="Crops you grow">কোন কোন ফসল চাষ করেন</legend><div class="cropchips" id="pfCrops"></div></fieldset>
+    <div class="row2">
+      <label class="f" for="pfLand"><span data-bn="জমির পরিমাণ" data-en="Land size">জমির পরিমাণ</span><input type="text" inputmode="decimal" id="pfLand"></label>
+      <label class="f" for="pfUnit"><span data-bn="একক" data-en="Unit">একক</span><select id="pfUnit"></select></label>
+    </div>
+    <label class="f" for="pfTank"><span data-bn="স্প্রে মেশিনের ট্যাংক (লিটার)" data-en="Sprayer tank (litres)">স্প্রে মেশিনের ট্যাংক (লিটার)</span><input type="text" inputmode="numeric" id="pfTank" placeholder="16"></label>
+    <p class="muted small" data-bn="হিসাবে ১ বিঘা = ৩৩ শতাংশ আর ১ কাঠা = ১.৬৫ শতাংশ ধরা হয়েছে। আপনার এলাকায় মাপ আলাদা হলে শতাংশে লিখুন।" data-en="The maths uses 1 bigha = 33 decimals and 1 katha = 1.65 decimals. If your area measures differently, enter decimals.">হিসাবে ১ বিঘা = ৩৩ শতাংশ আর ১ কাঠা = ১.৬৫ শতাংশ ধরা হয়েছে। আপনার এলাকায় মাপ আলাদা হলে শতাংশে লিখুন।</p>
+    <div class="dlg-actions">
+      <button type="button" class="linkish danger" id="pfClear" data-bn="সব মুছে দিন" data-en="Delete everything">সব মুছে দিন</button>
+      <span class="grow"></span>
+      <button type="button" class="btn soft" id="pfCancel" data-bn="বাতিল" data-en="Cancel">বাতিল</button>
+      <button type="submit" class="btn" data-bn="সংরক্ষণ করুন" data-en="Save">সংরক্ষণ করুন</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+/* ---------- settings ---------- */
+// The KrishiGuard model (llama.cpp server with Gemma 4 E2B) on a Hugging Face Space. Empty means DAE-tool answers only.
+const ENDPOINT = "https://mahmudnadim479-krishiguard.hf.space";
+// The claude.ai preview cannot reach other servers, so the model is only used on the published site.
+const LIVE_MODEL = !!ENDPOINT && !/claude|anthropic/i.test(location.hostname);
+
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let lang = store.get("kg_lang") === "en" ? "en" : "bn";
+const L = (bn, en) => lang === "bn" ? bn : en;
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+const num = (x) => lang === "bn" ? String(x).replace(/\d/g, d => BN_DIGITS[d]) : String(x);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = (s) => document.querySelector(s);
+
+/* ---------- crops and pests ---------- */
+const CROPS = [
+  {k:"rice", bn:"ধান", en:"Rice", re:/\brice\b/i, kw:["ধান","বোরো","আমন","আউশ"]},
+  {k:"tea", bn:"চা", en:"Tea", re:/\btea\b/i, kw:["চা"]},
+  {k:"potato", bn:"আলু", en:"Potato", re:/potato/i, kw:["আলু"]},
+  {k:"jute", bn:"পাট", en:"Jute", re:/jute/i, kw:["পাট"]},
+  {k:"mango", bn:"আম", en:"Mango", re:/mango/i, kw:["আম"]},
+  {k:"brinjal", bn:"বেগুন", en:"Brinjal", re:/brinjal|eggplant/i, kw:["বেগুন"]},
+  {k:"tomato", bn:"টমেটো", en:"Tomato", re:/tomato/i, kw:["টমেটো"]},
+  {k:"cotton", bn:"তুলা", en:"Cotton", re:/cotton/i, kw:["তুলা"]},
+  {k:"sugarcane", bn:"আখ", en:"Sugarcane", re:/sugarcane/i, kw:["আখ"]},
+  {k:"bean", bn:"শিম", en:"Bean", re:/\bbean/i, kw:["শিম","বরবটি"]},
+  {k:"banana", bn:"কলা", en:"Banana", re:/banana/i, kw:["কলা"]},
+  {k:"onion", bn:"পেঁয়াজ", en:"Onion", re:/onion/i, kw:["পেঁয়াজ","পিঁয়াজ"]},
+  {k:"sweet gourd", bn:"মিষ্টিকুমড়া", en:"Sweet gourd", re:/sweet gourd|cucurbit/i, kw:["মিষ্টিকুমড়া","মিষ্টি কুমড়া","কুমড়া"]},
+  {k:"cucumber", bn:"শসা", en:"Cucumber", re:/cucumber|cucurbit/i, kw:["শসা"]},
+  {k:"chilli", bn:"মরিচ", en:"Chilli", re:/chill?i/i, kw:["মরিচ"]},
+  {k:"wheat", bn:"গম", en:"Wheat", re:/wheat/i, kw:["গম"]},
+  {k:"mustard", bn:"সরিষা", en:"Mustard", re:/mustard/i, kw:["সরিষা","সরিষার"]},
+  {k:"maize", bn:"ভুট্টা", en:"Maize", re:/maize|corn/i, kw:["ভুট্টা"]},
+  {k:"pea", bn:"মটরশুঁটি", en:"Garden pea", re:/\bpea\b/i, kw:["মটর"]},
+  {k:"groundnut", bn:"চিনাবাদাম", en:"Groundnut", re:/groundnut/i, kw:["চিনাবাদাম","বাদাম"]},
+  {k:"betel", bn:"পান", en:"Betel vine", re:/betel/i, kw:["পান"]},
+  {k:"cabbage", bn:"বাঁধাকপি", en:"Cabbage", re:/cabbage/i, kw:["বাঁধাকপি","কপি"]},
+];
+const PESTS = [
+  {k:"bph", bn:"বাদামি গাছফড়িং (কারেন্ট পোকা)", en:"Brown planthopper (BPH)", re:/\bbph\b|brown plant ?hopper/i, kw:["কারেন্ট","গাছফড়িং","বাদামি ফড়িং"]},
+  {k:"stem borer", bn:"মাজরা পোকা", en:"Stem borer", re:/stem ?borer|\bysb\b/i, kw:["মাজরা"]},
+  {k:"leaf roller", bn:"পাতা মোড়ানো পোকা", en:"Leaf roller", re:/leaf (roller|folder)/i, kw:["পাতা মোড়ানো","পাতামোড়া"]},
+  {k:"hispa", bn:"পামরি পোকা", en:"Hispa", re:/hispa/i, kw:["পামরি"]},
+  {k:"rice bug", bn:"গান্ধি পোকা", en:"Rice bug", re:/rice bug/i, kw:["গান্ধি"]},
+  {k:"blast", bn:"ব্লাস্ট রোগ", en:"Blast", re:/\bblast\b/i, kw:["ব্লাস্ট"]},
+  {k:"sheath blight", bn:"খোলপোড়া রোগ", en:"Sheath blight", re:/sheath blight/i, kw:["খোলপোড়া","খোল পোড়া"]},
+  {k:"late blight", bn:"নাবি ধসা (মড়ক)", en:"Late blight", re:/late blight/i, kw:["নাবি ধসা","মড়ক","লেট ব্লাইট"]},
+  {k:"early blight", bn:"আগাম ধসা", en:"Early blight", re:/early blight/i, kw:["আগাম ধসা"]},
+  {k:"sfb", bn:"ডগা ও ফল ছিদ্রকারী পোকা", en:"Shoot and fruit borer", re:/(shoot (and|&) ?fruit|fruit (and|&) ?shoot) ?borer/i, kw:["ডগা ও ফল","ডগা ছিদ্রকারী"]},
+  {k:"fruit borer", bn:"ফল ছিদ্রকারী পোকা", en:"Fruit borer", re:/(fruit|pod) ?borer/i, kw:["ফল ছিদ্রকারী","ফল ছিদ্র"]},
+  {k:"aphid", bn:"জাব পোকা", en:"Aphid", re:/aphid/i, kw:["জাব"]},
+  {k:"whitefly", bn:"সাদা মাছি", en:"Whitefly", re:/white ?fly/i, kw:["সাদা মাছি"]},
+  {k:"thrips", bn:"থ্রিপস", en:"Thrips", re:/thrips/i, kw:["থ্রিপস"]},
+  {k:"mite", bn:"মাকড়", en:"Mite", re:/\bmites?\b/i, kw:["মাকড়"]},
+  {k:"armyworm", bn:"লেদা পোকা", en:"Armyworm", re:/army ?worm/i, kw:["লেদা"]},
+  {k:"cutworm", bn:"কাটুই পোকা", en:"Cutworm", re:/cut ?worm/i, kw:["কাটুই"]},
+  {k:"termite", bn:"উইপোকা", en:"Termite", re:/termite/i, kw:["উইপোকা","উই পোকা","উঁই"]},
+  {k:"hairy caterpillar", bn:"বিছা পোকা", en:"Hairy caterpillar", re:/hairy caterpillar/i, kw:["বিছা"]},
+  {k:"helopeltis", bn:"চায়ের মশা পোকা", en:"Helopeltis (tea mosquito bug)", re:/helopeltis/i, kw:["হেলোপেলটিস","মশা পোকা"]},
+  {k:"hopper", bn:"হপার (শোষক পোকা)", en:"Hopper", re:/\bhopper|jassid/i, kw:["হপার","শোষক","জ্যাসিড"]},
+  {k:"powdery mildew", bn:"পাউডারি মিলডিউ", en:"Powdery mildew", re:/powdery mildew/i, kw:["পাউডারি","সাদা গুঁড়া"]},
+  {k:"anthracnose", bn:"অ্যানথ্রাকনোজ", en:"Anthracnose", re:/anthracnose/i, kw:["অ্যানথ্রাকনোজ","এনথ্রাকনোজ"]},
+  {k:"die back", bn:"আগামরা রোগ", en:"Die back", re:/die ?back/i, kw:["আগামরা"]},
+  {k:"wilt", bn:"ঢলে পড়া রোগ", en:"Wilt", re:/wilt/i, kw:["ঢলে পড়া"]},
+  {k:"purple blotch", bn:"পার্পল ব্লচ", en:"Purple blotch", re:/purple blotch/i, kw:["পার্পল ব্লচ","বেগুনি দাগ"]},
+  {k:"red rust", bn:"লাল মরিচা", en:"Red rust", re:/red rust/i, kw:["লাল মরিচা"]},
+  {k:"sigatoka", bn:"সিগাটোকা", en:"Sigatoka", re:/sigatoka/i, kw:["সিগাটোকা"]},
+  {k:"nematode", bn:"কৃমি (নেমাটোড)", en:"Nematode", re:/nematode/i, kw:["কৃমি","নেমাটোড"]},
+  {k:"fruit fly", bn:"ফলের মাছি", en:"Fruit fly", re:/fruit fly/i, kw:["ফলের মাছি","মাছি পোকা"]},
+  {k:"mealybug", bn:"ছাতরা পোকা", en:"Mealybug", re:/mealy ?bug/i, kw:["ছাতরা"]},
+  {k:"weeds", bn:"আগাছা", en:"Weeds", re:/weed|hispida|crus-galli/i, kw:["আগাছা"]},
+  {k:"rat", bn:"ইঁদুর", en:"Rats", re:/\brats?\b|rodent/i, kw:["ইঁদুর"]},
+];
+const cropName = (c) => L(c.bn, c.en);
+const pestName = (p) => L(p.bn, p.en);
+
+/* ---------- DAE data ---------- */
+let DAE = null; // {rows:[{brand,ing,reg,holder,crop,pest,dose}], brands, comps}
+async function loadDAE(){
+  const raw = await (await fetch("dae.json")).json();
+  const rows = raw.rows.map(r => ({brand:r[0], ing:raw.ingredients[r[1]], reg:r[2], holder:raw.holders[r[3]], crop:r[4], pest:r[5], dose:r[6]}));
+  const brands = [...new Set(rows.map(r => r.brand))].filter(b => b.length >= 5).sort((a,b) => b.length - a.length);
+  const base = new Map(); // "taba" -> ["Taba 25WDG"]
+  for (const b of brands){ const w = b.split(/\s+/)[0].toLowerCase(); if (w.length >= 4 && /^[a-z-]+$/.test(w)) base.set(w, [...(base.get(w)||[]), b]); }
+  const comps = new Map(); // ingredient component -> set of full ingredient strings
+  for (const ing of raw.ingredients) for (const part of ing.split("+")){ const c = part.replace(/\(.*?\)/g,"").trim().toLowerCase(); if (c.length >= 6) comps.set(c, (comps.get(c)||new Set()).add(ing)); }
+  DAE = {rows, brands, base, comps, stats: raw.stats, source: raw.source};
+}
+// Known errors in the source PDF: a miticide and a fungicide listed for rice brown planthopper.
+const isSourceError = (r) => /\bbph\b/i.test(r.pest) && (/hexythiazox/i.test(r.ing) || /^blastin/i.test(r.brand));
+const doseUnit = (d) => /\/\s*l(itre)?\b|of water/i.test(d) ? L("প্রতি লিটার পানিতে","per litre of water") : /\/\s*ha/i.test(d) ? L("প্রতি হেক্টরে","per hectare") : "";
+
+/* ---------- reading the question ---------- */
+const SHORT_SUFFIX = ["","ে","ের","য়ের","গাছ","গাছে","গাছের","খেতে","ক্ষেতে","ক্ষেত","চাষে"];
+function cropsIn(q){
+  const words = String(q).match(/[ঀ-৿]+/g) || [];
+  return CROPS.filter(c => c.re.test(q) || c.kw.some(bn => bn.includes(" ") ? q.includes(bn) :
+    [...bn].length > 2 ? words.some(w => w.startsWith(bn)) : words.some(w => SHORT_SUFFIX.some(s => w === bn + s))));
+}
+function pestIn(q){ return PESTS.find(p => p.re.test(q) || p.kw.some(k => q.includes(k))) || null; }
+function brandIn(q){
+  const ql = q.toLowerCase();
+  const full = DAE.brands.find(b => ql.includes(b.toLowerCase()));
+  if (full) return full;
+  const bangla = /[\u0980-\u09FF]/.test(q); // in a Bangla sentence a short Latin word is almost always a product name
+  for (const w of ql.match(/[a-z][a-z-]{3,}/g) || []) if (DAE.base.has(w) && (w.length >= 5 || bangla)) return DAE.base.get(w)[0];
+  return null;
+}
+function ingIn(q){ const ql = q.toLowerCase(); for (const [c, set] of DAE.comps) if (ql.includes(c)) return {name:c.replace(/\b\w/g, m => m.toUpperCase()), set}; return null; }
+const onCrop = (r, c) => c.re.test(r.crop);
+const onPest = (r, p) => p.re.test(r.pest);
+const DOSE_Q = /কত|মাত্রা|কতটুকু|কতখানি|পরিমাণ|ডোজ|দিমু|দিব\b|দেব|dose|how much|rate/i;
+const TREAT_Q = /দমন|কী দি|কি দি|ওষুধ|অষুধ|স্প্রে|কীটনাশক|বালাইনাশক|ছত্রাকনাশক|লেগেছে|লাগছে|ধরেছে|আক্রমণ|treat|control|spray|pesticide|fungicide|insecticide/i;
+const WEATHER_Q = /আবহাওয়া|বৃষ্টি|বাতাস|কখন স্প্রে|weather|rain|forecast/i;
+
+/* ---------- my farm: kept on this phone only until accounts exist ---------- */
+const LAND_UNITS = [ // hectares per unit: bigha = 33 decimals and katha = 1.65 decimals, the common Bangladesh measures; some regions differ
+  {k:"bigha", bn:"বিঘা", en:"bigha", ha:0.13355, kw:["বিঘা","bigha"]},
+  {k:"decimal", bn:"শতাংশ", en:"decimal", ha:0.004047, kw:["শতাংশ","শতক","decimal"]},
+  {k:"katha", bn:"কাঠা", en:"katha", ha:0.006677, kw:["কাঠা","katha"]},
+  {k:"acre", bn:"একর", en:"acre", ha:0.4047, kw:["একর","acre"]},
+  {k:"ha", bn:"হেক্টর", en:"hectare", ha:1, kw:["হেক্টর","hectare"]},
+];
+let PROFILE = (() => { try { return JSON.parse(store.get("kg_profile")) || {}; } catch (e) { return {}; } })();
+const saveProfile = () => store.set("kg_profile", JSON.stringify(PROFILE));
+const enNum = (s) => String(s).replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d));
+const unitOf = (k) => LAND_UNITS.find(u => u.k === k);
+const landHa = () => PROFILE.land && unitOf(PROFILE.land.unit) ? PROFILE.land.n * unitOf(PROFILE.land.unit).ha : 0;
+const landText = (land = PROFILE.land) => land ? `${num(land.n)} ${L(unitOf(land.unit).bn, unitOf(land.unit).en)}` : "";
+const myCrop = (c) => (PROFILE.crops || []).includes(c.k);
+const mineFirst = (list) => [...list].sort((a, b) => myCrop(b) - myCrop(a));
+
+function parseDose(d){ // "100 g/ha", "1.0 L/ha", "2 ml/L of water", "150 gm/ha", "8.5 Kg/ha" -> grams or millilitres per ha or per litre
+  const m = String(d).match(/([\d.]+)\s*(kg|gm|g|ml|l|litre|liter)\s*\/\s*(ha|hectare|lof|l\b|litre|liter)/i);
+  if (!m) return null;
+  const u = m[2].toLowerCase(), [unit, f] = u === "kg" ? ["g", 1000] : u.startsWith("g") ? ["g", 1] : u === "ml" ? ["ml", 1] : ["ml", 1000];
+  return {amt: parseFloat(m[1]) * f, unit, per: /^h/i.test(m[3]) ? "ha" : "L"};
+}
+(() => { const a = parseDose("100 g/ha"), b = parseDose("2 ml/L of water"), c = parseDose("1.0 L/ha"), d = parseDose("2 g/Lof water");
+  if (!(a.amt === 100 && a.per === "ha" && b.per === "L" && c.amt === 1000 && c.unit === "ml" && d.per === "L")) console.error("parseDose self-check failed"); })();
+function amountText(x, unit){ // rounded the way people measure out powder or liquid
+  const big = x >= 1000, v = big ? x / 1000 : x, r = v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
+  return `${num(r)} ${unit === "g" ? (big ? L("কেজি","kg") : L("গ্রাম","g")) : (big ? L("লিটার","L") : L("মিলি","ml"))}`;
+}
+function forMyFarm(r){
+  const p = parseDose(r.dose); if (!p) return "";
+  if (p.per === "ha" && landHa()) return `<div class="mine">${L(`আপনার ${landText()} জমিতে মোট প্রায় ${amountText(p.amt * landHa(), p.unit)}`, `For your ${landText()}: about ${amountText(p.amt * landHa(), p.unit)} in total`)}</div>`;
+  if (p.per === "L"){ const t = PROFILE.tank || 16; return `<div class="mine">${L(`${num(t)} লিটারের ট্যাংকে ${amountText(p.amt * t, p.unit)}`, `In a ${t} L tank: ${amountText(p.amt * t, p.unit)}`)}</div>`; }
+  if (p.per === "ha") return `<div class="mine"><button class="linkish" data-profile>${L("আপনার জমিতে কতটুকু লাগবে? জমির মাপ দিন","How much for your field? Add your land size")}</button></div>`;
+  return "";
+}
+
+/* details a farmer mentions in chat, offered back as "remember this?" */
+function factsIn(q){
+  const out = [], t = enNum(q);
+  const unit = LAND_UNITS.find(u => u.kw.some(k => t.includes(k)));
+  const m = unit && t.match(new RegExp(`([\\d.]+)\\s*(${unit.kw.join("|")})`));
+  if (m && !(PROFILE.land && PROFILE.land.n === parseFloat(m[1]) && PROFILE.land.unit === unit.k)) out.push({type:"land", land:{n:parseFloat(m[1]), unit:unit.k}});
+  const name = t.match(/আমার নাম\s+([ঀ-৿]+)/) || t.match(/my name is\s+([A-Za-z]+)/i);
+  if (name && name[1] !== PROFILE.name) out.push({type:"name", name:name[1]});
+  if (/আমার|আমি|আমাদের|\bmy\b|i grow/i.test(q)) for (const c of cropsIn(q)) if (!myCrop(c)) out.push({type:"crop", crop:c.k});
+  return out;
+}
+const factLabel = (f) => f.type === "land" ? L(`আমার জমি ${landText(f.land)}`, `My land: ${landText(f.land)}`)
+  : f.type === "name" ? L(`আমার নাম ${f.name}`, `My name is ${f.name}`)
+  : L(`আমি ${CROPS.find(c => c.k === f.crop).bn} চাষ করি`, `I grow ${CROPS.find(c => c.k === f.crop).en}`);
+const rememberChips = (q) => { const facts = factsIn(q); return facts.length ? `<div class="remember"><span>${L("মনে রাখব?","Remember this?")}</span>${facts.map(f => `<button class="chip" data-remember="${esc(JSON.stringify(f))}">${esc(factLabel(f))}</button>`).join("")}</div>` : ""; };
+function remember(f){
+  if (f.type === "land") PROFILE.land = f.land;
+  if (f.type === "name") PROFILE.name = f.name;
+  if (f.type === "crop") PROFILE.crops = [...new Set([...(PROFILE.crops || []), f.crop])];
+  saveProfile(); toast(L("মনে রাখা হলো। আমার খামার থেকে বদলাতে বা মুছতে পারবেন।","Saved. You can change or delete it in My farm.")); refreshAll();
+}
+
+/* ---------- talking about anything ---------- */
+const SELF_HARM = /আত্মহত্যা|মরতে চাই|মরে যেতে ইচ্ছ|বাঁচতে চাই না|বাঁচতে ইচ্ছা করে না|নিজেকে শেষ|জীবন শেষ করে|বিষ খেয়ে|বিষ খাব|কীটনাশক খাব|ওষুধ খেয়ে মর|suicide|kill myself|want to die|end my life/i;
+const HARM_OTHERS = /খাইয়ে মার|মানুষ মার|কাউকে মার|kill (someone|a person)|poison (someone|a person)/i;
+const GREET = /^(হ্যালো|হেলো|হাই|আসসালামু|সালাম|নমস্কার|আদাব|শুভ সকাল|কেমন আছ|hello|hi\b|hey|good morning|how are you)/i;
+const THANKS = /ধন্যবাদ|থ্যাংক|শুকরিয়া|thank/i;
+const FEEL = /মন খারাপ|মন ভালো না|চিন্তায় আছি|দুশ্চিন্তা|টেনশন|কষ্টে আছি|কষ্ট হচ্ছে|লোকসান|ক্ষতি হয়ে গেছে|সব শেষ|ঋণ|দেনা|টাকা নেই|ভালো লাগছে না|হতাশ|একা লাগ|\bsad\b|worried|stress|\bloss\b|\bdebt\b|lonely/i;
+const hello = () => PROFILE.name ? `${esc(PROFILE.name)}, ` : "";
+
+function answer(q){
+  q = q.trim();
+  if (SELF_HARM.test(q)) return `<p>${L("আপনি এখন যে কষ্টের মধ্যে আছেন, সেটা বলার জন্য ধন্যবাদ। আপনি একা নন।","Thank you for telling me how heavy things feel right now. You are not alone.")}</p>
+    <p>${L("এখনই পরিবারের কাউকে বা কাছের কোনো মানুষকে ডেকে পাশে থাকতে বলুন। বিপদ মনে হলে ৯৯৯ নম্বরে ফোন করুন। কীটনাশক আর ওষুধ নিজের থেকে দূরে, তালা দেওয়া জায়গায় রাখুন।","Please call someone from your family or someone nearby and ask them to stay with you now. If you feel in danger, call 999. Keep pesticides and medicines far away from you, somewhere locked.")}</p>
+    <p>${L("চাইলে আমাকে বলুন কী হয়েছে। আমি শুনছি।","If you want, tell me what happened. I'm listening.")}</p>`;
+  if (HARM_OTHERS.test(q)) return `<p>${L("এ বিষয়ে আমি সাহায্য করতে পারব না। কেউ বিপদে থাকলে এখনই ৯৯৯ নম্বরে ফোন করুন।","I can't help with that. If someone is in danger, call 999 now.")}</p>`;
+  if (!DAE) return `<p>${L("বালাইনাশক তালিকা লোড হয়নি। পাতাটি আবার খুলুন।","The pesticide list did not load. Reload the page.")}</p>`;
+  const farmy = cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q);
+  if (!farmy && GREET.test(q) && q.length < 40)
+    return `<p>${hello()}${L("ভালো আছি, ধন্যবাদ। আপনার খেতের খবর কী? ফসল, পোকা, রোগ, ওষুধ বা আবহাওয়া, যা নিয়ে ভাবছেন লিখুন। মনের কথাও বলতে পারেন, আমি শুনব।","I'm well, thank you. How is your field? Write about crops, pests, disease, pesticides or the weather. You can also just tell me how you're doing.")}</p>`;
+  if (!farmy && THANKS.test(q) && q.length < 40) return `<p>${hello()}${L("আপনাকেও ধন্যবাদ। আর কিছু জানতে চাইলে লিখুন। ভালো ফলন হোক।","Thank you too. Write any time you need something. I hope the harvest goes well.")}</p>`;
+  const feelings = () => `<p>${hello()}${L("শুনে খারাপ লাগছে। ফসলের ক্ষতি আর টাকার চাপ অনেক ভারী জিনিস, আর এটা নিয়ে কথা বলা ঠিক কাজ।","I'm sorry to hear that. Crop losses and money worries are heavy, and it's good that you're talking about it.")}</p>
+      <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। খেতের কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;
+  assumed = null;
+  const body = farmAnswer(q);
+  if (body === null){
+    if (FEEL.test(q)) return feelings();
+    if (factsIn(q).length) return `<p>${hello()}${L("জানানোর জন্য ধন্যবাদ। নিচে থেকে মনে রাখতে বললে পরের উত্তরগুলো আপনার জমি আর ফসল মিলিয়ে দেব। খেতে কোনো সমস্যা দেখলে লিখুন।","Thanks for telling me. Tap below to save it, and later answers will fit your land and crops. Tell me if you see any problem in the field.")}</p>`;
+    return null;
+  }
+  const care = FEEL.test(q) ? `<p class="muted">${L("শুনে খারাপ লাগছে। আগে খেতের সমস্যাটা দেখি।","I'm sorry you're dealing with this. Let's look at the field problem first.")}</p>` : "";
+  const note = assumed ? `<p class="muted small">${L(`আপনার খামারের তথ্য থেকে ${assumed.bn} ধরে নিলাম। অন্য ফসল হলে বলুন।`, `Going by My farm, I assumed ${assumed.en}. Tell me if it's another crop.`)}</p>` : "";
+  return care + note + body;
+}
+let assumed = null;
+
+/* ---------- answers ---------- */
+function doseList(rows, max = 5){
+  return `<div class="doses">${rows.slice(0, max).map(r => `
+    <div class="dose"><div class="nm">${esc(r.brand)}</div>
+      <div class="meta">${esc(r.ing)} · ${esc(r.crop)}, ${esc(r.pest)}</div>
+      <div class="amt">${esc(r.dose)}<small>${esc(doseUnit(r.dose))}</small></div>
+      ${isSourceError(r) ? "" : forMyFarm(r)}
+      ${isSourceError(r) ? `<div class="flag">${L("উৎস তালিকার সম্ভাব্য ভুল: এই উপাদান কারেন্ট পোকার জন্য নয়। ব্যবহার করবেন না।","Likely error in the source list: this ingredient does not target BPH. Do not use it for this.")}</div>` : ""}
+    </div>`).join("")}</div>`;
+}
+const sourcesOf = (rows) => `<div class="sources">${L("সূত্র:","Sources:")} ${[...new Set(rows.map(r => r.reg))].slice(0, 6).map(g => `<button class="src" data-reg="${esc(g)}">DAE ${esc(g)}</button>`).join("")}</div>`;
+const CAUTION = () => `<div class="caution">${L("মাত্রা নেওয়া হয়েছে DAE-র নিবন্ধিত বালাইনাশক তালিকা থেকে। ব্যবহারের আগে বোতলের লেবেল পড়ুন এবং উপজেলা কৃষি অফিসারের সাথে মিলিয়ে নিন। মাস্ক ও গ্লাভস পরে স্প্রে করুন।","Doses come from the DAE list of registered pesticides. Read the product label and check with your upazila agriculture officer before use. Wear a mask and gloves when spraying.")}</div>`;
+const followups = (items) => `<div class="followups">${items.map(t => `<button class="chip" data-ask="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
+function pickVaried(rows, max = 5){ // one product per active ingredient, source-list errors last
+  const seen = new Set(), out = [];
+  for (const r of [...rows].sort((a, b) => isSourceError(a) - isSourceError(b))) if (!seen.has(r.ing)){ seen.add(r.ing); out.push(r); if (out.length === max) break; }
+  return out;
+}
+
+function farmAnswer(q){
+  let crops = cropsIn(q); const pest = pestIn(q), brand = brandIn(q), ing = brand ? null : ingIn(q);
+  if (!crops.length && (PROFILE.crops || []).length === 1 && (pest || brand || ing)){ assumed = CROPS.find(c => c.k === PROFILE.crops[0]); crops = [assumed]; }
+
+  if (brand){
+    const rows = DAE.rows.filter(r => r.brand === brand);
+    const ing0 = rows[0].ing;
+    if (crops.length){
+      const hit = rows.filter(r => crops.some(c => onCrop(r, c)));
+      if (!hit.length){
+        const where = [...new Set(rows.map(r => r.crop))].join(", ");
+        return `<div class="verdict no"><span class="vi">✕</span><div><b>${esc(brand)}</b> ${L(`${crops.map(cropName).join(", ")} ফসলের জন্য নিবন্ধিত নয়।`, `is not registered for ${crops.map(cropName).join(", ")}.`)}</div></div>
+          <p>${L(`এটি (${esc(ing0)}) শুধু এই ফসলে নিবন্ধিত: ${esc(where)}। তাই এই ফসলে এর মাত্রা বলা যাবে না।`, `It (${esc(ing0)}) is registered only for: ${esc(where)}. So no dose can be given for this crop.`)}</p>
+          ${pest ? followups([L(`${crops[0].bn} ফসলে ${pest.bn} দমনে কোন বালাইনাশক নিবন্ধিত?`, `Which pesticides are registered for ${pest.en} on ${crops[0].en}?`)]) : ""}
+          ${sourcesOf(rows)}`;
+      }
+      const byPest = pest ? hit.filter(r => onPest(r, pest)) : [];
+      const show = byPest.length ? byPest : hit;
+      const note = pest && !byPest.length ? `<p>${L(`${esc(brand)} এই ফসলে নিবন্ধিত, তবে ${pest.bn} এর জন্য নয়। নিবন্ধিত ব্যবহারগুলো:`, `${esc(brand)} is registered for this crop, but not for ${pest.en}. Its registered uses:`)}</p>`
+        : `<p>${L(`${esc(brand)} এর নিবন্ধিত মাত্রা:`, `Registered dose of ${esc(brand)}:`)}</p>`;
+      return note + doseList(dedupe(show)) + sourcesOf(show) + CAUTION();
+    }
+    if (DOSE_Q.test(q) || TREAT_Q.test(q)){
+      const cs = [...new Set(rows.map(r => r.crop))].slice(0, 6);
+      return `<p>${L(`${esc(brand)} কোন ফসলে ব্যবহার করবেন? মাত্রা ফসল ও বালাই অনুযায়ী আলাদা, তাই ফসল না জেনে মাত্রা বলছি না।`, `Which crop will you use ${esc(brand)} on? The dose depends on crop and pest, so I won't give one without the crop.`)}</p>
+        <p class="muted small">${L("এটি নিবন্ধিত:","It is registered for:")} ${esc(cs.join(", "))}</p>
+        ${followups(cs.slice(0, 4).map(c => L(`${brand} ${(CROPS.find(x => x.re.test(c)) || {bn:c}).bn} ফসলে কত মাত্রায় দিব?`, `${brand} dose on ${c}?`)))}`;
+    }
+    return `<p>${L(`${esc(brand)} (${esc(ing0)}) এর নিবন্ধিত ব্যবহার:`, `Registered uses of ${esc(brand)} (${esc(ing0)}):`)}</p>` + doseList(dedupe(rows), 6) + sourcesOf(rows) + CAUTION();
+  }
+
+  if (ing){
+    let rows = DAE.rows.filter(r => ing.set.has(r.ing));
+    if (crops.length) rows = rows.filter(r => crops.some(c => onCrop(r, c)));
+    if (pest) rows = rows.filter(r => onPest(r, pest));
+    if (!crops.length && DOSE_Q.test(q))
+      return `<p>${L(`${esc(ing.name)} কোন ফসলে, কোন বালাইয়ের জন্য ব্যবহার করবেন? ফসল জানালে নিবন্ধিত পণ্য ও মাত্রা দেখাব।`, `Which crop and pest is the ${esc(ing.name)} for? Tell me the crop and I'll show registered products and doses.`)}</p>`;
+    if (!rows.length) return `<div class="verdict no"><span class="vi">✕</span><div>${L(`${esc(ing.name)} উপাদানের কোনো পণ্য এই ফসল বা বালাইয়ের জন্য নিবন্ধিত পাওয়া যায়নি।`, `No product with ${esc(ing.name)} is registered for this crop or pest.`)}</div></div>`;
+    return `<p>${L(`${esc(ing.name)} উপাদানের নিবন্ধিত পণ্য (${num(new Set(rows.map(r => r.brand)).size)}টির মধ্যে কয়েকটি):`, `Registered products with ${esc(ing.name)} (a few of ${new Set(rows.map(r => r.brand)).size}):`)}</p>` + doseList(dedupe(rows)) + sourcesOf(rows) + CAUTION();
+  }
+
+  if (crops.length && pest){
+    const rows = DAE.rows.filter(r => crops.some(c => onCrop(r, c)) && onPest(r, pest));
+    if (!rows.length) return `<p>${L(`${crops.map(c => c.bn).join(", ")} ফসলে ${pest.bn} এর জন্য তালিকায় কোনো নিবন্ধিত পণ্য পাইনি। উপজেলা কৃষি অফিসে যোগাযোগ করুন।`, `The list has no product registered for ${pest.en} on ${crops.map(c => c.en).join(", ")}. Ask your upazila agriculture office.`)}</p>`;
+    const total = new Set(rows.map(r => r.brand)).size;
+    const pick = pickVaried(rows);
+    return `<p>${L(`${crops[0].bn} ফসলে ${pest.bn} দমনে ${num(total)}টি পণ্য নিবন্ধিত। ভিন্ন ভিন্ন উপাদানের কয়েকটি:`, `${total} products are registered for ${pest.en} on ${crops[0].en}. A few with different active ingredients:`)}</p>`
+      + doseList(pick) + `<p class="muted small">${L("একই উপাদান বারবার না দিয়ে বদলে বদলে দিলে পোকার প্রতিরোধ ক্ষমতা কম তৈরি হয়।","Rotating between ingredients slows down resistance.")} <button class="chip" data-check="${crops[0].k}|${pest.k}">${L("সব পণ্য দেখুন","See all products")}</button></p>`
+      + sourcesOf(pick) + CAUTION();
+  }
+
+  if (pest && (TREAT_Q.test(q) || DOSE_Q.test(q)))
+    return `<p>${L(`কোন ফসলে ${pest.bn} লেগেছে? ফসলভেদে নিবন্ধিত ওষুধ ও মাত্রা আলাদা।`, `Which crop has the ${pest.en}? Registered products and doses differ by crop.`)}</p>`
+      + followups(mineFirst(CROPS.filter(c => DAE.rows.some(r => onCrop(r, c) && onPest(r, pest)))).slice(0, 4).map(c => L(`${c.bn} ফসলে ${pest.bn} দমনে কী দিব?`, `${pest.en} on ${c.en}, what to spray?`)));
+
+  if (crops.length && (TREAT_Q.test(q) || DOSE_Q.test(q)))
+    return `<p>${L(`${crops[0].bn} ফসলে কোন পোকা বা রোগ দেখছেন? লক্ষণ লিখুন (যেমন পাতা হলুদ, ডগা মরে যাচ্ছে), অথবা পাতার ছবি দিন। কোন বালাই না জেনে ওষুধের নাম বা মাত্রা বলছি না।`, `What pest or disease do you see on the ${crops[0].en}? Describe the symptoms or add a leaf photo. I won't name a pesticide or dose without knowing the pest.`)}</p>`
+      + followups(PESTS.filter(p => DAE.rows.some(r => onCrop(r, crops[0]) && onPest(r, p))).slice(0, 4).map(p => L(`${crops[0].bn} ফসলে ${p.bn} দমনে কী দিব?`, `${p.en} on ${crops[0].en}, what to spray?`)))
+      + `<p style="margin-top:8px"><button class="btn soft" data-go="leaf">${L("পাতার ছবি দিন","Add a leaf photo")}</button></p>`;
+
+  if (/পোকা|রোগ|দাগ|হলুদ|pest|insect|disease/i.test(q) && !crops.length)
+    return `<p>${L("কোন ফসলে সমস্যা দেখছেন, আর লক্ষণ কী (যেমন পাতা হলুদ, ছিদ্র, দাগ)? ফসল ও পোকা বা রোগের নাম জানালে নিবন্ধিত ওষুধ ও মাত্রা বলতে পারব।","Which crop is affected, and what do you see (yellow leaves, holes, spots)? Tell me the crop and the pest or disease and I can show registered products and doses.")}</p>`
+      + followups(lang === "bn" ? ["ধানে মাজরা পোকা লেগেছে","বেগুনে ডগা ও ফল ছিদ্রকারী পোকা","আলুতে নাবি ধসা রোগ"] : ["Stem borer on rice","Shoot and fruit borer on brinjal","Late blight on potato"])
+      + `<p style="margin-top:8px"><button class="btn soft" data-go="leaf">${L("পাতার ছবি দিন","Add a leaf photo")}</button></p>`;
+
+  if (WEATHER_Q.test(q))
+    return `<p>${L("আবহাওয়া পাতায় আপনার জেলার ৭ দিনের পূর্বাভাস এবং আগামী ৪৮ ঘণ্টার কোন সময় স্প্রে করা নিরাপদ তা দেখা যাবে।","The weather page shows a 7-day forecast for your district and which of the next 48 hours are safe for spraying.")}</p><p><button class="btn soft" data-go="weather">${L("আবহাওয়া দেখুন","Open weather")}</button></p>`;
+
+  return null; // needs the language model
+}
+function dedupe(rows){ const s = new Set(); return rows.filter(r => { const k = r.brand + "|" + r.crop + "|" + r.pest; if (s.has(k)) return false; s.add(k); return true; }); }
+
+/* ---------- chat ---------- */
+const thread = $("#thread");
+let history = []; // {role, text} or {role, q, fallback} or {role, html}
+const IDEAS = () => [
+  ["i-bottle", L("সঠিক মাত্রা","The right dose"), L("ধানে কারেন্ট পোকা লেগেছে, Taba 25WDG কতটুকু দিব?","Brown planthopper on rice. How much Taba 25WDG?")],
+  ["i-check", L("নিবন্ধিত কিনা","Is it registered?"), L("Neptune 48EC পাটে দেওয়া যাবে?","Can I use Neptune 48EC on jute?")],
+  ["i-bug", L("পোকা দমন","Pest control"), L("বেগুনে ডগা ও ফল ছিদ্রকারী পোকা, কী স্প্রে করমু?","Shoot and fruit borer on brinjal, what should I spray?")],
+  ["i-leaf", L("রোগ দমন","Disease control"), L("আলুতে নাবি ধসা রোগ, কোন ছত্রাকনাশক নিবন্ধিত?","Which fungicide is registered for potato late blight?")],
+];
+const scroller = $("#chatScroll");
+function renderChat(){
+  const started = history.length > 0, form = $("#askForm");
+  $("#home").hidden = started; $("#dock").hidden = !started;
+  if (started && form.parentElement.id !== "dockSlot") $("#dockSlot").prepend(form);
+  if (!started && form.parentElement.id !== "heroSlot") $("#heroSlot").append(form);
+  $("#ideas").innerHTML = IDEAS().map(([ic, t, q]) => `<button class="mchip" data-ask="${esc(q)}" title="${esc(q)}"><svg width="16" height="16"><use href="#${ic}"/></svg>${t}</button>`).join("");
+  if (DAE) $("#facts").innerHTML = [
+    [num(DAE.stats.products.toLocaleString("en-US")), L("নিবন্ধিত বালাইনাশক পণ্য","registered pesticide products")],
+    [num(DAE.stats.ingredients), L("সক্রিয় উপাদান, মাত্রাসহ","active ingredients, with doses")],
+    [L("৮১তম","81st"), L("PTAC সভা পর্যন্ত DAE তালিকা","PTAC meeting: DAE list up to here")],
+    [num(16), L("জেলার আবহাওয়া ও স্প্রে সময়","districts with weather and spray times")],
+  ].map(([n, t]) => `<div><b>${n}</b><span>${t}</span></div>`).join("");
+  thread.innerHTML = history.map((m, i) => m.role === "user"
+    ? `<div class="msg user">${esc(m.text)}</div>`
+    : `<div class="msg bot"><svg class="mark"><use href="#logo"/></svg><div class="answer" id="m${i}">${m.llm ? llmHtml(m) : (m.html ?? (answer(m.q) ?? m.fallback())) + (m.q ? rememberChips(m.q) : "")}</div></div>`).join("");
+  scroller.scrollTop = history.length ? scroller.scrollHeight : 0;
+}
+const noModel = () => `<p>${L("এই প্রশ্নের পুরো উত্তর দেবে কৃষিগার্ডের ভাষা মডেল, যা এই সাইটে এখনো যুক্ত হয়নি। এখন আমি যা পারি:","A full answer to this needs KrishiGuard's language model, which is not connected to this site yet. What I can do now:")}</p>
+  <ul><li>${L("ফসল ও বালাই বললে নিবন্ধিত বালাইনাশক ও মাত্রা","Registered pesticides and doses for a crop and pest")}</li><li>${L("কোনো পণ্য একটি ফসলে নিবন্ধিত কিনা","Whether a product is registered for a crop")}</li><li>${L("আবহাওয়া ও স্প্রে করার নিরাপদ সময়","Weather and safe spraying hours")}</li></ul>`;
+
+/* ---------- KrishiGuard model on the Hugging Face Space ----------
+   The page builds the prompt: rules, the farmer's own profile, the DAE rows that match the message and the weather.
+   The model writes the reply; registered doses are also shown as cards straight from the DAE list, and any
+   amount in the model's text that is not in those rows is removed before it is shown. */
+function systemPrompt(evidence, weather){
+  const now = new Date(), s = season(now), b = bnCalendar(now);
+  const d = DISTRICTS.find(x => x.k === PROFILE.district);
+  const prof = [PROFILE.name && `নাম ${PROFILE.name}`, d && `জেলা ${d.bn}`,
+    PROFILE.crops?.length && `ফসল ${PROFILE.crops.map(k => CROPS.find(c => c.k === k).bn).join(", ")}`,
+    PROFILE.land && `জমি ${PROFILE.land.n} ${unitOf(PROFILE.land.unit).bn}`, PROFILE.tank && `স্প্রে ট্যাংক ${PROFILE.tank} লিটার`].filter(Boolean).join("; ");
+  return [
+`তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের পাশে থাকা একজন বন্ধুর মতো সহকারী। নিয়মগুলো মেনে চলবে:
+১. সহজ, ছোট বাংলায় উত্তর দেবে। কৃষককে "আপনি" বলবে। প্রশ্ন ইংরেজিতে হলে ইংরেজিতে উত্তর দেবে।
+২. কৃষক যেকোনো বিষয়ে কথা বলতে পারেন: খেত, বাজার, পরিবার, টাকা, মন খারাপ বা একেবারে ব্যক্তিগত কথা। মন দিয়ে শুনবে, সহানুভূতি দেখাবে, বিচার করবে না, আর প্রয়োজনে একটা প্রশ্ন করে আরও জানতে চাইবে।
+৩. বালাইনাশকের নাম, মাত্রা বা কোনো পরিমাণ কখনো নিজে বানিয়ে বলবে না। শুধু নিচে দেওয়া DAE তথ্য থেকে বলবে। তথ্য না থাকলে ফসল আর পোকা বা রোগের নাম জিজ্ঞেস করবে।
+৪. নিশ্চিত না হলে অনুমান না করে জিজ্ঞেস করবে।
+৫. কেউ নিজের ক্ষতি করার কথা বললে নরমভাবে কথা বলবে, পরিবারের কাউকে পাশে ডাকতে বলবে, বিপদে ৯৯৯ নম্বরে ফোন করতে বলবে, কীটনাশক দূরে তালা দিয়ে রাখতে বলবে। এমন সময় কোনো ওষুধ বা বিষের তথ্য দেবে না।
+৬. কারও ক্ষতি করা, বেআইনি কাজ বা নিষিদ্ধ বালাইনাশক নিয়ে সাহায্য করবে না।
+৭. উত্তর সাধারণত ১২০ শব্দের মধ্যে রাখবে। কোনো ইমোজি ব্যবহার করবে না। কৃষক নিজে না বললে "ভাই", "আপা" এমন সম্বোধন করবে না, নাম জানা থাকলে নাম ধরে ডাকবে।
+৮. মাত্রার প্রশ্নে উত্তর হবে এভাবে: কোন পণ্য, তার নিবন্ধিত মাত্রা, আর কৃষকের জমির মোট পরিমাণ দেওয়া থাকলে সেটা। নিজে কোনো হিসাব করবে না।`,
+`আজ ${b.d} ${BN_MONTHS[b.m]} ${b.y} বঙ্গাব্দ, ${s.bn}।`,
+prof ? `এই কৃষক নিজে জানিয়েছেন: ${prof}। এগুলো মাথায় রেখে উত্তর দেবে।` : "এই কৃষকের খামারের তথ্য জানা নেই।",
+evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে):\n${evidence}`
+  : "এই প্রশ্নের জন্য DAE তালিকা থেকে কোনো তথ্য দেওয়া হয়নি, তাই কোনো বালাইনাশকের নাম বা মাত্রা বলবে না।",
+weather ? `কৃষকের জেলার আবহাওয়া:\n${weather}` : "",
+lang === "en" ? "The farmer is using the English version: reply in English." : ""].filter(Boolean).join("\n\n");
+}
+function toolPart(q){ // the deterministic DAE card for this message, and the same facts as plain lines for the prompt
+  const html = answer(q);
+  if (!html || !/class="(dose|verdict)/.test(html)) return {html: "", text: ""};
+  const box = document.createElement("div"); box.innerHTML = html;
+  const t = (el, sel) => el.querySelector(sel)?.innerText.replace(/\s+/g, " ").trim() || "";
+  const lines = [...box.querySelectorAll(".muted.small, .verdict")].map(e => e.innerText.replace(/\s+/g, " ").trim());
+  for (const d of box.querySelectorAll(".dose")){
+    const mine = d.querySelector(".mine:not(:has(button))");
+    lines.push(`পণ্য ${t(d, ".nm")} (${t(d, ".meta")}): নিবন্ধিত মাত্রা ${d.querySelector(".amt")?.firstChild?.textContent.trim()} ${t(d, ".amt small")}`
+      + (mine ? `; এই কৃষকের জন্য হিসাব করা: ${mine.innerText.trim()}` : "") + (t(d, ".flag") ? `; সতর্কতা: ${t(d, ".flag")}` : ""));
+  }
+  const regs = [...box.querySelectorAll(".src")].map(e => e.innerText.trim());
+  if (regs.length) lines.push(`নিবন্ধন নম্বর: ${regs.join(", ")}`);
+  return {html, text: lines.filter(Boolean).join("\n")};
+}
+const UNIT_WORD = /গ্রাম|মিলি|লিটার|কেজি|হেক্টর|বিঘা|শতাংশ|\b(g|gm|ml|kg|l|ha)\b|%/i;
+function numberGuard(text, evidence){ // drop sentences with an amount that is not in the DAE rows we sent
+  const ok = new Set((enNum(evidence).match(/\d+(\.\d+)?/g) || []).map(Number));
+  let dropped = 0;
+  const out = text.split(/(?<=[।!?\n]|\.\s)/).filter(sn => {
+    const nums = (enNum(sn).match(/\d+(\.\d+)?/g) || []).map(Number);
+    const bad = UNIT_WORD.test(sn) && nums.some(n => !ok.has(n));
+    if (bad) dropped++;
+    return !bad;
+  }).join("");
+  return {text: out, dropped};
+}
+function mdLite(t){ // paragraphs, simple bullet lists, **bold**
+  return esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").split(/\n{2,}/).map(p => {
+    const lines = p.split("\n");
+    return lines.every(l => /^\s*([-*•]|\d+[.)])\s+/.test(l)) ? `<ul>${lines.map(l => `<li>${l.replace(/^\s*([-*•]|\d+[.)])\s+/, "")}</li>`).join("")}</ul>` : `<p>${lines.join("<br>")}</p>`;
+  }).join("");
+}
+function llmHtml(m){
+  return (m.text ? mdLite(m.text) : `<span class="typing"><i></i><i></i><i></i></span>`)
+    + (m.dropped ? `<p class="muted small">${L("একটি পরিমাণ সরিয়ে দেওয়া হয়েছে, কারণ সেটি DAE তালিকায় নেই।","An amount was removed because it is not in the DAE list.")}</p>` : "")
+    + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker">${L("DAE তালিকা থেকে","From the DAE list")}</div>${m.tool}</div>` : "")
+    + (m.error ? `<p class="muted small">${m.error}</p>` : "")
+    + (!m.streaming && m.q ? rememberChips(m.q) : "");
+}
+async function askModel(text){
+  const tool = toolPart(text);
+  const weather = WEATHER_Q.test(text) && WX ? $("#wAdvice").innerText.replace(/\s+/g, " ") : "";
+  const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.text : m.text}));
+  const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
+  history.push(slot); renderChat();
+  const el = () => document.getElementById("m" + history.indexOf(slot));
+  try {
+    const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({messages:[{role:"system", content:systemPrompt(tool.text, weather)}, ...past, {role:"user", content:text}], stream:true, temperature:0.5, max_tokens:450, chat_template_kwargs:{enable_thinking:false}})});
+    if (!r.ok || !r.body) throw new Error(r.status);
+    const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;){
+      const {done, value} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines){
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim(); if (data === "[DONE]") continue;
+        try { slot.text += JSON.parse(data).choices?.[0]?.delta?.content || ""; } catch (e) {}
+      }
+      const node = el(); if (node){ node.innerHTML = llmHtml(slot); scroller.scrollTop = scroller.scrollHeight; }
+    }
+    const g = numberGuard(slot.text, tool.text); slot.text = g.text.trim(); slot.dropped = g.dropped;
+    if (!slot.text) throw new Error("empty");
+  } catch (e) {
+    const local = answer(text);
+    slot.text = ""; slot.tool = "";
+    slot.html = (local ?? noModel()) + `<p class="muted small">${L("মডেলের সার্ভার এখন ঘুমিয়ে আছে বা ব্যস্ত, তাই এই উত্তর সরাসরি DAE তালিকা থেকে। এক-দুই মিনিট পরে আবার চেষ্টা করুন।","The model server is asleep or busy, so this answer comes straight from the DAE list. Try again in a minute or two.")}</p>`;
+    delete slot.llm;
+  }
+  slot.streaming = false; renderChat();
+}
+
+async function ask(text){
+  text = text.trim(); if (!text) return;
+  history.push({role:"user", text});
+  if (!LIVE_MODEL || SELF_HARM.test(text) || HARM_OTHERS.test(text)){ history.push({role:"bot", q:text, fallback:noModel}); renderChat(); return; }
+  await askModel(text);
+}
+$("#askForm").addEventListener("submit", e => { e.preventDefault(); const q = $("#q"); ask(q.value); q.value = ""; q.style.height = ""; });
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#askForm").requestSubmit(); } });
+$("#q").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; });
+$("#toLeaf").addEventListener("click", () => go("leaf"));
+$("#newChat").addEventListener("click", () => { history = []; renderChat(); $("#q").focus(); });
+
+/* ---------- pesticide checker ---------- */
+function fillSelect(sel, items, allLabel, nameFn){
+  const v = sel.value;
+  sel.innerHTML = `<option value="">${allLabel}</option>` + items.map(i => `<option value="${i.k}">${esc(nameFn(i))}</option>`).join("");
+  sel.value = v;
+}
+function renderChecker(){
+  if (!DAE){ $("#results").innerHTML = `<div class="empty">${L("তালিকা লোড হচ্ছে…","Loading the list…")}</div>`; return; }
+  const st = DAE.stats;
+  const q = $("#pq").value.trim().toLowerCase();
+  const crop = CROPS.find(c => c.k === $("#pcrop").value), pest = PESTS.find(p => p.k === $("#ppest").value);
+  let rows = DAE.rows;
+  if (q) rows = rows.filter(r => r.brand.toLowerCase().includes(q) || r.ing.toLowerCase().includes(q) || r.reg.toLowerCase() === q);
+  let verdict = "";
+  const brands = new Set(rows.map(r => r.brand));
+  if (q && crop && brands.size === 1){
+    const b = [...brands][0], ok = rows.filter(r => onCrop(r, crop) && (!pest || onPest(r, pest)));
+    verdict = ok.length
+      ? `<div class="verdict yes"><span class="vi">✓</span><div><b>${esc(b)}</b> ${L(`${crop.bn}${pest ? ` (${pest.bn})` : ""} এর জন্য নিবন্ধিত।`, `is registered for ${crop.en}${pest ? ` (${pest.en})` : ""}.`)}</div></div>`
+      : `<div class="verdict no"><span class="vi">✕</span><div><b>${esc(b)}</b> ${L(`${crop.bn}${pest ? ` (${pest.bn})` : ""} এর জন্য নিবন্ধিত নয়। এটি নিবন্ধিত: ${esc([...new Set(rows.map(r => r.crop))].join(", "))}`, `is not registered for ${crop.en}${pest ? ` (${pest.en})` : ""}. It is registered for: ${esc([...new Set(rows.map(r => r.crop))].join(", "))}`)}</div></div>`;
+  }
+  if (crop) rows = rows.filter(r => onCrop(r, crop));
+  if (pest) rows = rows.filter(r => onPest(r, pest));
+  $("#verdictBox").innerHTML = verdict;
+  const shown = dedupe(rows).sort((a, b) => isSourceError(a) - isSourceError(b) || a.brand.localeCompare(b.brand)).slice(0, 120);
+  const big = (n) => num(n.toLocaleString("en-US"));
+  $("#counts").innerHTML = L(`<b>${big(new Set(rows.map(r => r.brand)).size)}</b>টি পণ্য পাওয়া গেছে · পুরো তালিকায় ${big(st.products)}টি পণ্য, ${big(st.ingredients)}টি সক্রিয় উপাদান`,
+    `<b>${big(new Set(rows.map(r => r.brand)).size)}</b> products found · the full list has ${big(st.products)} products and ${big(st.ingredients)} active ingredients`);
+  $("#results").innerHTML = rows.length ? `<div class="rrow rhead"><div>${L("পণ্য","Product")}</div><div>${L("সক্রিয় উপাদান","Active ingredient")}</div><div>${L("ফসল ও বালাই","Crop and pest")}</div><div style="text-align:right">${L("মাত্রা","Dose")}</div></div>`
+    + shown.map(r => `<div class="rrow${isSourceError(r) ? " flagged" : ""}"><div class="c1"><div class="b">${esc(r.brand)}</div><div class="sub mono">${esc(r.reg)} · ${esc(r.holder)}</div></div>
+        <div class="c2 sub">${esc(r.ing)}</div><div class="c3 sub">${esc(r.crop)}, ${esc(r.pest)}${isSourceError(r) ? `<div style="color:var(--bad)">${L("উৎস তালিকার সম্ভাব্য ভুল","Likely error in the source list")}</div>` : ""}</div>
+        <div class="d">${esc(r.dose)}<small>${esc(doseUnit(r.dose))}</small></div></div>`).join("")
+    + (rows.length > shown.length ? `<div class="more">${L(`${num(rows.length)}টির মধ্যে ${num(shown.length)}টি দেখানো হচ্ছে। খোঁজ সরু করুন।`, `Showing ${shown.length} of ${rows.length}. Narrow the search to see the rest.`)}</div>` : "")
+    : `<div class="empty">${L("কিছু পাওয়া যায়নি। বানান দেখুন, অথবা ফসল ও বালাই বদলে দেখুন।","Nothing found. Check the spelling or try another crop or pest.")}</div>`;
+  $("#srcNote").textContent = L(`উৎস: কৃষি সম্প্রসারণ অধিদপ্তরের (DAE) নিবন্ধিত কৃষি বালাইনাশকের তালিকা, PTAC-এর ৮১তম সভা পর্যন্ত। জনস্বাস্থ্য বালাইনাশক (মশা, তেলাপোকা) বাদ দেওয়া হয়েছে। লাল সারিগুলো উৎস তালিকার সম্ভাব্য ভুল।`,
+    `Source: Department of Agricultural Extension (DAE) list of registered agricultural pesticides, up to the 81st PTAC meeting. Public-health products (mosquito, cockroach) are left out. Red rows are likely errors in the source list.`);
+}
+["#pq", "#pcrop", "#ppest"].forEach(s => $(s).addEventListener("input", renderChecker));
+$("#checkForm").addEventListener("submit", e => e.preventDefault());
+
+/* ---------- leaf ---------- */
+const TIPS = () => lang === "bn"
+  ? ["একটি পাতা পুরো ফ্রেমে রাখুন, যেখানে দাগ বা লক্ষণ স্পষ্ট।","দিনের আলোয় তুলুন, ফ্ল্যাশ ছাড়া, ছায়া এড়িয়ে।","পাতার পেছনে সাদা কাগজ বা হাত রাখলে পটভূমি পরিষ্কার হয়।","পাতার দুই পাশেরই ছবি তুলুন, পোকা অনেক সময় নিচে থাকে।","ঝাপসা হলে আবার তুলুন। ফোকাস ঠিক না থাকলে রোগ চেনা যায় না।"]
+  : ["Fill the frame with one leaf, with the spots or symptoms clearly visible.","Shoot in daylight without flash, and avoid shadows.","Hold white paper or your hand behind the leaf for a clean background.","Photograph both sides of the leaf; insects often sit underneath.","Retake blurry photos. A diagnosis needs a sharp focus."];
+function renderLeaf(){ $("#tips").innerHTML = TIPS().map((t, i) => `<li><span>${num(i + 1)}</span><div>${t}</div></li>`).join(""); fillSelect($("#leafCrop"), CROPS, L("ফসল বেছে নিন","Choose a crop"), cropName); }
+function showLeaf(file){
+  if (!file || !file.type.startsWith("image/")) return;
+  let img = $("#leafImg");
+  if (!img){ img = document.createElement("img"); img.id = "leafImg"; drop.prepend(img); }
+  img.src = URL.createObjectURL(file); $("#dropHint").hidden = true;
+  img.alt = L("আপনার দেওয়া পাতার ছবি", "Your leaf photo");
+}
+$("#leafFile").addEventListener("change", e => showLeaf(e.target.files[0]));
+const drop = $("#drop");
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); showLeaf(e.dataTransfer.files[0]); });
+
+/* ---------- weather ---------- */
+const DISTRICTS = [
+  ["dhaka","ঢাকা","Dhaka",23.81,90.41],["chattogram","চট্টগ্রাম","Chattogram",22.36,91.78],["rajshahi","রাজশাহী","Rajshahi",24.37,88.60],
+  ["khulna","খুলনা","Khulna",22.85,89.54],["barishal","বরিশাল","Barishal",22.70,90.37],["sylhet","সিলেট","Sylhet",24.89,91.87],
+  ["rangpur","রংপুর","Rangpur",25.74,89.25],["mymensingh","ময়মনসিংহ","Mymensingh",24.75,90.41],["bogura","বগুড়া","Bogura",24.85,89.37],
+  ["dinajpur","দিনাজপুর","Dinajpur",25.63,88.64],["jashore","যশোর","Jashore",23.17,89.21],["cumilla","কুমিল্লা","Cumilla",23.46,91.18],
+  ["faridpur","ফরিদপুর","Faridpur",23.61,89.84],["kushtia","কুষ্টিয়া","Kushtia",23.90,89.12],["tangail","টাঙ্গাইল","Tangail",24.25,89.92],["noakhali","নোয়াখালী","Noakhali",22.87,91.10],
+].map(([k, bn, en, lat, lon]) => ({k, bn, en, lat, lon}));
+let WX = null, WX_SAMPLE = false;
+const WCODE = (c) => c === 0 ? ["sun", L("পরিষ্কার আকাশ","Clear sky")] : c <= 3 ? ["part", L("আংশিক মেঘলা","Partly cloudy")] : c <= 48 ? ["fog", L("কুয়াশা","Fog")]
+  : c <= 57 ? ["rain", L("গুঁড়ি গুঁড়ি বৃষ্টি","Drizzle")] : c <= 67 ? ["rain", L("বৃষ্টি","Rain")] : c <= 82 ? ["rain", L("বৃষ্টির ঝাপটা","Showers")] : ["storm", L("বজ্রঝড়","Thunderstorm")];
+function wIcon(kind, size = 30){
+  const s = `width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true"`;
+  const sun = `<circle cx="16" cy="16" r="6" fill="var(--mustard)"/><g stroke="var(--mustard)" stroke-width="2" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a => `<line x1="16" y1="4" x2="16" y2="6.5" transform="rotate(${a} 16 16)"/>`).join("")}</g>`;
+  const cloud = (y = 0) => `<path d="M9 ${24+y}h14a5 5 0 0 0 .3-10 7 7 0 0 0-13.2 1.7A4.2 4.2 0 0 0 9 ${24+y}z" fill="var(--surface)" stroke="var(--muted)" stroke-width="1.6"/>`;
+  if (kind === "sun") return `<svg ${s}>${sun}</svg>`;
+  if (kind === "part") return `<svg ${s}><g transform="translate(-4 -4) scale(.8)">${sun}</g>${cloud(2)}</svg>`;
+  if (kind === "fog") return `<svg ${s}><g stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><line x1="6" y1="12" x2="26" y2="12"/><line x1="4" y1="17" x2="24" y2="17"/><line x1="8" y1="22" x2="28" y2="22"/></g></svg>`;
+  const drops = `<g stroke="var(--paddy)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="26" x2="11" y2="29"/><line x1="17" y1="26" x2="16" y2="29"/><line x1="22" y1="26" x2="21" y2="29"/></g>`;
+  if (kind === "rain") return `<svg ${s}>${cloud(-3)}${drops}</svg>`;
+  return `<svg ${s}>${cloud(-3)}<path d="M17 23l-3 4h3l-2 4" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+function sampleWeather(){ // used only when the live forecast cannot be reached; labelled on the page
+  const now = new Date(); now.setMinutes(0, 0, 0);
+  const hourly = {time:[], temperature_2m:[], precipitation_probability:[], precipitation:[], wind_speed_10m:[], relative_humidity_2m:[]};
+  for (let i = 0; i < 168; i++){
+    const t = new Date(now.getTime() + i * 36e5), h = t.getHours();
+    hourly.time.push(t.toISOString()); hourly.temperature_2m.push(+(23 + 6 * Math.sin((h - 9) / 24 * 2 * Math.PI)).toFixed(1));
+    const wet = (i > 30 && i < 40) ? 60 : (i > 100 && i < 110) ? 45 : 10;
+    hourly.precipitation_probability.push(wet); hourly.precipitation.push(wet > 50 ? 0.6 : 0);
+    hourly.wind_speed_10m.push(+(5 + 6 * Math.max(0, Math.sin((h - 8) / 24 * 2 * Math.PI))).toFixed(1)); hourly.relative_humidity_2m.push(70);
+  }
+  const daily = {time:[], weather_code:[], temperature_2m_max:[], temperature_2m_min:[], precipitation_sum:[], precipitation_probability_max:[]};
+  for (let d = 0; d < 7; d++){ const t = new Date(now.getTime() + d * 864e5); daily.time.push(t.toISOString().slice(0, 10));
+    daily.weather_code.push([1,2,61,1,0,80,2][d]); daily.temperature_2m_max.push([29,29,27,28,29,27,28][d]); daily.temperature_2m_min.push([18,18,19,17,17,18,18][d]);
+    daily.precipitation_sum.push([0,0,6,0,0,3,0][d]); daily.precipitation_probability_max.push([10,15,60,10,5,45,15][d]); }
+  return {current:{temperature_2m:hourly.temperature_2m[0], weather_code:1, wind_speed_10m:hourly.wind_speed_10m[0], relative_humidity_2m:70}, hourly, daily};
+}
+async function loadWeather(){
+  const d = DISTRICTS.find(x => x.k === $("#district").value) || DISTRICTS[0];
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${d.lat}&longitude=${d.lon}&timezone=Asia%2FDhaka&forecast_days=7`
+    + `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max`;
+  try { const r = await fetch(url); if (!r.ok) throw 0; WX = await r.json(); WX_SAMPLE = false; }
+  catch (e) { WX = sampleWeather(); WX_SAMPLE = true; }
+  renderWeather();
+}
+function sprayClass(h, i){
+  const hr = new Date(h.time[i]).getHours(), pp = h.precipitation_probability[i] ?? 0, w = h.wind_speed_10m[i], t = h.temperature_2m[i];
+  if (pp >= 50 || (h.precipitation[i] ?? 0) > 0.2 || w > 20) return "x";
+  if (hr < 6 || hr > 18) return "o";
+  const nextDry = [1, 2, 3].every(k => (h.precipitation_probability[i + k] ?? 0) < 40);
+  return pp < 30 && nextDry && w >= 3 && w <= 15 && t <= 32 ? "g" : "c";
+}
+function when(d){ // "শনিবার দুপুর ১২টা" / "Saturday 12 pm"
+  const h = d.getHours(), day = d.toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {weekday:"long"});
+  if (lang !== "bn") return `${day} ${h % 12 || 12} ${h < 12 ? "am" : "pm"}`;
+  const part = h < 4 ? "রাত" : h < 6 ? "ভোর" : h < 12 ? "সকাল" : h < 15 ? "দুপুর" : h < 18 ? "বিকেল" : h < 20 ? "সন্ধ্যা" : "রাত";
+  return `${day} ${part} ${num(h % 12 || 12)}টা`;
+}
+const hourLabel = (d) => { const h = d.getHours(); return lang === "bn" ? num(h) : (h % 12 || 12) + (h < 12 ? "a" : "p"); };
+function renderWeather(){
+  if (!WX){ $("#wNow").innerHTML = `<p class="note">${L("পূর্বাভাস আনা হচ্ছে…","Fetching the forecast…")}</p>`; return; }
+  const d = DISTRICTS.find(x => x.k === $("#district").value) || DISTRICTS[0];
+  $("#wSample").innerHTML = WX_SAMPLE ? `<div class="notice">${L("লাইভ পূর্বাভাসে সংযোগ হয়নি, তাই নিচের সংখ্যাগুলো নমুনা। প্রকাশিত সাইটে (GitHub Pages) এখানে Open-Meteo-র আসল পূর্বাভাস দেখাবে।","The live forecast could not be reached, so the numbers below are a sample. On the published site (GitHub Pages) this shows the real Open-Meteo forecast.")}</div>` : "";
+  const c = WX.current, [kind, label] = WCODE(c.weather_code);
+  $("#wNow").innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><div class="kicker">${L(d.bn, d.en)} · ${L("এখন","now")}</div>
+    <div class="t">${num(Math.round(c.temperature_2m))}°</div></div>${wIcon(kind, 56)}</div>
+    <div class="c">${label}</div><div class="m"><span>${L("বাতাস","Wind")} ${num(Math.round(c.wind_speed_10m))} ${L("কিমি/ঘ","km/h")}</span><span>${L("আর্দ্রতা","Humidity")} ${num(c.relative_humidity_2m)}%</span></div>`;
+
+  const h = WX.hourly, now = Date.now();
+  let start = h.time.findIndex(t => new Date(t).getTime() >= now - 36e5); if (start < 0) start = 0;
+  const idx = [...Array(48).keys()].map(k => start + k).filter(i => i < h.time.length);
+  const cls = idx.map(i => sprayClass(h, i));
+  $("#hours").innerHTML = idx.map((i, k) => { const t = new Date(h.time[i]); const lab = t.getHours() % 3 === 0 ? hourLabel(t) : "";
+    return `<div class="hr" title="${when(t)}: ${L("বৃষ্টির সম্ভাবনা","rain")} ${h.precipitation_probability[i] ?? 0}%, ${L("বাতাস","wind")} ${h.wind_speed_10m[i]} km/h"><b class="s-${cls[k]}"></b>${lab}</div>`; }).join("");
+  $("#legend").innerHTML = [["g", L("স্প্রে করা যায়","Good to spray")], ["c", L("সাবধানে","Marginal")], ["x", L("স্প্রে নয়","Do not spray")], ["o", L("রাত","Night")]]
+    .map(([k, t]) => `<span><i class="s-${k}"></i>${t}</span>`).join("");
+
+  // advice: first good window, rain ahead, irrigation hint
+  const blocks = []; let cur = null;
+  idx.forEach((i, k) => { if (cls[k] === "g"){ if (!cur){ cur = {a:i, b:i}; blocks.push(cur); } else cur.b = i; } else cur = null; });
+  const fmt = (i, end) => when(new Date(new Date(h.time[i]).getTime() + (end ? 36e5 : 0)));
+  const rain3 = WX.daily.precipitation_sum.slice(0, 3).reduce((a, b) => a + (b || 0), 0);
+  const wetDay = WX.daily.precipitation_probability_max.findIndex(p => p >= 50);
+  const adv = [];
+  adv.push(blocks.length ? ["g", L(`পরের ভালো স্প্রে সময়: ${fmt(blocks[0].a)} থেকে ${fmt(blocks[0].b, 1)} পর্যন্ত।`, `Next good spray window: ${fmt(blocks[0].a)} to ${fmt(blocks[0].b, 1)}.`)]
+    : ["x", L("আগামী ৪৮ ঘণ্টায় স্প্রে করার মতো ভালো সময় নেই।","No good spray window in the next 48 hours.")]);
+  if (wetDay >= 0) adv.push(["c", L(`${new Date(WX.daily.time[wetDay]).toLocaleDateString("bn-BD", {weekday:"long"})} বৃষ্টির সম্ভাবনা ${num(WX.daily.precipitation_probability_max[wetDay])}%। তার আগের দিন স্প্রে করলে ওষুধ ধুয়ে যেতে পারে।`,
+    `${new Date(WX.daily.time[wetDay]).toLocaleDateString("en-GB", {weekday:"long"})}: ${WX.daily.precipitation_probability_max[wetDay]}% chance of rain. Spraying the day before may get washed off.`)]);
+  adv.push(rain3 >= 20 ? ["g", L(`আগামী ৩ দিনে প্রায় ${num(Math.round(rain3))} মিমি বৃষ্টি হতে পারে। সেচ পিছিয়ে দিন।`, `About ${Math.round(rain3)} mm of rain is expected in 3 days. Hold off on irrigation.`)]
+    : ["c", L(`আগামী ৩ দিনে বৃষ্টি কম (${num(Math.round(rain3))} মিমি)। মাটি শুকালে সেচের পরিকল্পনা করুন।`, `Little rain in the next 3 days (${Math.round(rain3)} mm). Plan irrigation if the soil dries out.`)]);
+  $("#wAdvice").innerHTML = `<h3>${L("কৃষি পরামর্শ","Field advice")}</h3>` + adv.map(([k, t]) => `<div class="adv"><i class="s-${k}"></i><div>${t}</div></div>`).join("");
+
+  const dl = WX.daily;
+  $("#days").innerHTML = dl.time.map((t, i) => { const [k, lab] = WCODE(dl.weather_code[i]);
+    return `<div class="day" title="${lab}"><div class="n">${i === 0 ? L("আজ","Today") : new Date(t).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {weekday:"short"})}</div>${wIcon(k)}
+      <div class="hi">${num(Math.round(dl.temperature_2m_max[i]))}°</div><div class="lo">${num(Math.round(dl.temperature_2m_min[i]))}°</div>
+      <div class="rp">${L("বৃষ্টি","rain")} ${num(dl.precipitation_probability_max[i] ?? 0)}%</div></div>`; }).join("");
+}
+$("#district").addEventListener("change", () => { store.set("kg_district", $("#district").value); loadWeather(); });
+
+/* ---------- Bangla calendar and season ---------- */
+const BN_MONTHS = ["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
+function bnCalendar(date){ // revised Bangladesh calendar: Boishakh 1 = 14 April; first six months 31 days, Falgun 30 in leap years
+  const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  let y = date.getFullYear(); if (utc < Date.UTC(y, 3, 14)) y--;
+  let day = Math.round((utc - Date.UTC(y, 3, 14)) / 864e5);
+  const leap = ((y + 1) % 4 === 0 && (y + 1) % 100 !== 0) || (y + 1) % 400 === 0;
+  const lens = [31,31,31,31,31,31,30,30,30,30,leap ? 30 : 29,30];
+  let m = 0; while (day >= lens[m]){ day -= lens[m]; m++; }
+  return {d: day + 1, m, y: y - 593};
+}
+function season(date){
+  const md = (date.getMonth() + 1) * 100 + date.getDate();
+  if (md >= 1016 || md <= 315) return {k:"rabi", bn:"রবি মৌসুম", en:"Rabi season", crops:L("আলু, গম, সরিষা, শীতের সবজি, বোরো বীজতলা","potato, wheat, mustard, winter vegetables, Boro seedbeds")};
+  if (md <= 715) return {k:"kharif1", bn:"খরিফ-১ মৌসুম", en:"Kharif-1 season", crops:L("আউশ ধান, পাট, গ্রীষ্মের সবজি","Aus rice, jute, summer vegetables")};
+  return {k:"kharif2", bn:"খরিফ-২ মৌসুম", en:"Kharif-2 season", crops:L("আমন ধান, শরতের সবজি","Aman rice, autumn vegetables")};
+}
+function renderDate(){
+  const now = new Date(), b = bnCalendar(now), s = season(now);
+  const bd = lang === "bn" ? `${num(b.d)} ${BN_MONTHS[b.m]} ${num(b.y)}` : `${b.d} ${["Boishakh","Joishtho","Asharh","Srabon","Bhadro","Ashwin","Kartik","Agrahayan","Poush","Magh","Falgun","Chaitra"][b.m]} ${b.y}`;
+  $("#today").innerHTML = `<b>${bd}</b>${L(s.bn, s.en)}`;
+  $("#seasonPill").innerHTML = `<b>${L(s.bn, s.en)}</b> · ${bd}`;
+  $("#seasonPill").title = L("এখন মাঠে: ", "In the fields now: ") + s.crops;
+  return s;
+}
+
+/* ---------- real field strip along the bottom of the home cover, picked by season ---------- */
+const STRIP_ALT = {
+  rabi: ["হলুদ সরিষা ফুলের খেত", "Mustard field in yellow bloom"],
+  kharif1: ["পানিতে দাঁড়ানো কচি ধানের চারা", "Young rice seedlings standing in water"],
+  kharif2: ["পাকা সোনালি ধানের শীষ", "Ripe golden rice panicles"],
+};
+let stripKey = "rabi";
+function strip(k){
+  stripKey = k; const img = $("#stripImg");
+  img.srcset = `img/strip-${k}-800.webp 800w, img/strip-${k}-1600.webp 1600w`; img.src = `img/strip-${k}-1600.webp`;
+  img.alt = L(...STRIP_ALT[k]);
+}
+
+/* ---------- my farm dialog ---------- */
+function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => el.hidden = true, 2600); }
+function refreshAll(){
+  $("#helloLine").hidden = !PROFILE.name;
+  $("#helloLine").textContent = PROFILE.name ? L(`স্বাগতম, ${PROFILE.name}`, `Welcome, ${PROFILE.name}`) : "";
+  renderChat(); renderChecker();
+}
+function openProfile(){
+  $("#pfName").value = PROFILE.name || "";
+  $("#pfDistrict").innerHTML = `<option value="">${L("বেছে নিন","Choose")}</option>` + DISTRICTS.map(d => `<option value="${d.k}">${L(d.bn, d.en)}</option>`).join("");
+  $("#pfDistrict").value = PROFILE.district || "";
+  $("#pfCrops").innerHTML = CROPS.map(c => `<label class="cchip"><input type="checkbox" value="${c.k}"${myCrop(c) ? " checked" : ""}><span>${esc(cropName(c))}</span></label>`).join("");
+  $("#pfUnit").innerHTML = LAND_UNITS.map(u => `<option value="${u.k}">${L(u.bn, u.en)}</option>`).join("");
+  $("#pfUnit").value = PROFILE.land?.unit || "bigha";
+  $("#pfLand").value = PROFILE.land ? num(PROFILE.land.n) : "";
+  $("#pfTank").value = PROFILE.tank ? num(PROFILE.tank) : "";
+  $("#profileDlg").showModal();
+}
+$("#profileBtn").onclick = openProfile;
+$("#pfCancel").onclick = () => $("#profileDlg").close();
+$("#pfClear").onclick = () => { PROFILE = {}; saveProfile(); $("#profileDlg").close(); toast(L("আপনার খামারের সব তথ্য মুছে দেওয়া হয়েছে।","All your farm details are deleted.")); refreshAll(); };
+$("#profileForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const n = parseFloat(enNum($("#pfLand").value)), tank = parseFloat(enNum($("#pfTank").value));
+  PROFILE = {name: $("#pfName").value.trim() || undefined, district: $("#pfDistrict").value || undefined,
+    crops: [...document.querySelectorAll("#pfCrops input:checked")].map(i => i.value),
+    land: n > 0 ? {n, unit: $("#pfUnit").value} : undefined, tank: tank > 0 ? tank : undefined};
+  saveProfile();
+  if (PROFILE.district){ $("#district").value = PROFILE.district; store.set("kg_district", PROFILE.district); WX = null; }
+  $("#profileDlg").close(); toast(L("সংরক্ষণ হয়েছে। এখন থেকে উত্তর আপনার খামার মিলিয়ে আসবে।","Saved. Answers will now fit your farm.")); refreshAll();
+});
+
+/* ---------- language, theme, routing ---------- */
+function applyLang(){
+  document.documentElement.lang = lang === "bn" ? "bn" : "en";
+  document.querySelectorAll("[data-bn]").forEach(el => el.textContent = el.dataset[lang]);
+  document.querySelectorAll("[data-ph-bn]").forEach(el => el.placeholder = lang === "bn" ? el.dataset.phBn : el.dataset.phEn);
+  document.querySelectorAll("[data-alt-bn]").forEach(el => el.alt = lang === "bn" ? el.dataset.altBn : el.dataset.altEn);
+  document.querySelectorAll("[data-title-bn]").forEach(el => el.title = lang === "bn" ? el.dataset.titleBn : el.dataset.titleEn);
+  $("#langBtn").textContent = lang === "bn" ? "English" : "বাংলা";
+  $("#chatNote").textContent = LIVE_MODEL ? L("মাত্রা আসে শুধু সরকারি নিবন্ধন তালিকা থেকে। ব্যবহারের আগে কৃষি অফিসারের সাথে মিলিয়ে নিন।","Doses come only from the government registration list. Check with your agriculture officer before use.")
+    : L("প্রিভিউ: এখানে ওষুধের তালিকা ও আবহাওয়া চলে। ভাষা মডেল চলবে প্রকাশিত সাইটে।","Preview: the pesticide list and weather work here. The language model runs on the published site.");
+  renderDate(); if ($("#stripImg")) $("#stripImg").alt = L(...STRIP_ALT[stripKey]);
+  fillSelect($("#pcrop"), CROPS, L("সব ফসল","All crops"), cropName); fillSelect($("#ppest"), PESTS, L("সব বালাই","All pests"), pestName);
+  const dv = $("#district").value || PROFILE.district || store.get("kg_district") || "dhaka";
+  $("#district").innerHTML = DISTRICTS.map(d => `<option value="${d.k}">${L(d.bn, d.en)}</option>`).join(""); $("#district").value = dv;
+  renderChat(); renderChecker(); renderLeaf(); renderWeather(); refreshAll();
+}
+function setLang(l){ lang = l; store.set("kg_lang", l); applyLang(); }
+$("#langBtn").onclick = () => setLang(lang === "bn" ? "en" : "bn");
+$("#themeBtn").onclick = () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = dark ? "light" : "dark"; store.set("kg_theme", document.documentElement.dataset.theme);
+};
+const savedTheme = store.get("kg_theme"); if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+
+const VIEWS = ["chat", "pesticide", "leaf", "weather"];
+function go(v){ if (location.hash !== "#" + v) location.hash = v; else route(); }
+function route(){
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "chat";
+  VIEWS.forEach(x => $("#v-" + x).hidden = x !== v);
+  document.querySelectorAll(".tab").forEach(b => b.dataset.go === v ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  if (v === "weather" && !WX) loadWeather();
+  if (v === "chat") scroller.scrollTop = history.length ? scroller.scrollHeight : 0;
+}
+addEventListener("hashchange", route);
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-go],[data-ask],[data-reg],[data-check],[data-remember],[data-profile]"); if (!t) return;
+  if (t.dataset.remember) remember(JSON.parse(t.dataset.remember));
+  else if (t.hasAttribute("data-profile")) openProfile();
+  else if (t.dataset.go) go(t.dataset.go);
+  else if (t.dataset.ask) ask(t.dataset.ask);
+  else if (t.dataset.reg){ $("#pq").value = t.dataset.reg; $("#pcrop").value = ""; $("#ppest").value = ""; go("pesticide"); renderChecker(); }
+  else if (t.dataset.check){ const [c, p] = t.dataset.check.split("|"); $("#pq").value = ""; $("#pcrop").value = c; $("#ppest").value = p; go("pesticide"); renderChecker(); }
+});
+
+/* ---------- start ---------- */
+(async function start(){
+  $("#pcrop").innerHTML = ""; applyLang();
+  $("#pcrop").value = "rice"; $("#ppest").value = "bph"; // the checker opens on a real query
+  strip(season(new Date()).k);
+  route();
+  try { await loadDAE(); } catch (e) { /* answer() and the checker show a reload message */ }
+  renderChat(); renderChecker();
+})();
+</script>
+
+</html>

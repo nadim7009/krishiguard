@@ -1,0 +1,5 @@
+set,system,n,token_f1,num_halluc,sec_per_answer
+farmer,C_agent,50,0.151,0.000,15.221
+tools,A_closed_book,300,0.000,0.067,17.083
+tools,B_rag,300,0.000,0.007,17.083
+tools,C_agent,300,0.000,0.000,13.025

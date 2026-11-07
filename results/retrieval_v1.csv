@@ -1,0 +1,15 @@
+set,retriever,n,R@1,R@5,R@10,MRR@10
+general_test,bm25,358,0.075,0.142,0.184,0.105
+general_test,e5-small,358,0.034,0.067,0.075,0.045
+general_test,hybrid bm25+e5,358,0.034,0.073,0.101,0.051
+general_test,bge-m3,358,0.081,0.207,0.265,0.130
+general_test,hybrid bm25+bge,358,0.056,0.145,0.182,0.091
+general_test,e5-small-ft,358,0.084,0.134,0.209,0.112
+general_test,hybrid bm25+e5-ft,358,0.064,0.145,0.196,0.102
+treatment_test,bm25,346,0.347,0.480,0.512,0.404
+treatment_test,e5-small,346,0.191,0.272,0.318,0.231
+treatment_test,hybrid bm25+e5,346,0.254,0.358,0.410,0.298
+treatment_test,bge-m3,346,0.240,0.367,0.408,0.292
+treatment_test,hybrid bm25+bge,346,0.286,0.402,0.468,0.339
+treatment_test,e5-small-ft,346,0.309,0.390,0.451,0.349
+treatment_test,hybrid bm25+e5-ft,346,0.324,0.422,0.486,0.368
