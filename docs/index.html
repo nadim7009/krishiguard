@@ -684,6 +684,7 @@ function answer(q){
   if (!farmy && THANKS.test(q) && q.length < 40) return `<p>${hello()}${L("আপনাকেও ধন্যবাদ। আর কিছু জানতে চাইলে লিখুন। ভালো ফলন হোক।","Thank you too. Write any time you need something. I hope the harvest goes well.")}</p>`;
   const feelings = () => `<p>${hello()}${L("শুনে খারাপ লাগছে। ফসলের ক্ষতি আর টাকার চাপ অনেক ভারী জিনিস, আর এটা নিয়ে কথা বলা ঠিক কাজ।","I'm sorry to hear that. Crop losses and money worries are heavy, and it's good that you're talking about it.")}</p>
       <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। জমির কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;
+  const rot = rotation(q); if (rot) return rot.html;
   assumed = null;
   const body = farmAnswer(q);
   if (body === null){
@@ -696,6 +697,38 @@ function answer(q){
   return care + note + body;
 }
 let assumed = null;
+
+/* ---------- crop rotation: the most common yearly sequences in Bangladesh, from BRRI's national survey
+   (Nasim et al. 2017, Distribution of Crops and Cropping Patterns in Bangladesh, Bangladesh Rice J. 21(2), Table 2, 2014-15 data) ---------- */
+const PATTERNS = [ // Rabi, Kharif-1, Kharif-2, % of net cropped area
+  ["boro","fallow","t.aman",26.92],["boro","fallow","fallow",13.30],["fallow","fallow","t.aman",5.95],["boro","aus","t.aman",2.44],["fallow","aus","t.aman",2.26],
+  ["mustard","boro","t.aman",2.16],["boro","b.aman","",2.14],["potato","boro","t.aman",2.11],["wheat","jute","t.aman",1.72],["vegetable","vegetable","vegetable",1.67],
+  ["mustard","boro","fallow",1.67],["grasspea","fallow","t.aman",1.26],["maize","fallow","t.aman",1.18],["wheat","fallow","t.aman",1.06],["mungbean","fallow","t.aman",1.05]];
+const ROT_CROPS = {"t.aman":["রোপা আমন","Transplanted Aman rice",/আমন|aman/i],"boro":["বোরো ধান","Boro rice",/বোরো|boro/i],"aus":["আউশ ধান","Aus rice",/আউশ|aus\b/i],
+  "b.aman":["বোনা আমন","Broadcast Aman rice",/বোনা আমন|b\.? ?aman/i],"mustard":["সরিষা","Mustard",/সরিষা|mustard/i],"potato":["আলু","Potato",/আলু|potato/i],
+  "wheat":["গম","Wheat",/গম|wheat/i],"jute":["পাট","Jute",/পাট|jute/i],"vegetable":["সবজি","Vegetables",/সবজি|vegetable/i],"grasspea":["খেসারি","Grass pea",/খেসারি|grass ?pea/i],
+  "maize":["ভুট্টা","Maize",/ভুট্টা|maize|corn/i],"mungbean":["মুগ ডাল","Mung bean",/মুগ|mung/i],"fallow":["জমি খালি (পতিত) রাখা","Leave the land fallow",/^$/]};
+const ROT_Q = /পরে কী|পরে কি|এরপর কী|এরপর কি|পরের ফসল|কী চাষ করব|কি চাষ করব|কী লাগাব|কি লাগাব|কী লাগামু|ফসল চক্র|শস্য পর্যায়|rotation|(plant|grow|sow) (next|after)/i;
+function rotation(q){
+  if (!ROT_Q.test(q)) return null;
+  const prev = Object.keys(ROT_CROPS).filter(k => k !== "fallow" && ROT_CROPS[k][2].test(q)).sort((a, b) => (b === "b.aman") - (a === "b.aman"))[0];
+  if (!prev) return {text: "", html: `<p>${L("কোন ফসল তোলার পরে জানতে চাইছেন? যেমন: \"আমন কাটার পর কী লাগাব?\"","Which crop are you following? For example: \"What should I plant after Aman?\"")}</p>`};
+  const next = new Map();
+  for (const pt of PATTERNS){
+    const seq = pt.slice(0, 3).filter(Boolean), i = seq.indexOf(prev);
+    if (i >= 0){ const n = seq[(i + 1) % seq.length]; next.set(n, (next.get(n) || 0) + pt[3]); }
+  }
+  const top = [...next].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  if (!top.length) return {text: "", html: `<p>${L("এই ফসলের পরের ধাপ জরিপের সাধারণ ফসল ক্রমে নেই। উপজেলা কৃষি অফিস আপনার জমির জন্য ভালো বলতে পারবে।","This crop is not in the common sequences of the survey. Your upazila agriculture office can advise for your land.")}</p>`};
+  const name = k => L(ROT_CROPS[k][0], ROT_CROPS[k][1]);
+  const pulses = top.some(([k]) => ["grasspea","mungbean"].includes(k));
+  const html = `<div class="verdict rot"><span class="vi">↻</span><div><b>${L(`${name(prev)} এর পরে দেশে সবচেয়ে বেশি যা চাষ হয়`, `What farmers in Bangladesh most often grow after ${name(prev)}`)}</b>
+    <ul>${top.map(([k, v]) => `<li>${esc(name(k))} <span class="muted small">(${L(`জরিপে ${num(v.toFixed(1))}% জমির ফসল ক্রমে`, `${v.toFixed(1)}% of cropland in the survey's sequences`)})</span></li>`).join("")}</ul>
+    <p class="small">${L("ধানের পরে আবার ধান না দিয়ে মাঝে ডাল (মুগ, মসুর, খেসারি) বা তেল ফসল (সরিষা) দিলে মাটির উপকার হয় এবং রোগ-পোকার চক্র ভাঙে। ডাল ফসল মাটিতে নাইট্রোজেন যোগ করে।","Putting a pulse (mung, lentil, grass pea) or an oilseed (mustard) between rice crops helps the soil and breaks pest and disease cycles. Pulses add nitrogen to the soil.")}</p>
+    <p class="muted small">${L("সূত্র: ব্রি-র জাতীয় ফসল ক্রম জরিপ (নাসিম ও অন্যান্য, ২০১৭)। আপনার জমির পানি, মাটি আর বাজার দেখে উপজেলা কৃষি অফিসের সাথে ঠিক করুন।","Source: BRRI national cropping-pattern survey (Nasim et al., 2017). Decide with your upazila agriculture office, given your land's water, soil and market.")}</p></div></div>`;
+  const text = `ফসল চক্র (ব্রি জরিপ, নাসিম ও অন্যান্য ২০১৭): ${name(prev)} এর পরে দেশে সাধারণত চাষ হয়: ` + top.map(([k, v]) => `${ROT_CROPS[k][0]} (${v.toFixed(1)}% জমি)`).join(", ") + (pulses ? "। ডাল ফসল মাটিতে নাইট্রোজেন যোগ করে।" : "");
+  return {html, text};
+}
 
 /* ---------- answers ---------- */
 function doseList(rows, max = 5){
@@ -886,7 +919,8 @@ function llmHtml(m){
     + (!m.streaming && m.q ? rememberChips(m.q) : "");
 }
 async function askModel(text){
-  const tool = toolPart(text);
+  let tool = toolPart(text);
+  if (!tool.html){ const r = rotation(text); if (r && r.text) tool = r; }
   const weather = WEATHER_Q.test(text) && WX ? $("#wAdvice").innerText.replace(/\s+/g, " ") : "";
   const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
