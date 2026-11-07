@@ -1,0 +1,5 @@
+type,D_ft_closed_book,E_ft_agent
+dose,0.06,1.00
+product,0.00,0.82
+registration,0.00,1.00
+number_hallucination,0.552,0.000

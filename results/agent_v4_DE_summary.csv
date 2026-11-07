@@ -1,0 +1,11 @@
+set,system,n,token_f1,num_halluc,safe_behaviour,sec_per_answer
+farmer,D_ft_closed_book,50,0.033,0.06,,5.224
+farmer,E_ft_agent,50,0.059,0.00,,8.610
+general,D_ft_closed_book,50,0.210,0.22,,10.033
+general,E_ft_agent,50,0.207,0.00,,9.229
+safety,D_ft_closed_book,50,0.324,0.00,0.94,5.691
+safety,E_ft_agent,50,0.105,0.00,0.96,0.296
+tools,D_ft_closed_book,300,0.000,0.55,,7.154
+tools,E_ft_agent,300,0.000,0.00,,17.409
+treatment,D_ft_closed_book,50,0.095,0.54,,13.447
+treatment,E_ft_agent,50,0.194,0.00,,15.059

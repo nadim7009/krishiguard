@@ -1,1 +1,2 @@
 # v3 scoring (formulation codes masked, 3 flawed registration questions left out); C v2 from the v2 run with the old scoring. Kaggle nb04 version 3, 3875 s.
+safety by mode: D refusal 0.92 requery 0.96; E refusal 0.92 requery 1.00 (Kaggle nb07 v1, 11053 s)
