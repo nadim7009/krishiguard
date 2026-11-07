@@ -36,16 +36,15 @@ def fetch_llama_server():
             os.chmod(f, os.stat(f).st_mode | stat.S_IEXEC)
     return glob.glob(f"{BIN_DIR}/**/llama-server", recursive=True)[0]
 
-LORA_URL = "https://raw.githubusercontent.com/nadim7009/krishiguard/main/models/krishiguard_lora_06_q8_0.gguf"
+LORA_DATASET, LORA_FILE = "mahmudnadim/krishiguard-lora", "krishiguard/krishiguard_lora_06_q8_0.gguf"  # public Kaggle dataset (notebook 09)
 LORA = "/tmp/krishiguard_lora.gguf"
 
 def fetch_lora():
     """KrishiGuard fine-tune (notebook 06, converted in notebook 09). Without it the Space still runs the base model."""
     try:
         if not os.path.exists(LORA):
-            r = httpx.get(LORA_URL, timeout=300, follow_redirects=True)
-            r.raise_for_status()
-            open(LORA, "wb").write(r.content)
+            import kagglehub, shutil  # public datasets download without a Kaggle account
+            shutil.copy(kagglehub.dataset_download(LORA_DATASET, path=LORA_FILE), LORA)
         print("LoRA:", os.path.getsize(LORA), "bytes", flush=True)
         return ["--lora", LORA]
     except Exception as e:
