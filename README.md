@@ -131,12 +131,27 @@ Lookup only (no model), KrishiTools-Messy held-out seed 7, share of questions wh
 
 The pest and crop variants and the lexicon that reads them were both written by us, so those two rows are not independent; the product-name rows are.
 
+End to end on KrishiTools-Messy (held-out seed 7, 297 scored questions; notebooks 08 and 10). C = base Gemma 4 E2B, E = fine-tuned Gemma, Q = Qwen3-4B-Instruct; v3 = exact-name lookup, v4 = lookup that reads messy names:
+
+| | C v3 | C v4 | E v4 | Q alone | Q v4 |
+|---|---|---|---|---|---|
+| dose | 0.43 | 1.00 | 0.98 | 0.01 | 1.00 |
+| product | 0.46 | 1.00 | 1.00 | 0.00 | 0.98 |
+| registration | 0.27 | 1.00 | 1.00 | 0.00 | 1.00 |
+| crop missing, should ask (9) | 0.44 | 0.44 | 0.00 | 0.22 | 0.00 |
+| overall | 0.39 | 0.98 | 0.96 | 0.01 | 0.96 |
+| made-up numbers | 0% | 0.3% | 0% | 1.7% | 0% |
+
+- The exact-name lookup that scored 100% on clean questions gets 39% once farmers type the way they do; lookup v4 brings it back to 98%.
+- The agent carries a weaker model too: Qwen alone gets 1%, Qwen in the agent 96%. Qwen's own Bangla is poor, though (it repeats phrases and garbles pest names), so the answer text still depends on the model.
+- Open problem: when the crop is missing, the lookup still states the dose if the product is registered for that pest on one crop. The answer is then right for that crop, but the system should ask which crop. One E v4 lower-case miss is a scorer artifact (a lower-case "5g" formulation code was not masked).
+
 Deployment:
 - Website: nadim7009.github.io/krishiguard (docs/).
 - Model server: Hugging Face Space mahmudnadim479/krishiguard, llama.cpp on CPU with Gemma 4 E2B Q4_0. space/app.py now loads the fine-tuned LoRA (notebook 09, 39 MB) from models/ when that file is in this repo, and falls back to the base model otherwise.
 
 Next:
-1. Read notebooks 08 and 10 and add their tables here.
+1. Lookup v5: ask for the crop when it is missing and the product's dose differs across crops.
 2. Put models/krishiguard_lora_06_q8_0.gguf in the repo and redeploy the Space.
 3. Real farmer questions (even 50) and a small human rating of answers.
 4. FRG fertilizer tables (needs the BARC guide PDF).
