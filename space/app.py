@@ -1,6 +1,7 @@
 """KrishiGuard model server on a free Hugging Face Space.
 
 Starts the official llama.cpp server (prebuilt CPU binary from its GitHub release) with Gemma 4 E2B in 4-bit,
+with its vision projector (leaf and bottle photos) and the KrishiGuard LoRA,
 and exposes its OpenAI-style /v1/chat/completions on port 7860 for the KrishiGuard website.
 A small test chat sits at / so the Space page shows something useful. Messages are not stored.
 """
@@ -20,14 +21,21 @@ def fetch_llama_server():
     found = glob.glob(f"{BIN_DIR}/**/llama-server", recursive=True)
     if found:
         return found[0]
-    rels = httpx.get("https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15", timeout=60).json()
     skip = ("vulkan", "cuda", "rocm", "hip", "sycl", "arm", "aarch64", "openvino", "musa", "s390")
-    asset = next(a for r in rels for a in r.get("assets", [])
-                 if "ubuntu" in a["name"] and "x64" in a["name"] and not any(k in a["name"].lower() for k in skip)
-                 and a["name"].endswith((".zip", ".tar.gz")))
-    print("llama.cpp build:", asset["name"], flush=True)
-    data = httpx.get(asset["browser_download_url"], timeout=600, follow_redirects=True).content
-    if asset["name"].endswith(".zip"):
+    try:
+        rels = httpx.get("https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15", timeout=60,
+                         follow_redirects=True, headers={"User-Agent": "krishiguard-space"}).json()
+        asset = next(a for r in rels for a in r.get("assets", [])
+                     if "ubuntu" in a["name"] and "x64" in a["name"] and not any(k in a["name"].lower() for k in skip)
+                     and a["name"].endswith((".zip", ".tar.gz")))
+        name, url = asset["name"], asset["browser_download_url"]
+    except Exception as e:  # GitHub API rate limit or outage: use a build known to work (also used in notebook 09)
+        print("release lookup failed, using pinned build:", e, flush=True)
+        name = "llama-b12189-bin-ubuntu-x64.tar.gz"
+        url = f"https://github.com/ggml-org/llama.cpp/releases/download/b12189/{name}"
+    print("llama.cpp build:", name, flush=True)
+    data = httpx.get(url, timeout=600, follow_redirects=True).content
+    if name.endswith(".zip"):
         zipfile.ZipFile(io.BytesIO(data)).extractall(BIN_DIR)
     else:
         tarfile.open(fileobj=io.BytesIO(data), mode="r:gz").extractall(BIN_DIR)
@@ -54,7 +62,8 @@ def fetch_lora():
 def start_llama():
     exe = fetch_llama_server()
     env = dict(os.environ, LLAMA_CACHE="/tmp/llama-cache", LD_LIBRARY_PATH=os.path.dirname(exe))
-    subprocess.Popen([exe, "-hf", MODEL, "--no-mmproj", *fetch_lora(), "--host", "127.0.0.1", "--port", "8080",
+    subprocess.Popen([exe, "-hf", MODEL, *fetch_lora(),  # -hf also fetches the vision projector, for leaf and bottle photos
+                      "--host", "127.0.0.1", "--port", "8080",
                       "-c", "4096", "-t", "2", "--parallel", "1", "--no-webui"], env=env)
 
 threading.Thread(target=start_llama, daemon=True).start()

@@ -160,6 +160,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .box textarea:focus{box-shadow:none}
 .icon-btn{width:46px;height:46px;border-radius:15px;border:0;display:grid;place-items:center;flex:none;background:transparent;color:var(--muted)}
 .icon-btn:hover{background:var(--sunk);color:var(--ink)}
+.icon-btn.on{background:var(--bad);color:#fff}
+.bottle{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.diag{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
 .icon-btn.send{background:var(--forest);color:var(--forest-ink)}
 .dock-foot{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px;padding:0 6px}
 .dock-foot p{margin:0;font-size:.82rem;color:var(--muted)}
@@ -296,6 +299,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
     <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
     <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l1.8-2.5h6.4L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
     <symbol id="logo" viewBox="0 0 40 40"><path d="M20 3l14 5v11c0 9-6 15.5-14 18C12 34.5 6 28 6 19V8z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M20 31V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20 21c-4-.3-6.3-2.8-6.5-6.5 4 .2 6.3 2.6 6.5 6.5zM20 17.5c4-.3 6.3-2.8 6.5-6.5-4 .2-6.3 2.6-6.5 6.5zM20 26c-3.4-.3-5.4-2.3-5.6-5.5 3.4.2 5.4 2.2 5.6 5.5z" fill="var(--mustard)"/></symbol>
   </defs>
@@ -382,6 +386,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
           <label class="f" for="pcrop"><span data-bn="ফসল" data-en="Crop">ফসল</span><select id="pcrop"></select></label>
           <label class="f" for="ppest"><span data-bn="বালাই বা রোগ" data-en="Pest or disease">বালাই বা রোগ</span><select id="ppest"></select></label>
         </form>
+        <div class="bottle"><input type="file" id="bottleFile" accept="image/*" capture="environment" hidden>
+          <button type="button" class="btn" id="bottleBtn" data-bn="বোতলের ছবি দিয়ে যাচাই" data-en="Check from a bottle photo">বোতলের ছবি দিয়ে যাচাই</button>
+          <span class="small muted" id="bottleNote" data-bn="দোকানের বোতল বা প্যাকেটের সামনের লেবেলের ছবি দিন। নাম পড়ে DAE তালিকায় মিলিয়ে দেখা হবে।" data-en="Photograph the front label of the bottle or packet. The name is read and matched with the DAE list.">দোকানের বোতল বা প্যাকেটের সামনের লেবেলের ছবি দিন। নাম পড়ে DAE তালিকায় মিলিয়ে দেখা হবে।</span></div>
         <div id="verdictBox"></div>
         <div>
           <p class="counts" id="counts" style="margin:0 0 10px 4px"></p>
@@ -411,7 +418,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
           <div class="card panel">
             <label class="f" for="leafCrop"><span data-bn="কোন ফসলের পাতা?" data-en="Which crop is this?">কোন ফসলের পাতা?</span><select id="leafCrop"></select></label>
             <button class="btn" id="diagnose" disabled data-bn="রোগ শনাক্ত করুন" data-en="Identify the disease">রোগ শনাক্ত করুন</button>
-            <div class="soon" data-bn="ছবির মডেল এখনো যুক্ত হয়নি, এটি প্রকল্পের দ্বিতীয় ধাপে আসবে। ছবি এখানে দেখা যাবে, কিন্তু রোগের নাম এখনই বলা যাবে না।" data-en="The photo model is not connected yet; it arrives in phase 2 of the project. Your photo shows here, but no diagnosis is made yet.">ছবির মডেল এখনো যুক্ত হয়নি, এটি প্রকল্পের দ্বিতীয় ধাপে আসবে। ছবি এখানে দেখা যাবে, কিন্তু রোগের নাম এখনই বলা যাবে না।</div>
+            <div class="soon" data-bn="ছবি দেখে উত্তর দেয় একটি সাধারণ এআই মডেল, তাই এটি একটি সম্ভাব্য ধারণা মাত্র। চিকিৎসার আগে উপজেলা কৃষি অফিসে পাতা দেখিয়ে নিশ্চিত হোন।" data-en="A general AI model reads the photo, so this is only a likely guess. Show the leaf at your upazila agriculture office before treating.">ছবি দেখে উত্তর দেয় একটি সাধারণ এআই মডেল, তাই এটি একটি সম্ভাব্য ধারণা মাত্র। চিকিৎসার আগে উপজেলা কৃষি অফিসে পাতা দেখিয়ে নিশ্চিত হোন।</div>
+            <div id="leafResult" aria-live="polite"></div>
             <h3 data-bn="ভালো ছবি তোলার নিয়ম" data-en="How to take a useful photo">ভালো ছবি তোলার নিয়ম</h3>
             <ol class="steps" id="tips"></ol>
           </div>
@@ -905,7 +913,7 @@ async function askModel(text){
   } catch (e) {
     const local = answer(text);
     slot.text = ""; slot.tool = "";
-    slot.html = (local ?? noModel()) + `<p class="muted small">${L("মডেলের সার্ভার এখন ঘুমিয়ে আছে বা ব্যস্ত, তাই এই উত্তর সরাসরি DAE তালিকা থেকে। এক-দুই মিনিট পরে আবার চেষ্টা করুন।","The model server is asleep or busy, so this answer comes straight from the DAE list. Try again in a minute or two.")}</p>`;
+    slot.html = (local ?? noModel()) + `<p class="muted small">${navigator.onLine === false ? L("ইন্টারনেট নেই, তাই এই উত্তর ফোনে রাখা DAE তালিকা থেকে।","No internet, so this answer comes from the DAE list saved on the phone.") : L("মডেলের সার্ভার এখন ঘুমিয়ে আছে বা ব্যস্ত, তাই এই উত্তর সরাসরি DAE তালিকা থেকে। এক-দুই মিনিট পরে আবার চেষ্টা করুন।","The model server is asleep or busy, so this answer comes straight from the DAE list. Try again in a minute or two.")}</p>`;
     delete slot.llm;
   }
   slot.streaming = false; renderChat();
@@ -980,6 +988,103 @@ const drop = $("#drop");
 drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
 drop.addEventListener("dragleave", () => drop.classList.remove("over"));
 drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); showLeaf(e.dataTransfer.files[0]); });
+
+/* ---------- voice input (browser speech recognition; Chrome on Android supports Bangla) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR){
+  const mic = document.createElement("button");
+  mic.type = "button"; mic.className = "icon-btn"; mic.id = "mic";
+  mic.dataset.titleBn = "মুখে বলুন"; mic.dataset.titleEn = "Speak your question"; mic.title = "মুখে বলুন"; mic.setAttribute("aria-label", "মুখে বলুন");
+  mic.innerHTML = '<svg width="22" height="22"><use href="#i-mic"/></svg>';
+  $("#askForm .send").before(mic);
+  let rec = null;
+  mic.addEventListener("click", () => {
+    if (rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
+    const q = $("#q"), base = q.value.trim();
+    rec.onresult = e => { q.value = (base + " " + [...e.results].map(r => r[0].transcript).join("")).trim(); q.dispatchEvent(new Event("input")); };
+    rec.onerror = () => toast(L("কথা শোনা যায়নি, আবার চেষ্টা করুন","Could not hear you, please try again"));
+    rec.onend = () => { rec = null; mic.classList.remove("on"); q.focus(); };
+    mic.classList.add("on"); rec.start();
+  });
+}
+
+/* ---------- photos: leaf doctor and bottle check, read by Gemma 4 on the model server ---------- */
+function photoURL(file, max = 768){
+  return new Promise((ok, bad) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = bad; img.src = URL.createObjectURL(file);
+  });
+}
+async function lookAt(dataURL, prompt){
+  const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
+    body: JSON.stringify({messages:[{role:"user", content:[{type:"image_url", image_url:{url:dataURL}}, {type:"text", text:prompt}]}],
+      temperature:0.1, max_tokens:200, chat_template_kwargs:{enable_thinking:false}})});
+  if (!r.ok) throw new Error(r.status);
+  const t = (await r.json()).choices?.[0]?.message?.content || "";
+  const m = t.match(/\{[\s\S]*\}/);
+  return m ? JSON.parse(m[0]) : {};
+}
+let leafFile = null;
+$("#leafFile").addEventListener("change", e => { leafFile = e.target.files[0]; $("#diagnose").disabled = !leafFile || !LIVE_MODEL; });
+drop.addEventListener("drop", e => { leafFile = e.dataTransfer.files[0]; $("#diagnose").disabled = !leafFile || !LIVE_MODEL; });
+$("#diagnose").addEventListener("click", async () => {
+  const out = $("#leafResult"), crop = CROPS.find(c => c.k === $("#leafCrop").value);
+  if (!leafFile) return;
+  out.innerHTML = `<div class="diag muted">${L("ছবি দেখা হচ্ছে… সার্ভার ঘুমিয়ে থাকলে এক মিনিট লাগতে পারে।","Looking at the photo… this can take a minute if the server is asleep.")}</div>`;
+  const list = PESTS.map(p => `${p.k} = ${p.en}`).join("; ");
+  try {
+    const d = await lookAt(await photoURL(leafFile),
+      `This is a photo of a ${crop ? crop.en : "crop"} leaf from a farm in Bangladesh. Which problem in this list matches best: ${list}? ` +
+      `If none fits, use "other"; if the leaf looks healthy, use "healthy". Reply with JSON only: {"key": "...", "signs_bn": "what you see, one short sentence in Bangla", "sure": "low|medium|high"}`);
+    const p = PESTS.find(x => x.k === d.key);
+    const sure = {low: L("কম","low"), medium: L("মাঝারি","medium"), high: L("বেশি","high")}[d.sure] || L("কম","low");
+    const name = p ? L(p.bn, p.en) : d.key === "healthy" ? L("পাতা সুস্থ মনে হচ্ছে","The leaf looks healthy") : L("তালিকার কোনো রোগ বা পোকার সাথে মেলেনি","No match in our pest and disease list");
+    out.innerHTML = `<div class="diag"><b>${L("সম্ভাব্য সমস্যা","Likely problem")}: ${esc(name)}</b> <span class="muted small">(${L("নিশ্চয়তা","confidence")}: ${sure})</span>`
+      + (d.signs_bn ? `<p>${esc(d.signs_bn)}</p>` : "")
+      + (p && crop ? `<button class="btn" data-check="${crop.k}|${p.k}">${L("নিবন্ধিত ওষুধ দেখুন","See registered products")}</button>` : "")
+      + (p && !crop ? `<p class="small muted">${L("ফসল বেছে দিলে নিবন্ধিত ওষুধও দেখানো যাবে।","Choose the crop to see registered products too.")}</p>` : "")
+      + `<p class="small muted">${L("এটি ছবি দেখে অনুমান। স্প্রে করার আগে কৃষি অফিসে নিশ্চিত হোন।","This is a guess from a photo. Confirm with an agriculture officer before spraying.")}</p></div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="diag">${L("এখন ছবি দেখা গেল না। একটু পরে আবার চেষ্টা করুন।","Could not read the photo right now. Please try again shortly.")}</div>`;
+  }
+});
+
+const bigrams = s => { const t = s.toLowerCase().replace(/[^a-z0-9]/g, ""); const b = new Map(); for (let i = 0; i < t.length - 1; i++) b.set(t.slice(i, i + 2), (b.get(t.slice(i, i + 2)) || 0) + 1); return b; };
+function similar(a, b){ const x = bigrams(a), y = bigrams(b); let both = 0, n = 0; for (const [k, v] of x){ both += Math.min(v, y.get(k) || 0); n += v; } for (const v of y.values()) n += v; return n ? 2 * both / n : 0; }
+function brandFromLabel(text){
+  if (!text) return null;
+  const exact = brandIn(text); if (exact) return exact;
+  let best = null, score = 0;
+  for (const b of DAE.brands){ const s = similar(text, b); if (s > score){ score = s; best = b; } }
+  return score >= 0.75 ? best : null;
+}
+console.assert(similar("Taba 25 WDG", "Taba 25WDG") > 0.9 && similar("Taba", "Virtako") < 0.5, "brand similarity");
+$("#bottleBtn").addEventListener("click", () => LIVE_MODEL ? $("#bottleFile").click() : toast(L("ছবি পড়ার মডেল এখানে চালু নেই","The photo model is not available here")));
+$("#bottleFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f || !DAE) return;
+  const box = $("#verdictBox");
+  box.innerHTML = `<div class="verdict"><span class="vi">…</span><div>${L("লেবেল পড়া হচ্ছে…","Reading the label…")}</div></div>`;
+  try {
+    const d = await lookAt(await photoURL(f, 1024), `This is a pesticide bottle or packet sold in Bangladesh. Copy the product (brand) name and the active ingredient exactly as printed. Reply with JSON only: {"brand": "...", "ingredient": "..."}`);
+    const b = brandFromLabel(d.brand || "");
+    if (b){ $("#pq").value = b; renderChecker(); toast(L(`লেবেলে পড়া নাম: ${d.brand}`, `Name on the label: ${d.brand}`)); }
+    else box.innerHTML = `<div class="verdict no"><span class="vi">!</span><div>${L(
+      `লেবেলে "${esc(d.brand || "?")}" পড়া গেছে, কিন্তু এই নামে DAE তালিকায় কোনো নিবন্ধিত পণ্য পাওয়া যায়নি। নামটি ঠিক পড়া না-ও হতে পারে, তাই নিজে নাম লিখে খুঁজে দেখুন। তাও না পেলে পণ্যটি অনিবন্ধিত হতে পারে; কেনার আগে উপজেলা কৃষি অফিসে দেখান।`,
+      `The label reads "${esc(d.brand || "?")}", but no registered product with this name is in the DAE list. The name may have been misread, so type it in yourself. If it still does not appear, the product may be unregistered; show it at your upazila agriculture office before buying.`)}</div></div>`;
+  } catch (err) {
+    box.innerHTML = `<div class="verdict"><span class="vi">!</span><div>${L("এখন লেবেল পড়া গেল না। একটু পরে আবার চেষ্টা করুন, বা নাম লিখে খুঁজুন।","Could not read the label right now. Try again shortly, or type the name.")}</div></div>`;
+  }
+  e.target.value = "";
+});
+
+/* ---------- offline: the site, the DAE list and the dose maths work without internet once opened ---------- */
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
 /* ---------- weather ---------- */
 const DISTRICTS = [
