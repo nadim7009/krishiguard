@@ -153,5 +153,5 @@ Deployment:
 Next:
 1. Lookup v5: ask for the crop when it is missing and the product's dose differs across crops.
 2. Put models/krishiguard_lora_06_q8_0.gguf in the repo and redeploy the Space.
-3. Real farmer questions (even 50) and a small human rating of answers.
+3. Real farmer questions (even 50) and a small human rating of answers. The collection sheet, rating sheet, protocol and scorer are in `eval/farmer/`.
 4. FRG fertilizer tables (needs the BARC guide PDF).
