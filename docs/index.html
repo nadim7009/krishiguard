@@ -13,26 +13,22 @@
    Deep paddy green carries the brand: header and cover in green, working pages light. */
 :root{
   --bg:#F8FAF6; --side:#EBF1E8; --bubble:#E4ECE0; --surface:#FFFFFF; --sunk:#EFF0E7; --ink:#1A2920; --muted:#5F6C62; --line:#E3E5DA;
-  --forest:#22573A; --forest-ink:#FFFFFF; --forest-soft:#E2ECDF; --leaf:#6F9E3E; --mustard:#D6A11C; --mustard-soft:#F6EBC9; --soil:#8B6642;
+  --rain:#3B7EA8; --forest:#22573A; --forest-ink:#FFFFFF; --forest-soft:#E2ECDF; --leaf:#6F9E3E; --mustard:#D6A11C; --mustard-soft:#F6EBC9; --soil:#8B6642;
   --ok:#2E7A47; --ok-bg:#E1F0DF; --warn:#9A6408; --warn-bg:#F8EDD0; --bad:#B03A2A; --bad-bg:#F8E1DC; --night:#E0E3D8;
   --shadow:0 1px 2px rgba(26,41,32,.05),0 10px 30px rgba(26,41,32,.06);
-  --on-photo:#FFFFFF; --on-photo-soft:rgba(255,255,255,.84);
-  --deep:#0E3B24; --deep-2:#16583A; --deep-glow:#2F8A55;
   --display:"Anek Bangla","Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;
   --body:"Hind Siliguri","Anek Bangla","Noto Sans Bengali",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121A15; --side:#0C120E; --bubble:#1F2B23; --surface:#18221B; --sunk:#121A15; --ink:#E5ECE2; --muted:#98A69B; --line:#25312A;
-  --forest:#82C49A; --forest-ink:#0F1612; --forest-soft:#1C2E22; --leaf:#9DCB66; --mustard:#E6B53C; --mustard-soft:#3A3117; --soil:#C9A077;
+  --rain:#86BCDD; --forest:#82C49A; --forest-ink:#0F1612; --forest-soft:#1C2E22; --leaf:#9DCB66; --mustard:#E6B53C; --mustard-soft:#3A3117; --soil:#C9A077;
   --ok:#72C68F; --ok-bg:#183323; --warn:#E3B44B; --warn-bg:#382D13; --bad:#EE8576; --bad-bg:#3B1D18; --night:#1B2620;
-  --deep:#0A2618; --deep-2:#0F3A24; --deep-glow:#1F6640;
   --shadow:none; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121A15; --side:#0C120E; --bubble:#1F2B23; --surface:#18221B; --sunk:#121A15; --ink:#E5ECE2; --muted:#98A69B; --line:#25312A;
-  --forest:#82C49A; --forest-ink:#0F1612; --forest-soft:#1C2E22; --leaf:#9DCB66; --mustard:#E6B53C; --mustard-soft:#3A3117; --soil:#C9A077;
+  --rain:#86BCDD; --forest:#82C49A; --forest-ink:#0F1612; --forest-soft:#1C2E22; --leaf:#9DCB66; --mustard:#E6B53C; --mustard-soft:#3A3117; --soil:#C9A077;
   --ok:#72C68F; --ok-bg:#183323; --warn:#E3B44B; --warn-bg:#382D13; --bad:#EE8576; --bad-bg:#3B1D18; --night:#1B2620;
-  --deep:#0A2618; --deep-2:#0F3A24; --deep-glow:#1F6640;
   --shadow:none; color-scheme:dark}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
@@ -125,14 +121,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .starter span{display:block;color:var(--muted);font-size:.88rem;line-height:1.45}
 .season-pill{font-size:.84rem;color:var(--muted)}
 .season-pill b{color:var(--forest);font-weight:600}
-.photo{position:relative;border-radius:24px;overflow:hidden;display:flex;align-items:flex-end;isolation:isolate;background:radial-gradient(900px 420px at 88% 8%,var(--deep-glow) 0%,transparent 62%),linear-gradient(165deg,var(--deep-2) 0%,var(--deep) 70%)}
-.photo .over{padding:30px 32px;color:var(--on-photo);max-width:680px}
-.photo .over .kicker{color:var(--on-photo-soft)}
-.photo h2{color:var(--on-photo)}
-.photo .over p{color:var(--on-photo-soft);margin:10px 0 0;max-width:56ch}
-.banner{min-height:220px}
-.banner h2{font-size:clamp(1.75rem,3.4vw,2.4rem)}
-.onphoto{margin-top:16px;max-width:260px}.onphoto span{color:var(--on-photo-soft)}
+.wpick{margin-top:16px;max-width:280px}
 .convo{padding-block:28px 8px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));width:100%}
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg.user{align-self:flex-end;max-width:min(560px,85%);background:var(--bubble);color:var(--ink);padding:10px 17px;border-radius:22px;white-space:pre-wrap}
@@ -168,6 +157,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .icon-btn.on{background:var(--bad);color:#fff}
 .bottle{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .diag{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
+.answer > .diag:first-child{margin-top:0;border-top:0;padding-top:0}
+.uimg{display:block;max-width:220px;width:100%;border-radius:14px;margin:4px 0 8px}
 .icon-btn.send{background:var(--forest);color:var(--forest-ink)}
 .dock-foot{display:flex;justify-content:center;margin-top:6px;padding:0 6px;text-align:center}
 .dock-foot p{margin:0;font-size:.82rem;color:var(--muted)}
@@ -176,7 +167,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
 @keyframes b{0%,80%{opacity:.25}40%{opacity:1}}
 
-.withicon{display:inline-flex;align-items:center;gap:7px}
 .mine{grid-column:1/-1;font-size:.88rem;color:var(--forest);font-weight:600;margin-top:4px}
 .mine .linkish{font-weight:500;text-decoration:underline;text-underline-offset:3px}
 .toolbox{margin-top:14px;padding:14px 16px 4px;border-radius:14px;background:var(--sunk)}
@@ -272,6 +262,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
   .scrim{display:block;position:fixed;inset:0;z-index:25;background:rgba(6,24,14,.45)}
   .only-mobile{display:grid!important}
   .rc .rx{opacity:1}
+  .status span{display:none}
   .starters{grid-template-columns:minmax(0,1fr)}
   .starters .starter:nth-child(n+3){display:none}
   .search{grid-template-columns:1fr 1fr}.search .sfield-wrap{grid-column:1/-1}
@@ -283,7 +274,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
   .days{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:8px}
   .day:nth-child(5){border-left:0}
   .view{padding-top:26px}
-  .photo .over{padding:22px 20px}.banner{min-height:210px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -359,8 +349,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
       <div class="dock" id="dock" hidden>
         <div class="col" id="dockSlot">
           <form class="box" id="askForm">
-            <button type="button" class="icon-btn" id="toLeaf" data-title-bn="পাতার ছবি দিন" data-title-en="Add a leaf photo" title="পাতার ছবি দিন"><svg width="22" height="22"><use href="#i-cam"/></svg></button>
-            <textarea id="q" rows="1" aria-label="Question" data-ph-bn="ধানে কারেন্ট পোকা, কী দিব?" data-ph-en="For example: brown planthopper on my rice, what should I use?"></textarea>
+            <button type="button" class="icon-btn" id="toLeaf" data-title-bn="পাতার ছবি পাঠান" data-title-en="Send a leaf photo" title="পাতার ছবি পাঠান" aria-label="Send a leaf photo"><svg width="22" height="22"><use href="#i-cam"/></svg></button>
+            <input type="file" id="chatPhoto" accept="image/*" hidden>
+            <textarea id="q" rows="1" aria-label="Question" data-ph-bn="ধানে কারেন্ট পোকা, কী দিব?" data-ph-en="Brown planthopper on rice, what to use?"></textarea>
             <button class="icon-btn send" type="submit" aria-label="Send"><svg width="20" height="20"><use href="#i-send"/></svg></button>
           </form>
           <div class="dock-foot"><p id="chatNote"></p></div>
@@ -397,12 +388,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
     <!-- LEAF -->
     <section class="view" id="v-leaf" hidden>
       <div class="page">
-        <div class="photo banner">
-          <div class="over">
+        <div class="head">
           <div class="kicker" data-bn="ফসলের ডাক্তার" data-en="Crop doctor">ফসলের ডাক্তার</div>
           <h2 data-bn="পাতার ছবি দেখে রোগ চেনা" data-en="Name the disease from a leaf photo">পাতার ছবি দেখে রোগ চেনা</h2>
           <p data-bn="আক্রান্ত পাতার একটি পরিষ্কার ছবি দিন। ছবির মডেল রোগের নাম বলবে, তারপর বালাইনাশক যাচাই থেকে নিবন্ধিত চিকিৎসা দেখাবে।" data-en="Add one clear photo of an affected leaf. The photo model names the disease, then the pesticide check shows registered treatments.">আক্রান্ত পাতার একটি পরিষ্কার ছবি দিন। ছবির মডেল রোগের নাম বলবে, তারপর বালাইনাশক যাচাই থেকে নিবন্ধিত চিকিৎসা দেখাবে।</p>
-          </div>
         </div>
         <div class="two">
           <label class="drop" id="drop" for="leafFile">
@@ -426,13 +415,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
     <!-- WEATHER -->
     <section class="view" id="v-weather" hidden>
       <div class="page">
-        <div class="photo banner">
-          <div class="over">
+        <div class="head">
             <div class="kicker" data-bn="Open-Meteo পূর্বাভাস" data-en="Open-Meteo forecast">Open-Meteo পূর্বাভাস</div>
             <h2 data-bn="আবহাওয়া ও স্প্রে করার সময়" data-en="Weather and spray times">আবহাওয়া ও স্প্রে করার সময়</h2>
             <p data-bn="জেলা বেছে নিন। সাত দিনের পূর্বাভাসের সাথে দেখাবে আগামী দুই দিনে কোন সময় স্প্রে করা নিরাপদ।" data-en="Choose a district. Next to the 7-day forecast you see which hours in the next two days are safe for spraying.">জেলা বেছে নিন। সাত দিনের পূর্বাভাসের সাথে দেখাবে আগামী দুই দিনে কোন সময় স্প্রে করা নিরাপদ।</p>
-            <label class="f onphoto" for="district"><span data-bn="জেলা" data-en="District">জেলা</span><select id="district"></select></label>
-          </div>
+            <label class="f wpick" for="district"><span data-bn="জেলা" data-en="District">জেলা</span><select id="district"></select></label>
         </div>
         <div id="wSample"></div>
         <div class="wgrid">
@@ -559,7 +546,9 @@ const pestName = (p) => L(p.bn, p.en);
 let DAE = null; // {rows:[{brand,ing,reg,holder,crop,pest,dose}], brands, comps}
 async function loadDAE(){
   const raw = await (await fetch("dae.json")).json();
-  const rows = raw.rows.map(r => ({brand:r[0], ing:raw.ingredients[r[1]], reg:r[2], holder:raw.holders[r[3]], crop:r[4], pest:r[5], dose:r[6]}));
+  // 765 rows lost the ingredient name when the DAE PDF was parsed (only footnote numbers or percentages are left); keep them, but show that the name is missing
+  const ingName = (x) => /[A-Za-z]{3}/.test(x) ? x : "";
+  const rows = raw.rows.map(r => ({brand:r[0], ing:ingName(raw.ingredients[r[1]]), reg:r[2], holder:raw.holders[r[3]], crop:r[4], pest:r[5], dose:r[6]}));
   const brands = [...new Set(rows.map(r => r.brand))].filter(b => b.length >= 5).sort((a,b) => b.length - a.length);
   const base = new Map(); // "taba" -> ["Taba 25WDG"]
   for (const b of brands){ const w = b.split(/\s+/)[0].toLowerCase(); if (w.length >= 4 && /^[a-z-]+$/.test(w)) base.set(w, [...(base.get(w)||[]), b]); }
@@ -569,6 +558,7 @@ async function loadDAE(){
 }
 // Known errors in the source PDF: a miticide and a fungicide listed for rice brown planthopper.
 const isSourceError = (r) => /\bbph\b/i.test(r.pest) && (/hexythiazox/i.test(r.ing) || /^blastin/i.test(r.brand));
+const ingT = (r) => r.ing || L("উপাদানের নাম উৎস তালিকায় পড়া যায়নি", "ingredient name unreadable in the source list");
 const doseUnit = (d) => /\/\s*l(itre)?\b|of water/i.test(d) ? L("প্রতি লিটার পানিতে","per litre of water") : /\/\s*ha/i.test(d) ? L("প্রতি হেক্টরে","per hectare") : "";
 
 /* ---------- reading the question ---------- */
@@ -724,7 +714,7 @@ function rotation(q){
 function doseList(rows, max = 5){
   return `<div class="doses">${rows.slice(0, max).map(r => `
     <div class="dose"><div class="nm">${esc(r.brand)}</div>
-      <div class="meta">${esc(r.ing)} · ${esc(r.crop)}, ${esc(r.pest)}</div>
+      <div class="meta">${esc(ingT(r))} · ${esc(r.crop)}, ${esc(r.pest)}</div>
       <div class="amt">${esc(r.dose)}<small>${esc(doseUnit(r.dose))}</small></div>
       ${isSourceError(r) ? "" : forMyFarm(r)}
       ${isSourceError(r) ? `<div class="flag">${L("উৎস তালিকার সম্ভাব্য ভুল: এই উপাদান কারেন্ট পোকার জন্য নয়। ব্যবহার করবেন না।","Likely error in the source list: this ingredient does not target BPH. Do not use it for this.")}</div>` : ""}
@@ -735,7 +725,7 @@ const CAUTION = () => `<div class="caution">${L("মাত্রা নেওয
 const followups = (items) => `<div class="followups">${items.map(t => `<button class="chip" data-ask="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
 function pickVaried(rows, max = 5){ // one product per active ingredient, source-list errors last
   const seen = new Set(), out = [];
-  for (const r of [...rows].sort((a, b) => isSourceError(a) - isSourceError(b))) if (!seen.has(r.ing)){ seen.add(r.ing); out.push(r); if (out.length === max) break; }
+  for (const r of [...rows].sort((a, b) => isSourceError(a) - isSourceError(b))) if (!seen.has(r.ing || r.brand)){ seen.add(r.ing || r.brand); out.push(r); if (out.length === max) break; }
   return out;
 }
 
@@ -745,7 +735,7 @@ function farmAnswer(q){
 
   if (brand){
     const rows = DAE.rows.filter(r => r.brand === brand);
-    const ing0 = rows[0].ing;
+    const ing0 = ingT(rows[0]);
     if (crops.length){
       const hit = rows.filter(r => crops.some(c => onCrop(r, c)));
       if (!hit.length){
@@ -828,11 +818,27 @@ function renderChat(){
   if (!started && form.parentElement.id !== "heroSlot") $("#heroSlot").append(form);
   $("#ideas").innerHTML = IDEAS().map(([ic, t, q]) => `<button class="starter" data-ask="${esc(q)}"><svg width="18" height="18"><use href="#${ic}"/></svg><span><b>${t}</b><span>${esc(q)}</span></span></button>`).join("");
   thread.innerHTML = history.map((m, i) => m.role === "user"
-    ? `<div class="msg user">${esc(m.text)}</div>`
+    ? `<div class="msg user">${m.img ? `<img class="uimg" src="${m.img}" alt="${L("আপনার দেওয়া ছবি","Your photo")}">` : ""}${esc(m.text)}</div>`
     : `<div class="msg bot"><svg class="mark"><use href="#logo"/></svg><div class="answer" id="m${i}">${m.llm ? llmHtml(m) : (m.html ?? (answer(m.q) ?? m.fallback())) + (m.q ? rememberChips(m.q) : "")}</div></div>`).join("");
   scroller.scrollTop = history.length ? scroller.scrollHeight : 0;
   saveChat();
 }
+
+/* ---------- model status in the top bar ---------- */
+let MODEL = LIVE_MODEL ? "check" : "none";
+function renderStatus(){
+  const st = navigator.onLine === false ? "offline" : MODEL;
+  const [bn, en] = {check:["মডেল দেখা হচ্ছে…","Checking the model…"], on:["Gemma 4 মডেল চালু","Gemma 4 model on"], sleep:["মডেল জাগছে, প্রথম উত্তরে দেরি হবে","Model waking up, first answer will be slow"],
+    offline:["অফলাইন: উত্তর DAE তালিকা থেকে","Offline: answers from the DAE list"], none:["শুধু DAE তালিকা","DAE list only"]}[st];
+  const el = $("#status"); el.className = "status" + (st === "on" ? "" : " off"); el.title = L(bn, en); el.innerHTML = `<i></i><span>${L(bn, en)}</span>`;
+}
+async function checkModel(){
+  if (!LIVE_MODEL) return renderStatus();
+  try { const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/health", {signal: AbortSignal.timeout(15000)}); MODEL = r.ok ? "on" : "sleep"; }
+  catch (e) { MODEL = "sleep"; }
+  renderStatus();
+}
+addEventListener("online", () => { renderStatus(); checkModel(); }); addEventListener("offline", renderStatus);
 
 /* ---------- recent chats, kept in this browser only ---------- */
 let chatId = null;
@@ -840,7 +846,7 @@ const loadChats = () => { try { return JSON.parse(store.get("kg_chats") || "[]")
 function saveChat(){
   if (!history.length || history.some(m => m.streaming)) return renderRecent();
   chatId ??= Date.now().toString(36);
-  const msgs = history.map((m, i) => m.role === "user" ? {role:"user", text:m.text}
+  const msgs = history.map((m, i) => m.role === "user" ? {role:"user", text:m.text, img:m.img}
     : {role:"bot", html:document.getElementById("m" + i)?.innerHTML || "", text:m.text || ""});
   const chats = [{id:chatId, title:history[0].text.slice(0, 60), msgs}, ...loadChats().filter(c => c.id !== chatId)].slice(0, 30);
   store.set("kg_chats", JSON.stringify(chats)); renderRecent();
@@ -958,6 +964,7 @@ async function askModel(text){
     }
     const g = numberGuard(slot.text, tool.text); slot.text = g.text.trim(); slot.dropped = g.dropped;
     if (!slot.text) throw new Error("empty");
+    MODEL = "on"; renderStatus();
   } catch (e) {
     const local = answer(text);
     slot.text = ""; slot.tool = "";
@@ -976,7 +983,7 @@ async function ask(text){
 $("#askForm").addEventListener("submit", e => { e.preventDefault(); const q = $("#q"); ask(q.value); q.value = ""; q.style.height = ""; });
 $("#q").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#askForm").requestSubmit(); } });
 $("#q").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; });
-$("#toLeaf").addEventListener("click", () => go("leaf"));
+$("#toLeaf").addEventListener("click", () => LIVE_MODEL ? $("#chatPhoto").click() : go("leaf"));
 
 /* ---------- pesticide checker ---------- */
 function fillSelect(sel, items, allLabel, nameFn){
@@ -1008,7 +1015,7 @@ function renderChecker(){
     `<b>${big(new Set(rows.map(r => r.brand)).size)}</b> products found · the full list has ${big(st.products)} products and ${big(st.ingredients)} active ingredients`);
   $("#results").innerHTML = rows.length ? `<div class="rrow rhead"><div>${L("পণ্য","Product")}</div><div>${L("সক্রিয় উপাদান","Active ingredient")}</div><div>${L("ফসল ও বালাই","Crop and pest")}</div><div style="text-align:right">${L("মাত্রা","Dose")}</div></div>`
     + shown.map(r => `<div class="rrow${isSourceError(r) ? " flagged" : ""}"><div class="c1"><div class="b">${esc(r.brand)}</div><div class="sub mono">${esc(r.reg)} · ${esc(r.holder)}</div></div>
-        <div class="c2 sub">${esc(r.ing)}</div><div class="c3 sub">${esc(r.crop)}, ${esc(r.pest)}${isSourceError(r) ? `<div style="color:var(--bad)">${L("উৎস তালিকার সম্ভাব্য ভুল","Likely error in the source list")}</div>` : ""}</div>
+        <div class="c2 sub">${esc(ingT(r))}</div><div class="c3 sub">${esc(r.crop)}, ${esc(r.pest)}${isSourceError(r) ? `<div style="color:var(--bad)">${L("উৎস তালিকার সম্ভাব্য ভুল","Likely error in the source list")}</div>` : ""}</div>
         <div class="d">${esc(r.dose)}<small>${esc(doseUnit(r.dose))}</small></div></div>`).join("")
     + (rows.length > shown.length ? `<div class="more">${L(`${num(rows.length)}টির মধ্যে ${num(shown.length)}টি দেখানো হচ্ছে। খোঁজ সরু করুন।`, `Showing ${shown.length} of ${rows.length}. Narrow the search to see the rest.`)}</div>` : "")
     : `<div class="empty">${L("কিছু পাওয়া যায়নি। বানান দেখুন, অথবা ফসল ও বালাই বদলে দেখুন।","Nothing found. Check the spelling or try another crop or pest.")}</div>`;
@@ -1080,26 +1087,37 @@ async function lookAt(dataURL, prompt){
 let leafFile = null;
 $("#leafFile").addEventListener("change", e => { leafFile = e.target.files[0]; $("#diagnose").disabled = !leafFile || !LIVE_MODEL; });
 drop.addEventListener("drop", e => { leafFile = e.dataTransfer.files[0]; $("#diagnose").disabled = !leafFile || !LIVE_MODEL; });
+const LOOKING = () => `<div class="diag muted">${L("ছবি দেখা হচ্ছে… সার্ভার ঘুমিয়ে থাকলে এক মিনিট লাগতে পারে।","Looking at the photo… this can take a minute if the server is asleep.")}</div>`;
 $("#diagnose").addEventListener("click", async () => {
   const out = $("#leafResult"), crop = CROPS.find(c => c.k === $("#leafCrop").value);
   if (!leafFile) return;
-  out.innerHTML = `<div class="diag muted">${L("ছবি দেখা হচ্ছে… সার্ভার ঘুমিয়ে থাকলে এক মিনিট লাগতে পারে।","Looking at the photo… this can take a minute if the server is asleep.")}</div>`;
+  out.innerHTML = LOOKING(); out.innerHTML = await diagnoseHTML(leafFile, crop);
+});
+async function diagnoseHTML(file, crop, inChat = false){ // used by the leaf page and by a photo sent in the chat
   const list = PESTS.map(p => `${p.k} = ${p.en}`).join("; ");
   try {
-    const d = await lookAt(await photoURL(leafFile),
+    const d = await lookAt(await photoURL(file),
       `This is a photo of a ${crop ? crop.en : "crop"} leaf from a farm in Bangladesh. Which problem in this list matches best: ${list}? ` +
       `If none fits, use "other"; if the leaf looks healthy, use "healthy". Reply with JSON only: {"key": "...", "signs_bn": "what you see, one short sentence in Bangla", "sure": "low|medium|high"}`);
     const p = PESTS.find(x => x.k === d.key);
     const sure = {low: L("কম","low"), medium: L("মাঝারি","medium"), high: L("বেশি","high")}[d.sure] || L("কম","low");
     const name = p ? L(p.bn, p.en) : d.key === "healthy" ? L("পাতা সুস্থ মনে হচ্ছে","The leaf looks healthy") : L("তালিকার কোনো রোগ বা পোকার সাথে মেলেনি","No match in our pest and disease list");
-    out.innerHTML = `<div class="diag"><b>${L("সম্ভাব্য সমস্যা","Likely problem")}: ${esc(name)}</b> <span class="muted small">(${L("নিশ্চয়তা","confidence")}: ${sure})</span>`
+    return `<div class="diag"><b>${L("সম্ভাব্য সমস্যা","Likely problem")}: ${esc(name)}</b> <span class="muted small">(${L("নিশ্চয়তা","confidence")}: ${sure})</span>`
       + (d.signs_bn ? `<p>${esc(d.signs_bn)}</p>` : "")
       + (p && crop ? `<button class="btn" data-check="${crop.k}|${p.k}">${L("নিবন্ধিত ওষুধ দেখুন","See registered products")}</button>` : "")
-      + (p && !crop ? `<p class="small muted">${L("ফসল বেছে দিলে নিবন্ধিত ওষুধও দেখানো যাবে।","Choose the crop to see registered products too.")}</p>` : "")
+      + (p && !crop ? `<p class="small muted">${(inChat ? L("ছবির সাথে ফসলের নাম লিখে পাঠালে নিবন্ধিত ওষুধও দেখানো যাবে।","Type the crop name with the photo to see registered products too.") : L("ফসল বেছে দিলে নিবন্ধিত ওষুধও দেখানো যাবে।","Choose the crop to see registered products too."))}</p>` : "")
       + `<p class="small muted">${L("এটি ছবি দেখে অনুমান। স্প্রে করার আগে কৃষি অফিসে নিশ্চিত হোন।","This is a guess from a photo. Confirm with an agriculture officer before spraying.")}</p></div>`;
   } catch (e) {
-    out.innerHTML = `<div class="diag">${L("এখন ছবি দেখা গেল না। একটু পরে আবার চেষ্টা করুন।","Could not read the photo right now. Please try again shortly.")}</div>`;
+    return `<div class="diag">${L("এখন ছবি দেখা গেল না। একটু পরে আবার চেষ্টা করুন।","Could not read the photo right now. Please try again shortly.")}</div>`;
   }
+}
+$("#chatPhoto").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const q = $("#q").value.trim(); $("#q").value = ""; $("#q").style.height = "";
+  const crop = cropsIn(q)[0] || ((PROFILE.crops || []).length === 1 ? CROPS.find(c => c.k === PROFILE.crops[0]) : null);
+  history.push({role:"user", text: q || L("এই পাতায় কী হয়েছে?","What is wrong with this leaf?"), img: await photoURL(f, 320)});
+  const slot = {role:"bot", html: LOOKING(), streaming:true}; history.push(slot); renderChat();
+  slot.html = await diagnoseHTML(f, crop, true); slot.streaming = false; renderChat();
 });
 
 const bigrams = s => { const t = s.toLowerCase().replace(/[^a-z0-9]/g, ""); const b = new Map(); for (let i = 0; i < t.length - 1; i++) b.set(t.slice(i, i + 2), (b.get(t.slice(i, i + 2)) || 0) + 1); return b; };
@@ -1141,7 +1159,7 @@ const DISTRICTS = [
   ["dinajpur","দিনাজপুর","Dinajpur",25.63,88.64],["jashore","যশোর","Jashore",23.17,89.21],["cumilla","কুমিল্লা","Cumilla",23.46,91.18],
   ["faridpur","ফরিদপুর","Faridpur",23.61,89.84],["kushtia","কুষ্টিয়া","Kushtia",23.90,89.12],["tangail","টাঙ্গাইল","Tangail",24.25,89.92],["noakhali","নোয়াখালী","Noakhali",22.87,91.10],
 ].map(([k, bn, en, lat, lon]) => ({k, bn, en, lat, lon}));
-let WX = null, WX_SAMPLE = false;
+let WX = null, WX_AT = 0, WX_ERR = false; // WX_AT: when a saved forecast was fetched, 0 for a live one
 const WCODE = (c) => c === 0 ? ["sun", L("পরিষ্কার আকাশ","Clear sky")] : c <= 3 ? ["part", L("আংশিক মেঘলা","Partly cloudy")] : c <= 48 ? ["fog", L("কুয়াশা","Fog")]
   : c <= 57 ? ["rain", L("গুঁড়ি গুঁড়ি বৃষ্টি","Drizzle")] : c <= 67 ? ["rain", L("বৃষ্টি","Rain")] : c <= 82 ? ["rain", L("বৃষ্টির ঝাপটা","Showers")] : ["storm", L("বজ্রঝড়","Thunderstorm")];
 function wIcon(kind, size = 30){
@@ -1151,33 +1169,21 @@ function wIcon(kind, size = 30){
   if (kind === "sun") return `<svg ${s}>${sun}</svg>`;
   if (kind === "part") return `<svg ${s}><g transform="translate(-4 -4) scale(.8)">${sun}</g>${cloud(2)}</svg>`;
   if (kind === "fog") return `<svg ${s}><g stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><line x1="6" y1="12" x2="26" y2="12"/><line x1="4" y1="17" x2="24" y2="17"/><line x1="8" y1="22" x2="28" y2="22"/></g></svg>`;
-  const drops = `<g stroke="var(--paddy)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="26" x2="11" y2="29"/><line x1="17" y1="26" x2="16" y2="29"/><line x1="22" y1="26" x2="21" y2="29"/></g>`;
+  const drops = `<g stroke="var(--rain)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="26" x2="11" y2="29"/><line x1="17" y1="26" x2="16" y2="29"/><line x1="22" y1="26" x2="21" y2="29"/></g>`;
   if (kind === "rain") return `<svg ${s}>${cloud(-3)}${drops}</svg>`;
   return `<svg ${s}>${cloud(-3)}<path d="M17 23l-3 4h3l-2 4" fill="none" stroke="var(--mustard)" stroke-width="2" stroke-linejoin="round"/></svg>`;
-}
-function sampleWeather(){ // used only when the live forecast cannot be reached; labelled on the page
-  const now = new Date(); now.setMinutes(0, 0, 0);
-  const hourly = {time:[], temperature_2m:[], precipitation_probability:[], precipitation:[], wind_speed_10m:[], relative_humidity_2m:[]};
-  for (let i = 0; i < 168; i++){
-    const t = new Date(now.getTime() + i * 36e5), h = t.getHours();
-    hourly.time.push(t.toISOString()); hourly.temperature_2m.push(+(23 + 6 * Math.sin((h - 9) / 24 * 2 * Math.PI)).toFixed(1));
-    const wet = (i > 30 && i < 40) ? 60 : (i > 100 && i < 110) ? 45 : 10;
-    hourly.precipitation_probability.push(wet); hourly.precipitation.push(wet > 50 ? 0.6 : 0);
-    hourly.wind_speed_10m.push(+(5 + 6 * Math.max(0, Math.sin((h - 8) / 24 * 2 * Math.PI))).toFixed(1)); hourly.relative_humidity_2m.push(70);
-  }
-  const daily = {time:[], weather_code:[], temperature_2m_max:[], temperature_2m_min:[], precipitation_sum:[], precipitation_probability_max:[]};
-  for (let d = 0; d < 7; d++){ const t = new Date(now.getTime() + d * 864e5); daily.time.push(t.toISOString().slice(0, 10));
-    daily.weather_code.push([1,2,61,1,0,80,2][d]); daily.temperature_2m_max.push([29,29,27,28,29,27,28][d]); daily.temperature_2m_min.push([18,18,19,17,17,18,18][d]);
-    daily.precipitation_sum.push([0,0,6,0,0,3,0][d]); daily.precipitation_probability_max.push([10,15,60,10,5,45,15][d]); }
-  return {current:{temperature_2m:hourly.temperature_2m[0], weather_code:1, wind_speed_10m:hourly.wind_speed_10m[0], relative_humidity_2m:70}, hourly, daily};
 }
 async function loadWeather(){
   const d = DISTRICTS.find(x => x.k === $("#district").value) || DISTRICTS[0];
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${d.lat}&longitude=${d.lon}&timezone=Asia%2FDhaka&forecast_days=7`
     + `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,relative_humidity_2m`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max`;
-  try { const r = await fetch(url); if (!r.ok) throw 0; WX = await r.json(); WX_SAMPLE = false; }
-  catch (e) { WX = sampleWeather(); WX_SAMPLE = true; }
+  WX_ERR = false;
+  try { const r = await fetch(url); if (!r.ok) throw 0; WX = await r.json(); WX_AT = 0; store.set("kg_wx_" + d.k, JSON.stringify({at: Date.now(), wx: WX})); }
+  catch (e) { // no made-up numbers: use this district's last real forecast if it is under 3 days old, else say it could not load
+    let saved = null; try { saved = JSON.parse(store.get("kg_wx_" + d.k)); } catch (_) {}
+    if (saved && Date.now() - saved.at < 3 * 864e5){ WX = saved.wx; WX_AT = saved.at; } else { WX = null; WX_ERR = true; }
+  }
   renderWeather();
 }
 function sprayClass(h, i){
@@ -1195,9 +1201,17 @@ function when(d){ // "শনিবার দুপুর ১২টা" / "Saturd
 }
 const hourLabel = (d) => { const h = d.getHours(); return lang === "bn" ? num(h) : (h % 12 || 12) + (h < 12 ? "a" : "p"); };
 function renderWeather(){
-  if (!WX){ $("#wNow").innerHTML = `<p class="note">${L("পূর্বাভাস আনা হচ্ছে…","Fetching the forecast…")}</p>`; return; }
+  $(".spray").hidden = $("#days").hidden = !WX;
+  if (!WX){
+    $("#wSample").innerHTML = ""; ["#hours", "#legend", "#days"].forEach(k => $(k).innerHTML = "");
+    $("#wAdvice").innerHTML = `<h3>${L("কৃষি পরামর্শ","Field advice")}</h3><p class="note">${WX_ERR ? L("পূর্বাভাস না পেলে স্প্রের পরামর্শ দেওয়া হয় না।","No spray advice without a forecast.") : "…"}</p>`;
+    $("#wNow").innerHTML = WX_ERR ? `<p>${L("পূর্বাভাস আনা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।","The forecast could not be loaded. Check the internet connection and try again.")}</p><button class="btn soft" id="wRetry">${L("আবার চেষ্টা করুন","Try again")}</button>`
+      : `<p class="note">${L("পূর্বাভাস আনা হচ্ছে…","Fetching the forecast…")}</p>`;
+    if (WX_ERR) $("#wRetry").onclick = () => { WX_ERR = false; renderWeather(); loadWeather(); };
+    return;
+  }
   const d = DISTRICTS.find(x => x.k === $("#district").value) || DISTRICTS[0];
-  $("#wSample").innerHTML = WX_SAMPLE ? `<div class="notice">${L("লাইভ পূর্বাভাসে সংযোগ হয়নি, তাই নিচের সংখ্যাগুলো নমুনা। প্রকাশিত সাইটে (GitHub Pages) এখানে Open-Meteo-র আসল পূর্বাভাস দেখাবে।","The live forecast could not be reached, so the numbers below are a sample. On the published site (GitHub Pages) this shows the real Open-Meteo forecast.")}</div>` : "";
+  $("#wSample").innerHTML = WX_AT ? `<div class="notice">${L(`ইন্টারনেট নেই, তাই শেষ পাওয়া পূর্বাভাস দেখানো হচ্ছে (${when(new Date(WX_AT))})। "এখন" অংশটি তখনকার।`, `No internet, so this is the last forecast received (${when(new Date(WX_AT))}). "Now" is from that time.`)}</div>` : "";
   const c = WX.current, [kind, label] = WCODE(c.weather_code);
   $("#wNow").innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><div class="kicker">${L(d.bn, d.en)} · ${L("এখন","now")}</div>
     <div class="t">${num(Math.round(c.temperature_2m))}°</div></div>${wIcon(kind, 56)}</div>
@@ -1221,15 +1235,15 @@ function renderWeather(){
   const adv = [];
   adv.push(blocks.length ? ["g", L(`পরের ভালো স্প্রে সময়: ${fmt(blocks[0].a)} থেকে ${fmt(blocks[0].b, 1)} পর্যন্ত।`, `Next good spray window: ${fmt(blocks[0].a)} to ${fmt(blocks[0].b, 1)}.`)]
     : ["x", L("আগামী ৪৮ ঘণ্টায় স্প্রে করার মতো ভালো সময় নেই।","No good spray window in the next 48 hours.")]);
-  if (wetDay >= 0) adv.push(["c", L(`${new Date(WX.daily.time[wetDay]).toLocaleDateString("bn-BD", {weekday:"long"})} বৃষ্টির সম্ভাবনা ${num(WX.daily.precipitation_probability_max[wetDay])}%। তার আগের দিন স্প্রে করলে ওষুধ ধুয়ে যেতে পারে।`,
-    `${new Date(WX.daily.time[wetDay]).toLocaleDateString("en-GB", {weekday:"long"})}: ${WX.daily.precipitation_probability_max[wetDay]}% chance of rain. Spraying the day before may get washed off.`)]);
+  if (wetDay >= 0) adv.push(["c", L(`${new Date(WX.daily.time[wetDay] + "T12:00").toLocaleDateString("bn-BD", {weekday:"long"})} বৃষ্টির সম্ভাবনা ${num(WX.daily.precipitation_probability_max[wetDay])}%। তার আগের দিন স্প্রে করলে ওষুধ ধুয়ে যেতে পারে।`,
+    `${new Date(WX.daily.time[wetDay] + "T12:00").toLocaleDateString("en-GB", {weekday:"long"})}: ${WX.daily.precipitation_probability_max[wetDay]}% chance of rain. Spraying the day before may get washed off.`)]);
   adv.push(rain3 >= 20 ? ["g", L(`আগামী ৩ দিনে প্রায় ${num(Math.round(rain3))} মিমি বৃষ্টি হতে পারে। সেচ পিছিয়ে দিন।`, `About ${Math.round(rain3)} mm of rain is expected in 3 days. Hold off on irrigation.`)]
     : ["c", L(`আগামী ৩ দিনে বৃষ্টি কম (${num(Math.round(rain3))} মিমি)। মাটি শুকালে সেচের পরিকল্পনা করুন।`, `Little rain in the next 3 days (${Math.round(rain3)} mm). Plan irrigation if the soil dries out.`)]);
   $("#wAdvice").innerHTML = `<h3>${L("কৃষি পরামর্শ","Field advice")}</h3>` + adv.map(([k, t]) => `<div class="adv"><i class="s-${k}"></i><div>${t}</div></div>`).join("");
 
   const dl = WX.daily;
   $("#days").innerHTML = dl.time.map((t, i) => { const [k, lab] = WCODE(dl.weather_code[i]);
-    return `<div class="day" title="${lab}"><div class="n">${i === 0 ? L("আজ","Today") : new Date(t).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {weekday:"short"})}</div>${wIcon(k)}
+    return `<div class="day" title="${lab}"><div class="n">${i === 0 ? L("আজ","Today") : new Date(t + "T12:00").toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {weekday:"short"})}</div>${wIcon(k)}
       <div class="hi">${num(Math.round(dl.temperature_2m_max[i]))}°</div><div class="lo">${num(Math.round(dl.temperature_2m_min[i]))}°</div>
       <div class="rp">${L("বৃষ্টি","rain")} ${num(dl.precipitation_probability_max[i] ?? 0)}%</div></div>`; }).join("");
 }
@@ -1259,19 +1273,6 @@ function renderDate(){
   $("#seasonPill").innerHTML = `<b>${L(s.bn, s.en)}</b> · ${bd}`;
   $("#seasonPill").title = L("এখন মাঠে: ", "In the fields now: ") + s.crops;
   return s;
-}
-
-/* ---------- real field strip along the bottom of the home cover, picked by season ---------- */
-const STRIP_ALT = {
-  rabi: ["হলুদ সরিষা ফুলের জমি", "Mustard field in yellow bloom"],
-  kharif1: ["পানিতে দাঁড়ানো কচি ধানের চারা", "Young rice seedlings standing in water"],
-  kharif2: ["পাকা সোনালি ধানের শীষ", "Ripe golden rice panicles"],
-};
-let stripKey = "rabi";
-function strip(k){
-  stripKey = k; const img = $("#stripImg"); if (!img) return;
-  img.srcset = `img/strip-${k}-800.webp 800w, img/strip-${k}-1600.webp 1600w`; img.src = `img/strip-${k}-1600.webp`;
-  img.alt = L(...STRIP_ALT[k]);
 }
 
 /* ---------- my farm dialog ---------- */
@@ -1316,10 +1317,9 @@ function applyLang(){
   $("#langBtn").textContent = lang === "bn" ? "English" : "বাংলা";
   $("#chatNote").textContent = LIVE_MODEL ? L("মাত্রা আসে শুধু সরকারি নিবন্ধন তালিকা থেকে। ব্যবহারের আগে কৃষি অফিসারের সাথে মিলিয়ে নিন।","Doses come only from the government registration list. Check with your agriculture officer before use.")
     : L("প্রিভিউ: এখানে ওষুধের তালিকা ও আবহাওয়া চলে। ভাষা মডেল চলবে প্রকাশিত সাইটে।","Preview: the pesticide list and weather work here. The language model runs on the published site.");
-  $("#status").className = "status" + (LIVE_MODEL ? "" : " off");
-  $("#status").innerHTML = `<i></i>${LIVE_MODEL ? L("Gemma 4 মডেল চালু","Gemma 4 model on") : L("শুধু DAE তালিকা","DAE list only")}`;
+  renderStatus();
   route();
-  renderDate(); if ($("#stripImg")) $("#stripImg").alt = L(...STRIP_ALT[stripKey]);
+  renderDate();
   fillSelect($("#pcrop"), CROPS, L("সব ফসল","All crops"), cropName); fillSelect($("#ppest"), PESTS, L("সব বালাই","All pests"), pestName);
   const dv = $("#district").value || PROFILE.district || store.get("kg_district") || "dhaka";
   $("#district").innerHTML = DISTRICTS.map(d => `<option value="${d.k}">${L(d.bn, d.en)}</option>`).join(""); $("#district").value = dv;
@@ -1359,10 +1359,9 @@ document.addEventListener("click", e => {
 (async function start(){
   $("#pcrop").innerHTML = ""; applyLang();
   $("#pcrop").value = "rice"; $("#ppest").value = "bph"; // the checker opens on a real query
-  strip(season(new Date()).k);
   route();
   try { await loadDAE(); } catch (e) { /* answer() and the checker show a reload message */ }
-  renderChat(); renderChecker();
+  renderChat(); renderChecker(); checkModel();
 })();
 </script>
 
