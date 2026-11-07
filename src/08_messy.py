@@ -319,7 +319,9 @@ def run_agent(questions, ctxs):
     out = []
     for i, (q, r) in enumerate(zip(questions, routes)):
         t, lead = looks[i]
-        if r == "ask":
+        if lead.startswith("কোন ফসলে"):  # lookup v5: product registered on several crops and no crop named
+            out.append((lead, "ask", t, full[i], 0))
+        elif r == "ask":
             out.append((FOLLOWUP, r, "", full[i], 0))
         elif r == "refuse":
             out.append((REDIRECT, r, "", full[i], 0))
@@ -527,8 +529,29 @@ assert "Rekazeb 80WP" in canonicalize("আলু খেতে লেট ব্�
 assert "নাবি ধসা" in canonicalize("আলু খেতে লেট ব্লাইট, Rekazeb কতখানি দিমু?")
 assert "100 g/ha" in tool_lookup_v4("ধানে কারেন পোকা লাগছে, Tabba কতটুকু দিব?")[1] or "Taba" in canonicalize("ধানে কারেন পোকা লাগছে, Tabba কতটুকু দিব?")
 
+ASK_CROP = "কোন ফসলে দেবেন জানালে নিবন্ধিত মাত্রা বলতে পারব। {brand} এই কাজে নিবন্ধিত আছে এই ফসলগুলোতে: {crops}। আপনার কোন ফসল?"
+
+def tool_lookup_v5(q):
+    """v4, plus, when no crop is named: a product registered for this pest on several crops gets a fixed question back
+    (the crops, no dose), which run_agent sends as the whole reply; a product registered on one crop only gets that crop's dose, with the crop named."""
+    cq = canonicalize(q)
+    ev, lead = tool_lookup(cq)
+    if crops_in(cq):
+        return ev, lead
+    b = next((b for b in BRANDS if b.lower() in cq.lower()), None)
+    pests = [en for b_, ens in PEST_BN.items() if b_ in cq for en in ens]
+    if not (b and pests):
+        return ev, lead
+    rows = dae[(dae.brand == b) & dae.pest.str.lower().map(lambda p: any(x in p for x in pests))]
+    if rows.crop.nunique() > 1:
+        return ev, ASK_CROP.format(brand=b, crops=", ".join(rows.crop.unique()[:6]))
+    crop_bn = next((c for c, en in CROP_BN.items() if len(rows) and to_crop(en) in rows.crop.iloc[0].lower()), None)
+    return tool_lookup(f"{cq} {crop_bn} ফসলে") if crop_bn else (ev, lead)  # one crop only: the dose is for that crop, and the lead names it
+
+assert tool_lookup_v5("ধানে কারেন্ট পোকা লাগছে, Taba 25WDG কতটুকু দিব?")[1] == tool_lookup_v4("ধানে কারেন্ট পোকা লাগছে, Taba 25WDG কতটুকু দিব?")[1]
+
 # %% [markdown]
-# ## Run the three systems on the held-out messy set
+# ## Run on the held-out messy set (v2: E with lookup v5)
 
 # %%
 M = build_messy(sets["tools"], seed=7)
@@ -538,7 +561,7 @@ qs = M.question.tolist()
 ctx_ids = retrieve(qs)
 ctxs = ["\n---\n".join(chunks.text[i] for i in ids) for ids in ctx_ids]
 rows = []
-for name, lookup, adapter in [("C_v3", tool_lookup, False), ("C_v4", tool_lookup_v4, False), ("E_v4", tool_lookup_v4, True)]:
+for name, lookup, adapter in [("E_v5", tool_lookup_v5, True)]:  # v1 of this notebook ran C_v3, C_v4 and E_v4 (results/messy_all_systems.csv)
     LOOKUP = lookup
     t0 = time.time()
     if adapter:
@@ -559,8 +582,10 @@ for name, lookup, adapter in [("C_v3", tool_lookup, False), ("C_v4", tool_lookup
 
 # %%
 def messy_correct(r):
-    if r.expect == "ask":
-        return ("?" in str(r.pred) or "কোন ফসল" in str(r.pred)) and not DOSE.search(str(r.pred).translate(BN_DIGITS))
+    if r.expect == "ask":  # crop left out: asking back is right, and so is the dose when it names the one crop the product is registered on
+        asked = ("?" in str(r.pred) or "কোন ফসল" in str(r.pred)) and not DOSE.search(str(r.pred).translate(BN_DIGITS))
+        crop_bn = next((c for c, en in CROP_BN.items() if to_crop(en) == to_crop(r.crop)), "")
+        return asked or (bool(crop_bn) and crop_bn in str(r.pred) and tool_correct_v4(r.pred, "dose", r.gold_dose, None))
     gp = gold_products_v2(r.crop, r.pest) if r.type == "product" else None
     return tool_correct_v4(r.pred, r.type, r.gold_dose, gp)
 
@@ -569,12 +594,12 @@ P["correct"] = [float(messy_correct(r)) for r in P.itertuples()]
 P["num_halluc"] = [num_hallucinated(p, q, c) for p, q, c in zip(P.pred, P.question, P.context)]
 P["excluded"] = (P["type"] == "registration") & P.question_orig.map(flawed)
 K = P[~P.excluded]
-print("left out:", P[P.system == "E_v4"].excluded.sum(), "flawed registration questions")
+print("left out:", P[P.system == "E_v5"].excluded.sum(), "flawed registration questions")
 by_change = K.groupby(["change", "system"]).correct.mean().unstack().round(3)
 by_type = K.groupby(["expect", "system"]).correct.mean().unstack().round(3)
 overall = K.groupby("system").agg(correct=("correct", "mean"), num_halluc=("num_halluc", "mean"), sec=("sec", "mean")).round(3)
 print("by change:\n", by_change.to_string(), "\n\nby question type:\n", by_type.to_string(), "\n\noverall:\n", overall.to_string())
 by_change.to_csv(f"{OUT}/messy_by_change.csv"); by_type.to_csv(f"{OUT}/messy_by_type.csv"); overall.to_csv(f"{OUT}/messy_overall.csv")
 P.to_parquet(f"{OUT}/messy_scored.parquet")
-for _, r in P[(P.system == "E_v4") & (P.correct == 0) & ~P.excluded].head(8).iterrows():
+for _, r in P[(P.system == "E_v5") & (P.correct == 0) & ~P.excluded].head(8).iterrows():
     print(f"[{r.change} | {r.expect}] Q: {r.question}\nPRED: {str(r.pred)[:300]}\n")

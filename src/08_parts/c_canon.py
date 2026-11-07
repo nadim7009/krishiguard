@@ -64,3 +64,24 @@ tool_lookup_v4 = lambda q: tool_lookup(canonicalize(q))
 assert "Rekazeb 80WP" in canonicalize("আলু খেতে লেট ব্লাইট, rekazeb80wp কতখানি দিমু?")
 assert "নাবি ধসা" in canonicalize("আলু খেতে লেট ব্লাইট, Rekazeb কতখানি দিমু?")
 assert "100 g/ha" in tool_lookup_v4("ধানে কারেন পোকা লাগছে, Tabba কতটুকু দিব?")[1] or "Taba" in canonicalize("ধানে কারেন পোকা লাগছে, Tabba কতটুকু দিব?")
+
+ASK_CROP = "কোন ফসলে দেবেন জানালে নিবন্ধিত মাত্রা বলতে পারব। {brand} এই কাজে নিবন্ধিত আছে এই ফসলগুলোতে: {crops}। আপনার কোন ফসল?"
+
+def tool_lookup_v5(q):
+    """v4, plus, when no crop is named: a product registered for this pest on several crops gets a fixed question back
+    (the crops, no dose), which run_agent sends as the whole reply; a product registered on one crop only gets that crop's dose, with the crop named."""
+    cq = canonicalize(q)
+    ev, lead = tool_lookup(cq)
+    if crops_in(cq):
+        return ev, lead
+    b = next((b for b in BRANDS if b.lower() in cq.lower()), None)
+    pests = [en for b_, ens in PEST_BN.items() if b_ in cq for en in ens]
+    if not (b and pests):
+        return ev, lead
+    rows = dae[(dae.brand == b) & dae.pest.str.lower().map(lambda p: any(x in p for x in pests))]
+    if rows.crop.nunique() > 1:
+        return ev, ASK_CROP.format(brand=b, crops=", ".join(rows.crop.unique()[:6]))
+    crop_bn = next((c for c, en in CROP_BN.items() if len(rows) and to_crop(en) in rows.crop.iloc[0].lower()), None)
+    return tool_lookup(f"{cq} {crop_bn} ফসলে") if crop_bn else (ev, lead)  # one crop only: the dose is for that crop, and the lead names it
+
+assert tool_lookup_v5("ধানে কারেন্ট পোকা লাগছে, Taba 25WDG কতটুকু দিব?")[1] == tool_lookup_v4("ধানে কারেন্ট পোকা লাগছে, Taba 25WDG কতটুকু দিব?")[1]
