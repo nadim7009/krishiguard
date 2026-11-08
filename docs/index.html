@@ -75,7 +75,7 @@ h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0;f
 .ghost{color:var(--ink);border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px;font-size:.86rem;font-weight:500;flex:1}
 .ghost:hover,.round:hover{border-color:var(--forest)}
 .round{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink);flex:none}
-.content{min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.content{min-width:0;min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr)}
 .top{display:flex;align-items:center;gap:8px;height:56px;border-bottom:1px solid var(--line);
   padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
 .top-title{font-family:var(--display);font-size:1.05rem;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -84,7 +84,7 @@ h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0;f
 .status.off i{background:var(--mustard)}
 .only-mobile{display:none!important}
 .scrim{display:none}
-main{min-width:0;overflow:auto}
+main{min-width:0;overflow:auto;grid-row:3}
 .view{min-height:100%;padding-block:40px 64px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .page{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
 .head h2{font-size:clamp(1.75rem,3.4vw,2.4rem)}
@@ -96,7 +96,7 @@ main{min-width:0;overflow:auto}
 .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
 .btn.soft{background:var(--forest-soft);color:var(--forest)}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:.88rem;color:var(--muted);font-weight:500;min-width:0}
-input[type=text],input[type=search],input[type=email],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;min-width:0;color:var(--ink)}
+input[type=text],input[type=search],input[type=email],input[type=password],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;min-width:0;color:var(--ink)}
 input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;box-shadow:0 0 0 3px var(--forest-soft)}
 
 /* home / chat */
@@ -327,8 +327,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .auth-card{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow);text-align:left}
 .auth-step{display:flex;flex-direction:column;gap:12px}
 .auth-step input{text-align:left;font-size:1rem}
-.auth-code{font-family:var(--mono);font-size:1.4rem!important;letter-spacing:.3em;text-align:center!important}
-.auth-code::placeholder{letter-spacing:normal;font-family:var(--body);font-size:1rem}
 .auth-go{width:100%;padding:13px 18px}
 .auth-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600}
 .auth-google:hover{border-color:var(--forest)}
@@ -353,6 +351,20 @@ html[lang="bn"] .pv[data-lang="en"],html[lang="en"] .pv[data-lang="bn"]{display:
 .me-wrap{position:relative}
 .me-menu{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:6px;display:flex;flex-direction:column}
 .me-menu .em{font-size:.8rem;color:var(--muted);padding:6px 10px;overflow:hidden;text-overflow:ellipsis}
+.auth-card .f{display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--muted)}
+.auth-card .f input{color:var(--ink)}
+.lab-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pw{position:relative;display:block}
+.pw input{padding-right:72px!important}
+.pw-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--forest);font-weight:600;font-size:.85rem;padding:6px}
+.auth-switch{margin:4px 0 0;text-align:center;font-size:.92rem;color:var(--muted)}
+.auth-ok{margin:0;color:var(--ok);font-size:.92rem}
+.auth-oauth{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+/* guests: a slim line over the composer, and the sign-up card in the chat */
+.guestbar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:.86rem;color:var(--ink);padding:6px 16px;background:var(--mustard-soft);border-bottom:1px solid var(--line)}
+.gate{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px}
+.gate p{margin:0 0 12px}
+.gate .row{display:flex;gap:10px;flex-wrap:wrap}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -392,32 +404,55 @@ html[lang="bn"] .pv[data-lang="en"],html[lang="en"] .pv[data-lang="bn"]{display:
     <h1 class="auth-h" id="authTitle" data-bn="মাঠের প্রশ্ন, সঠিক উত্তর" data-en="Farm questions, straight answers">মাঠের প্রশ্ন, সঠিক উত্তর</h1>
     <p class="auth-sub" data-bn="ওষুধের সরকারি নিবন্ধিত মাত্রা, পাতার ছবি দেখে রোগ, সার আর স্প্রের আবহাওয়া, এক সহকারীতে।" data-en="Registered pesticide doses, disease from a leaf photo, fertilizer and spray weather, in one assistant.">ওষুধের সরকারি নিবন্ধিত মাত্রা, পাতার ছবি দেখে রোগ, সার আর স্প্রের আবহাওয়া, এক সহকারীতে।</p>
     <div class="auth-card">
-      <form id="stepEmail" class="auth-step" novalidate>
-        <button type="button" class="auth-google" id="authGoogle" hidden><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h6a5.1 5.1 0 0 1-2.2 3.4v2.8h3.6c2.1-1.9 3.2-4.8 3.2-8.2z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.4-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.7H2v2.9A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 13.9a6.6 6.6 0 0 1 0-4.2V6.8H2a11 11 0 0 0 0 9.9z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2 6.8l3.7 2.9C6.6 7.3 9.1 5.4 12 5.4z"/></svg><span data-bn="Google দিয়ে চালিয়ে যান" data-en="Continue with Google">Google দিয়ে চালিয়ে যান</span></button>
-        <div class="auth-or" id="authOr" hidden><span data-bn="অথবা" data-en="or">অথবা</span></div>
-        <label class="sr" for="authEmail" data-bn="ইমেইল" data-en="Email">ইমেইল</label>
-        <input type="email" id="authEmail" autocomplete="email" inputmode="email" data-ph-bn="আপনার ইমেইল ঠিকানা" data-ph-en="Your email address" placeholder="আপনার ইমেইল ঠিকানা">
-        <button class="btn auth-go" id="authSend" data-bn="ইমেইল দিয়ে চালিয়ে যান" data-en="Continue with email">ইমেইল দিয়ে চালিয়ে যান</button>
-        <p class="auth-err" id="authErr1" role="alert" hidden></p>
+      <div class="auth-oauth" id="authOAuth" hidden>
+        <button type="button" class="auth-google" id="authGoogle"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h6a5.1 5.1 0 0 1-2.2 3.4v2.8h3.6c2.1-1.9 3.2-4.8 3.2-8.2z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.4-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.7H2v2.9A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 13.9a6.6 6.6 0 0 1 0-4.2V6.8H2a11 11 0 0 0 0 9.9z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2 6.8l3.7 2.9C6.6 7.3 9.1 5.4 12 5.4z"/></svg><span data-bn="Google দিয়ে চালিয়ে যান" data-en="Continue with Google">Google দিয়ে চালিয়ে যান</span></button>
+        <div class="auth-or"><span data-bn="অথবা" data-en="or">অথবা</span></div>
+      </div>
+      <form id="stepIn" class="auth-step" novalidate>
+        <h2 class="auth-h2" data-bn="সাইন ইন করুন" data-en="Sign in">সাইন ইন করুন</h2>
+        <label class="f"><span data-bn="ইমেইল" data-en="Email">ইমেইল</span><input type="email" id="inEmail" autocomplete="email" inputmode="email"></label>
+        <label class="f"><span class="lab-row"><span data-bn="পাসওয়ার্ড" data-en="Password">পাসওয়ার্ড</span><button type="button" class="linkish" data-go-step="forgot" data-bn="পাসওয়ার্ড ভুলে গেছেন?" data-en="Forgot password?">পাসওয়ার্ড ভুলে গেছেন?</button></span><span class="pw"><input type="password" id="inPass" autocomplete="current-password"><button type="button" class="pw-eye" data-eye data-bn="দেখুন" data-en="Show">দেখুন</button></span></label>
+        <button class="btn auth-go" id="inGo" data-bn="সাইন ইন" data-en="Sign in">সাইন ইন</button>
+        <p class="auth-err" role="alert" hidden></p>
+        <p class="auth-switch"><span data-bn="অ্যাকাউন্ট নেই?" data-en="No account yet?">অ্যাকাউন্ট নেই?</span> <button type="button" class="linkish" data-go-step="up" data-bn="অ্যাকাউন্ট খুলুন" data-en="Create one">অ্যাকাউন্ট খুলুন</button></p>
       </form>
-      <form id="stepCode" class="auth-step" novalidate hidden>
+      <form id="stepUp" class="auth-step" novalidate hidden>
+        <h2 class="auth-h2" data-bn="অ্যাকাউন্ট খুলুন" data-en="Create your account">অ্যাকাউন্ট খুলুন</h2>
+        <label class="f"><span data-bn="আপনার নাম" data-en="Your name">আপনার নাম</span><input type="text" id="upName" autocomplete="name" maxlength="60"></label>
+        <label class="f"><span data-bn="ইমেইল" data-en="Email">ইমেইল</span><input type="email" id="upEmail" autocomplete="email" inputmode="email"></label>
+        <label class="f"><span data-bn="পাসওয়ার্ড (অন্তত ৮ অক্ষর)" data-en="Password (at least 8 characters)">পাসওয়ার্ড (অন্তত ৮ অক্ষর)</span><span class="pw"><input type="password" id="upPass" autocomplete="new-password" minlength="8"><button type="button" class="pw-eye" data-eye data-bn="দেখুন" data-en="Show">দেখুন</button></span></label>
+        <button class="btn auth-go" id="upGo" data-bn="অ্যাকাউন্ট খুলুন" data-en="Create account">অ্যাকাউন্ট খুলুন</button>
+        <p class="auth-err" role="alert" hidden></p>
+        <p class="auth-switch"><span data-bn="আগেই অ্যাকাউন্ট আছে?" data-en="Already have an account?">আগেই অ্যাকাউন্ট আছে?</span> <button type="button" class="linkish" data-go-step="in" data-bn="সাইন ইন করুন" data-en="Sign in">সাইন ইন করুন</button></p>
+      </form>
+      <form id="stepForgot" class="auth-step" novalidate hidden>
+        <h2 class="auth-h2" data-bn="পাসওয়ার্ড ভুলে গেছেন?" data-en="Forgot your password?">পাসওয়ার্ড ভুলে গেছেন?</h2>
+        <p class="auth-p" data-bn="আপনার ইমেইল দিন। নতুন পাসওয়ার্ড দেওয়ার একটি লিংক পাঠাব।" data-en="Enter your email and we'll send a link to set a new password.">আপনার ইমেইল দিন। নতুন পাসওয়ার্ড দেওয়ার একটি লিংক পাঠাব।</p>
+        <label class="f"><span data-bn="ইমেইল" data-en="Email">ইমেইল</span><input type="email" id="fgEmail" autocomplete="email" inputmode="email"></label>
+        <button class="btn auth-go" id="fgGo" data-bn="লিংক পাঠান" data-en="Send link">লিংক পাঠান</button>
+        <p class="auth-err" role="alert" hidden></p>
+        <p class="auth-ok" role="status" hidden></p>
+        <p class="auth-switch"><button type="button" class="linkish" data-go-step="in" data-bn="সাইন ইনে ফিরে যান" data-en="Back to sign in">সাইন ইনে ফিরে যান</button></p>
+      </form>
+      <form id="stepNew" class="auth-step" novalidate hidden>
+        <h2 class="auth-h2" data-bn="নতুন পাসওয়ার্ড দিন" data-en="Set a new password">নতুন পাসওয়ার্ড দিন</h2>
+        <label class="f"><span data-bn="নতুন পাসওয়ার্ড (অন্তত ৮ অক্ষর)" data-en="New password (at least 8 characters)">নতুন পাসওয়ার্ড (অন্তত ৮ অক্ষর)</span><span class="pw"><input type="password" id="nwPass" autocomplete="new-password" minlength="8"><button type="button" class="pw-eye" data-eye data-bn="দেখুন" data-en="Show">দেখুন</button></span></label>
+        <button class="btn auth-go" id="nwGo" data-bn="পাসওয়ার্ড সেভ করুন" data-en="Save password">পাসওয়ার্ড সেভ করুন</button>
+        <p class="auth-err" role="alert" hidden></p>
+      </form>
+      <div id="stepCheck" class="auth-step" hidden>
         <h2 class="auth-h2" data-bn="ইমেইল দেখুন" data-en="Check your email">ইমেইল দেখুন</h2>
-        <p class="auth-p" id="codeNote"></p>
-        <label class="sr" for="authCode" data-bn="লগইন কোড" data-en="Login code">লগইন কোড</label>
-        <input type="text" id="authCode" class="auth-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" data-ph-bn="কোডটি লিখুন" data-ph-en="Enter the code" placeholder="কোডটি লিখুন">
-        <button class="btn auth-go" id="authVerify" data-bn="যাচাই করুন" data-en="Verify">যাচাই করুন</button>
-        <p class="auth-err" id="authErr2" role="alert" hidden></p>
-        <div class="auth-links"><button type="button" class="linkish" id="authBack" data-bn="অন্য ইমেইল দিন" data-en="Use a different email">অন্য ইমেইল দিন</button><button type="button" class="linkish" id="authResend"></button></div>
-      </form>
+        <p class="auth-p" id="checkNote"></p>
+        <p class="auth-switch"><button type="button" class="linkish" data-go-step="in" data-bn="সাইন ইনে ফিরে যান" data-en="Back to sign in">সাইন ইনে ফিরে যান</button></p>
+      </div>
       <form id="stepName" class="auth-step" novalidate hidden>
         <h2 class="auth-h2" data-bn="আপনাকে কী নামে ডাকব?" data-en="What should we call you?">আপনাকে কী নামে ডাকব?</h2>
-        <label class="sr" for="authName" data-bn="নাম" data-en="Name">নাম</label>
-        <input type="text" id="authName" autocomplete="given-name" maxlength="60" data-ph-bn="আপনার নাম" data-ph-en="Your name" placeholder="আপনার নাম">
-        <button class="btn auth-go" id="authNameGo" data-bn="শুরু করুন" data-en="Start">শুরু করুন</button>
+        <label class="f"><span data-bn="নাম" data-en="Name">নাম</span><input type="text" id="authName" autocomplete="given-name" maxlength="60"></label>
+        <button class="btn auth-go" data-bn="শুরু করুন" data-en="Start">শুরু করুন</button>
       </form>
     </div>
     <p class="auth-fine" id="authFine"><span data-bn="চালিয়ে গেলে আপনি আমাদের" data-en="By continuing you accept our">চালিয়ে গেলে আপনি আমাদের</span> <button type="button" class="linkish" id="authPrivacy" data-bn="গোপনীয়তা নীতি" data-en="privacy policy">গোপনীয়তা নীতি</button> <span data-bn="মেনে নিচ্ছেন।" data-en=".">মেনে নিচ্ছেন।</span></p>
-    <button type="button" class="linkish auth-guest" id="authGuest" hidden data-bn="লগইন ছাড়া চালিয়ে যান" data-en="Continue without an account">লগইন ছাড়া চালিয়ে যান</button>
+    <button type="button" class="linkish auth-guest" id="authGuest" data-bn="অতিথি হিসেবে দেখুন (দিনে ৩টি প্রশ্ন, ছবি ও ভয়েস ছাড়া)" data-en="Look around as a guest (3 questions a day, no photos or voice)">অতিথি হিসেবে দেখুন (দিনে ৩টি প্রশ্ন, ছবি ও ভয়েস ছাড়া)</button>
   </div>
 </section>
 <dialog class="dlg" id="privacyDlg" aria-labelledby="pvTitle">
@@ -475,6 +510,7 @@ html[lang="bn"] .pv[data-lang="en"],html[lang="en"] .pv[data-lang="bn"]{display:
     <span class="status" id="status"></span>
     <button class="icon-btn only-mobile" data-new aria-label="New chat"><svg width="20" height="20"><use href="#i-edit"/></svg></button>
   </header>
+  <div class="guestbar" id="guestBar" hidden></div>
 
   <main id="main">
     <!-- HOME / ASSISTANT -->
@@ -1070,29 +1106,41 @@ document.addEventListener("click", e => {
   if (q.dataset.qa === "spray") ask(L("আজ কখন স্প্রে করা যাবে?","When can I spray today?"));
 });
 
-/* ---------- accounts (Supabase): sign-in screen, chats and farm details on every phone, pest radar ----------
-   Sign-in works like a chat app's: Google, or email and a one-time code; new people are asked their name.
+/* ---------- accounts (Supabase): sign up, sign in, forgot password, chats and farm details on every phone, pest radar ----------
    The key is the project's publishable key, meant to be public; row level security in supabase/schema.sql
    lets each person read and write only their own rows, and the radar returns counts only.
-   If the Supabase library cannot load (no internet on first visit), the assistant opens without an account. */
-// shortcut: guests may skip sign-in until an email service (SMTP) or Google sign-in is set up in Supabase; then set false
-const GUEST_OK = true;
+   Guests can look around with 3 text questions a day; photos, voice, saved chats and the pest radar need an account.
+   If the Supabase library cannot load (no internet on first visit), the assistant opens without limits rather than not at all. */
+const GUEST_QUESTIONS = 3;
 const cloud = (() => {
   const URL_ = "https://kwmnpumiraboztfcepbv.supabase.co", KEY = "sb_publishable_bvmH92t5SlJ02g_L19eM_A_7zIHWdKx";
-  const TOKEN = "sb-kwmnpumiraboztfcepbv-auth-token";
+  const TOKEN = "sb-kwmnpumiraboztfcepbv-auth-token", HOME = location.origin + location.pathname;
   let sb = null;
-  try { sb = window.supabase?.createClient(URL_, KEY, {auth: {persistSession: true, detectSessionInUrl: true, flowType: "implicit"}}) || null; } catch (e) {}
-  let user = null, email = "";
+  try { sb = window.supabase?.createClient(URL_, KEY, {auth: {persistSession: true, detectSessionInUrl: true}}) || null; } catch (e) {}
+  let user = null, recovering = /type=recovery/.test(location.hash);
   const real = () => !!user && !user.is_anonymous;
   const quiet = (q) => q.then(() => {}, () => {});
   const district = () => PROFILE.district || store.get("kg_district");
+  const today = () => new Date().toISOString().slice(0, 10);
+  const used = () => { try { const g = JSON.parse(store.get("kg_gq") || "{}"); return g.d === today() ? g.n : 0; } catch (e) { return 0; } };
   const api = {ok: !!sb,
     get email(){ return real() ? user.email : ""; },
+    get guest(){ return !!sb && !real(); },
+    left(){ return Math.max(0, GUEST_QUESTIONS - used()); },
+    spend(){ store.set("kg_gq", JSON.stringify({d: today(), n: used() + 1})); api.renderGuest(); },
+    gateHTML(why){ // the card a guest sees when they reach something that needs an account
+      return `<div class="gate"><p>${why} ${L("অ্যাকাউন্ট খুললে পাবেন সীমাহীন প্রশ্ন, পাতা ও বোতলের ছবি, ভয়েস, সব ফোনে জমা চ্যাট আর এলাকার পোকার খবর। খুলতে এক মিনিট লাগে, খরচ নেই।","With an account you get unlimited questions, leaf and bottle photos, voice, chats saved on every phone and pest news from your area. It takes a minute and costs nothing.")}</p>`
+        + `<div class="row"><button class="btn" data-auth="up">${L("অ্যাকাউন্ট খুলুন","Create account")}</button><button class="btn soft" data-auth="in">${L("সাইন ইন","Sign in")}</button></div></div>`;
+    },
+    renderGuest(){
+      const bar = $("#guestBar"); bar.hidden = !api.guest;
+      if (api.guest) bar.innerHTML = `<span>${L(`অতিথি হিসেবে চালাচ্ছেন: আজ আর ${num(api.left())}টি প্রশ্ন বাকি।`, `You're a guest: ${api.left()} question${api.left() === 1 ? "" : "s"} left today.`)}</span><button class="linkish" data-auth="up">${L("অ্যাকাউন্ট খুলুন","Create account")}</button>`;
+    },
     pushProfile(){ if (real()) quiet(sb.from("profiles").upsert({id: user.id, data: PROFILE, updated_at: new Date().toISOString()})); },
     pushChat(c){ if (real()) return quiet(sb.from("chats").upsert({id: c.id, title: c.title, msgs: c.msgs.map(({img, ...m}) => m), updated_at: new Date(c.at).toISOString()})); },
     dropChat(id){ if (real()) quiet(sb.from("chats").delete().eq("id", id)); },
     async report(pest, crop, source){
-      if (!real()){ toast(L("এলাকার কৃষকদের জানাতে আগে লগইন করুন।","Sign in first to tell farmers nearby.")); showAuth("email"); return false; }
+      if (!real()){ botSay(api.gateHTML(L("এলাকার কৃষকদের জানাতে অ্যাকাউন্ট লাগে।","Telling farmers nearby needs an account."))); return false; }
       if (!district()){ toast(L("আগে 'আমার খামার'-এ আপনার জেলা দিন।","First set your district in My farm.")); openProfile(); return false; }
       const {error} = await sb.from("pest_reports").insert({district: district(), crop: crop || null, pest, source: source || "chat"});
       toast(!error ? L("জানানো হয়েছে। আপনার জেলার কৃষকেরা এলাকার খবরে দেখবেন, আপনার নাম ছাড়া।","Sent. Farmers in your district will see it, without your name.")
@@ -1102,6 +1150,7 @@ const cloud = (() => {
       return !error;
     },
     async radarHTML(){
+      if (!real()) return api.gateHTML(L("এলাকার পোকার খবর দেখতে অ্যাকাউন্ট লাগে।","Pest news from your area needs an account."));
       const d = DISTRICTS.find(x => x.k === district());
       if (!d) return `<p>${L("আপনার জেলা জানা নেই। 'আমার খামার'-এ জেলা দিলে সেই জেলার কৃষকদের জানানো পোকা আর রোগ দেখাব।","I don't know your district yet. Set it in My farm and I'll show the pests farmers there are reporting.")}</p><button class="btn soft" data-profile>${L("আমার খামার","My farm")}</button>`;
       const {data, error} = await sb.rpc("pest_radar", {p_district: d.k, p_days: 14});
@@ -1117,68 +1166,92 @@ const cloud = (() => {
       const name = PROFILE.name || (real() ? user.email.split("@")[0] : "");
       $("#meAv").textContent = real() ? [...name.trim()][0]?.toUpperCase() || "?" : "";
       $("#meAv").hidden = !real(); $("#meIcon").toggleAttribute("hidden", real());
-      $("#meName").textContent = real() ? name : L("লগইন করুন", "Sign in");
-      $("#meMail").textContent = real() ? user.email : L("সব ফোনে আপনার চ্যাট", "Your chats on every phone");
+      $("#meName").textContent = real() ? name : L("অ্যাকাউন্ট খুলুন বা সাইন ইন", "Sign up or sign in");
+      $("#meMail").textContent = real() ? user.email : L("অতিথি", "Guest");
       $("#meEm").textContent = real() ? user.email : "";
-      $("#authResend").textContent = L("কোড আবার পাঠান", "Send the code again");
+      api.renderGuest();
     },
   };
 
-  /* the screen: shown when nobody is signed in (and the person has not chosen to look around as a guest) */
-  const steps = ["stepEmail", "stepCode", "stepName"];
+  /* the sign-in screen */
+  const STEPS = {in: "stepIn", up: "stepUp", forgot: "stepForgot", new: "stepNew", check: "stepCheck", name: "stepName"};
   function showAuth(step){
-    steps.forEach(s => $("#" + s).hidden = s !== {email: "stepEmail", code: "stepCode", name: "stepName"}[step]);
-    $("#authFine").hidden = step === "name"; $("#authGuest").hidden = !GUEST_OK || step === "name";
+    for (const [k, id] of Object.entries(STEPS)) $("#" + id).hidden = k !== step;
+    const entry = step === "in" || step === "up";
+    $("#authOAuth").hidden = !entry || !api.google; $("#authFine").hidden = !entry; $("#authGuest").hidden = !entry;
     $("#auth").hidden = false; document.body.classList.add("authing"); $("#side").classList.remove("open"); $("#scrim").hidden = true;
-    setTimeout(() => $({email: "#authEmail", code: "#authCode", name: "#authName"}[step])?.focus(), 50);
+    setTimeout(() => $("#" + STEPS[step])?.querySelector("input")?.focus(), 50);
   }
   function hideAuth(){ $("#auth").hidden = true; document.body.classList.remove("authing"); }
-  const err = (id, t) => { const e = $(id); e.hidden = !t; e.textContent = t || ""; };
   window.showAuth = showAuth;
+  const say = (form, t, ok) => { const e = $(`#${form} ${ok ? ".auth-ok" : ".auth-err"}`); e.hidden = !t; e.textContent = t || ""; };
+  const okEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const why = (err) => { const m = String(err?.message || err);
+    return /invalid login|invalid credentials/i.test(m) ? L("ইমেইল বা পাসওয়ার্ড মেলেনি।","The email or password is wrong.")
+      : /already (registered|been registered)|already exists/i.test(m) ? L("এই ইমেইলে আগেই অ্যাকাউন্ট আছে। সাইন ইন করুন, পাসওয়ার্ড ভুলে গেলে রিসেট করুন।","There is already an account with this email. Sign in, or reset the password if you forgot it.")
+      : /not confirmed/i.test(m) ? L("ইমেইলটি এখনও নিশ্চিত করা হয়নি। ইমেইলে পাঠানো লিংকে চাপ দিন।","This email is not confirmed yet. Tap the link we emailed you.")
+      : /password/i.test(m) && /(short|least|weak|characters)/i.test(m) ? L("পাসওয়ার্ড অন্তত ৮ অক্ষরের দিন।","Use a password of at least 8 characters.")
+      : /rate|seconds|security purposes|too many/i.test(m) ? L("অল্প সময়ে অনেকবার চেষ্টা হয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।","Too many tries just now. Wait a minute and try again.")
+      : /fetch|network/i.test(m) ? L("ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না।","No internet connection.")
+      : L("এখন করা গেল না। আবার চেষ্টা করুন।","That did not work. Please try again."); };
+  async function busy(btn, fn){ btn.disabled = true; try { return await fn(); } finally { btn.disabled = false; } }
 
-  let cool = 0, coolTimer;
-  function cooldown(){
-    cool = 60; clearInterval(coolTimer);
-    const b = $("#authResend"), tick = () => { b.disabled = cool > 0; b.textContent = cool > 0 ? L(`${num(cool)} সেকেন্ড পরে আবার পাঠানো যাবে`, `Send again in ${cool}s`) : L("কোড আবার পাঠান", "Send the code again"); };
-    tick(); coolTimer = setInterval(() => { cool--; tick(); if (cool <= 0) clearInterval(coolTimer); }, 1000);
-  }
-  async function sendCode(){
-    const {error} = await sb.auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname}}).catch(e => ({error: e}));
-    if (error) return /rate|seconds|security purposes/i.test(error.message) ? L("এখন অনেকবার কোড চাওয়া হয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।","Too many codes just now. Try again in a minute.")
-      : /fetch|network/i.test(error.message) ? L("ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না।","No internet connection.")
-      : L("কোড পাঠানো গেল না। ইমেইল ঠিকানাটি দেখুন।","Could not send the code. Check the email address.");
-    cooldown(); return "";
-  }
-  $("#stepEmail").addEventListener("submit", async e => {
+  $("#stepIn").addEventListener("submit", async e => {
     e.preventDefault();
-    email = $("#authEmail").value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return err("#authErr1", L("ইমেইল ঠিকানাটি ঠিক করে লিখুন।","Please enter a valid email address."));
-    $("#authSend").disabled = true; err("#authErr1", "");
-    const problem = await sendCode(); $("#authSend").disabled = false;
-    if (problem) return err("#authErr1", problem);
-    $("#codeNote").textContent = L(`${email}-এ একটি লগইন কোড পাঠানো হয়েছে। ইমেইলের লিংকে চাপ দিলেও লগইন হবে।`, `We sent a login code to ${email}. Tapping the link in the email also signs you in.`);
-    $("#authCode").value = ""; err("#authErr2", ""); showAuth("code");
+    const email = $("#inEmail").value.trim().toLowerCase(), password = $("#inPass").value;
+    if (!okEmail(email)) return say("stepIn", L("ইমেইল ঠিকানাটি ঠিক করে লিখুন।","Please enter a valid email address."));
+    if (!password) return say("stepIn", L("পাসওয়ার্ড লিখুন।","Enter your password."));
+    say("stepIn", "");
+    const {error} = await busy($("#inGo"), () => sb.auth.signInWithPassword({email, password}).catch(err => ({error: err})));
+    if (error) say("stepIn", why(error));
   });
-  $("#stepCode").addEventListener("submit", async e => {
+  $("#stepUp").addEventListener("submit", async e => {
     e.preventDefault();
-    const token = $("#authCode").value.replace(/\D/g, "");
-    if (token.length < 6) return err("#authErr2", L("ইমেইলে আসা পুরো কোডটি লিখুন।","Enter the whole code from the email."));
-    $("#authVerify").disabled = true;
-    const {error} = await sb.auth.verifyOtp({email, token, type: "email"}).catch(e => ({error: e}));
-    $("#authVerify").disabled = false;
-    if (error) err("#authErr2", /expired|invalid/i.test(error.message) ? L("কোডটি মেলেনি বা মেয়াদ শেষ। আবার দেখে লিখুন, না হলে নতুন কোড নিন।","That code is wrong or has expired. Check it, or get a new one.") : L("এখন যাচাই করা গেল না। আবার চেষ্টা করুন।","Could not check it now. Try again."));
+    const name = $("#upName").value.trim().slice(0, 60), email = $("#upEmail").value.trim().toLowerCase(), password = $("#upPass").value;
+    if (!name) return say("stepUp", L("আপনার নাম লিখুন।","Enter your name."));
+    if (!okEmail(email)) return say("stepUp", L("ইমেইল ঠিকানাটি ঠিক করে লিখুন।","Please enter a valid email address."));
+    if (password.length < 8) return say("stepUp", L("পাসওয়ার্ড অন্তত ৮ অক্ষরের দিন।","Use a password of at least 8 characters."));
+    say("stepUp", "");
+    const {data, error} = await busy($("#upGo"), () => sb.auth.signUp({email, password, options: {data: {name}, emailRedirectTo: HOME}}).catch(err => ({error: err})));
+    if (error) return say("stepUp", why(error));
+    PROFILE.name = name; store.set("kg_profile", JSON.stringify(PROFILE));
+    if (data.user && !data.session){ // the project asks new people to confirm their email first
+      if (!data.user.identities?.length) return say("stepUp", why("already registered"));
+      $("#checkNote").textContent = L(`${email}-এ একটি লিংক পাঠানো হয়েছে। লিংকে চাপ দিলে অ্যাকাউন্ট চালু হবে, তারপর সাইন ইন করুন।`, `We sent a link to ${email}. Tap it to switch the account on, then sign in.`);
+      showAuth("check");
+    }
   });
-  $("#authCode").addEventListener("input", e => { const v = e.target.value.replace(/\D/g, ""); if (e.target.value !== v) e.target.value = v; });
-  $("#authBack").onclick = () => showAuth("email");
-  $("#authResend").onclick = async () => { const p = await sendCode(); err("#authErr2", p); if (!p) toast(L("নতুন কোড পাঠানো হয়েছে।","A new code is on its way.")); };
+  $("#stepForgot").addEventListener("submit", async e => {
+    e.preventDefault();
+    const email = $("#fgEmail").value.trim().toLowerCase();
+    if (!okEmail(email)) return say("stepForgot", L("ইমেইল ঠিকানাটি ঠিক করে লিখুন।","Please enter a valid email address."));
+    say("stepForgot", ""); say("stepForgot", "", true);
+    const {error} = await busy($("#fgGo"), () => sb.auth.resetPasswordForEmail(email, {redirectTo: HOME}).catch(err => ({error: err})));
+    if (error) return say("stepForgot", why(error));
+    say("stepForgot", L(`এই ইমেইলে অ্যাকাউন্ট থাকলে ${email}-এ একটি লিংক গেছে। লিংকে চাপ দিয়ে নতুন পাসওয়ার্ড দিন। না পেলে স্প্যাম ফোল্ডার দেখুন।`, `If there is an account for ${email}, a link is on its way. Tap it to set a new password. Check spam if you don't see it.`), true);
+  });
+  $("#stepNew").addEventListener("submit", async e => {
+    e.preventDefault();
+    const password = $("#nwPass").value;
+    if (password.length < 8) return say("stepNew", L("পাসওয়ার্ড অন্তত ৮ অক্ষরের দিন।","Use a password of at least 8 characters."));
+    const {error} = await busy($("#nwGo"), () => sb.auth.updateUser({password}).catch(err => ({error: err})));
+    if (error) return say("stepNew", why(error));
+    recovering = false; window.history.replaceState(null, "", HOME); toast(L("নতুন পাসওয়ার্ড সেভ হয়েছে।","New password saved.")); signedIn();
+  });
   $("#stepName").addEventListener("submit", e => {
     e.preventDefault();
     const name = $("#authName").value.trim().slice(0, 60); if (!name) return $("#authName").focus();
     PROFILE.name = name; saveProfile(); quiet(sb.auth.updateUser({data: {name}}));
     hideAuth(); api.renderMe(); refreshAll();
   });
-  $("#authGoogle").onclick = () => sb.auth.signInWithOAuth({provider: "google", options: {redirectTo: location.origin + location.pathname}});
-  $("#authGuest").onclick = () => { store.set("kg_guest", "1"); hideAuth(); };
+  document.addEventListener("click", e => {
+    const s = e.target.closest("[data-go-step]"); if (s){ const t = s.dataset.goStep, from = $("#auth").querySelector(".auth-step:not([hidden]) input[type=email]")?.value;
+      showAuth(t); const to = $("#" + STEPS[t]).querySelector("input[type=email]"); if (from && to && !to.value) to.value = from; return; }
+    const a = e.target.closest("[data-auth]"); if (a) return showAuth(a.dataset.auth);
+    const eye = e.target.closest("[data-eye]"); if (eye){ const i = eye.previousElementSibling, show = i.type === "password"; i.type = show ? "text" : "password"; eye.textContent = show ? L("লুকান","Hide") : L("দেখুন","Show"); }
+  });
+  $("#authGoogle").onclick = () => sb.auth.signInWithOAuth({provider: "google", options: {redirectTo: HOME}});
+  $("#authGuest").onclick = () => { store.set("kg_guest", "1"); hideAuth(); api.renderMe(); };
   $("#authPrivacy").onclick = () => $("#privacyDlg").showModal();
   $("#authLang").onclick = () => setLang(lang === "bn" ? "en" : "bn");
 
@@ -1193,33 +1266,36 @@ const cloud = (() => {
     for (const c of merged) if (!remote.has(c.id) || remote.get(c.id) < (c.at || 0)) api.pushChat({...c, at: c.at || Date.now()});
   }
   async function signedIn(){
+    if (recovering) return showAuth("new"); // came from a reset link: set the password first
+    store.set("kg_guest", "");
     await pull().catch(() => {});
-    if (!PROFILE.name && user.user_metadata?.full_name) { PROFILE.name = user.user_metadata.full_name.split(" ")[0]; saveProfile(); } // Google gives a name
+    const meta = user.user_metadata || {};
+    if (!PROFILE.name && (meta.name || meta.full_name)){ PROFILE.name = (meta.name || meta.full_name.split(" ")[0]).slice(0, 60); saveProfile(); }
     if (!PROFILE.name) showAuth("name"); else hideAuth();
-    api.renderMe();
+    api.renderMe(); renderRecent();
   }
   api.logout = async () => {
     await Promise.all(loadChats().map(c => api.pushChat({...c, at: c.at || Date.now()}))); // nothing on this phone is lost
     await sb.auth.signOut().catch(() => {});
     // a shared phone: the next person must not see these chats
     store.set("kg_chats", "[]"); store.set("kg_profile", "{}"); store.set("kg_guest", ""); PROFILE = {};
-    newChat(); refreshAll(); api.renderMe(); showAuth("email");
+    newChat(); refreshAll(); api.renderMe(); showAuth("in");
   };
 
   if (sb){
     // decide before the first paint, from what supabase-js keeps in this browser, so the screen does not flash
     let had = false; try { had = !!localStorage.getItem(TOKEN); } catch (e) {}
     const fromLink = /access_token|error_description/.test(location.hash);
-    if (!had && !fromLink && !store.get("kg_guest")) showAuth("email");
-    fetch(URL_ + "/auth/v1/settings", {headers: {apikey: KEY}}).then(r => r.json()).then(s => { $("#authGoogle").hidden = $("#authOr").hidden = !s.external?.google; }).catch(() => {});
+    if (!had && !fromLink && !store.get("kg_guest")) showAuth("in");
+    fetch(URL_ + "/auth/v1/settings", {headers: {apikey: KEY}}).then(r => r.json()).then(s => { api.google = !!s.external?.google; $("#authOAuth").hidden = !(api.google && (!$("#stepIn").hidden || !$("#stepUp").hidden)); }).catch(() => {});
     sb.auth.onAuthStateChange((ev, session) => {
       const was = real(); user = session?.user || null; api.renderMe();
+      if (ev === "PASSWORD_RECOVERY"){ recovering = true; setTimeout(() => showAuth("new"), 0); return; }
       if (real() && !was) setTimeout(signedIn, 0); // outside the auth callback, as supabase-js asks
-      if (!session && ev === "INITIAL_SESSION" && !store.get("kg_guest")) showAuth("email");
+      if (!session && ev === "INITIAL_SESSION" && !store.get("kg_guest")) showAuth("in");
       if (user?.is_anonymous) quiet(sb.auth.signOut()); // left over from the first radar version
     });
-  }
-  if (!sb) $("#meBtn").hidden = true;
+  } else $("#meBtn").hidden = true;
   return api;
 })();
 document.addEventListener("click", async e => {
@@ -1228,7 +1304,7 @@ document.addEventListener("click", async e => {
   if (!await cloud.report(pest, crop, source)) r.disabled = false;
 });
 $("#meBtn").onclick = () => {
-  if (!cloud.email){ if (cloud.ok) showAuth("email"); return; }
+  if (!cloud.email) return showAuth("up");
   const m = $("#meMenu"); m.hidden = !m.hidden;
 };
 document.addEventListener("click", e => { if (!e.target.closest("#meBtn,#meMenu")) $("#meMenu").hidden = true; });
@@ -1238,6 +1314,7 @@ $("#meOut").onclick = async () => { $("#meMenu").hidden = true; await cloud.logo
 let chatId = null;
 const loadChats = () => { try { return JSON.parse(store.get("kg_chats") || "[]"); } catch (e) { return []; } };
 function saveChat(){
+  if (cloud.guest) return renderRecent(); // guests' chats are not kept
   if (!history.length || history.some(m => m.streaming)) return renderRecent();
   chatId ??= Date.now().toString(36);
   const msgs = history.map((m, i) => m.role === "user" ? {role:"user", text:m.text, img:m.img}
@@ -1249,7 +1326,7 @@ function saveChat(){
 function renderRecent(){
   const chats = loadChats();
   $("#recent").innerHTML = chats.length ? chats.map(c => `<div class="rc${c.id === chatId ? " on" : ""}"><button class="rt" data-open="${c.id}" title="${esc(c.title)}">${esc(c.title)}</button><button class="rx" data-del="${c.id}" aria-label="${L("মুছুন","Delete")}"><svg width="15" height="15"><use href="#i-x"/></svg></button></div>`).join("")
-    : `<p class="none">${L(cloud.email ? "আপনার প্রশ্নগুলো এখানে জমা থাকবে।" : "আপনার প্রশ্নগুলো এখানে জমা থাকবে, শুধু এই ফোনে।", cloud.email ? "Your chats are kept here." : "Your chats are kept here, on this phone only.")}</p>`;
+    : `<p class="none">${cloud.guest ? L("অ্যাকাউন্ট খুললে আপনার চ্যাট এখানে জমা থাকবে।","With an account, your chats are kept here.") : L(cloud.email ? "আপনার প্রশ্নগুলো এখানে জমা থাকবে।" : "আপনার প্রশ্নগুলো এখানে জমা থাকবে, শুধু এই ফোনে।", cloud.email ? "Your chats are kept here." : "Your chats are kept here, on this phone only.")}</p>`;
 }
 function newChat(){ history = []; chatId = null; renderChat(); go("chat"); closeSide(); $("#q").focus(); }
 $("#recent").addEventListener("click", e => {
@@ -1379,6 +1456,10 @@ async function askModel(text){
 const RADAR_Q = /এলাকায়.*(পোকা|রোগ)|আশেপাশে.*(পোকা|রোগ)|(পোকা|রোগ).*(খবর|রিপোর্ট)|pest radar|pests? (reported|nearby)|in my area/i;
 async function ask(text){
   text = text.trim(); if (!text) return;
+  if (cloud.guest){
+    if (!cloud.left()){ history.push({role:"user", text}); botSay(cloud.gateHTML(L(`আজকের ${num(GUEST_QUESTIONS)}টি অতিথি প্রশ্ন শেষ।`, `That's today's ${GUEST_QUESTIONS} guest questions.`))); return; }
+    cloud.spend();
+  }
   if (RADAR_Q.test(text) && cloud.ok){ history.push({role:"user", text}); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); slot.html = await cloud.radarHTML().catch(() => `<p>${L("এখন এলাকার খবর আনা গেল না। ইন্টারনেট দেখে আবার জিজ্ঞেস করুন।","Could not load nearby reports now. Check the internet and ask again.")}</p>`); slot.streaming = false; renderChat(); return; }
   if (WEATHER_Q.test(text) && !WX){ history.push({role:"user", text}); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); await loadWeather(); history.splice(-2); }
   history.push({role:"user", text});
@@ -1449,7 +1530,7 @@ if (SR && TTS){
     rec.start();
   }
   function stop(){ on = VOICE = false; ov.hidden = true; rec?.abort(); stopSpeak(); }
-  vb.onclick = () => { on = VOICE = true; ov.hidden = false; listen(); };
+  vb.onclick = () => { if (cloud.guest) return botSay(cloud.gateHTML(L("ভয়েস মোডে কথা বলতে অ্যাকাউন্ট লাগে।","Voice mode needs an account."))); on = VOICE = true; ov.hidden = false; listen(); };
   $("#vmStop").onclick = stop;
   $("#vmOrb").onclick = () => ov.dataset.state === "listen" ? rec?.stop() : listen(); // talking or idle: start listening; listening: send now
   addEventListener("keydown", e => { if (e.key === "Escape" && on) stop(); });
@@ -1506,7 +1587,7 @@ function weatherHTML(){ // copies the hidden weather view, rendered from the liv
     <div class="wc-hours"><b>${L("আগামী ৪৮ ঘণ্টায় স্প্রের সময়","Spray times, next 48 hours")}</b><div class="hours-wrap"><div class="hours">${$("#hours").innerHTML}</div></div><div class="legend">${$("#legend").innerHTML}</div></div>
     <p class="muted small">${L(`জেলা: ${d.bn}। বদলাতে`, `District: ${d.en}. To change it, open`)} <button class="linkish" data-profile>${L("আমার খামার","My farm")}</button>${L(" খুলুন।",".")} ${L("সূত্র: Open-Meteo পূর্বাভাস।","Source: Open-Meteo forecast.")}</p></div>`;
 }
-function pickPhoto(){ LIVE_MODEL ? $("#chatPhoto").click() : toast(L("ছবি দেখার মডেল এখানে চালু নেই","The photo model is not available here")); }
+function pickPhoto(){ if (cloud.guest) return botSay(cloud.gateHTML(L("ছবি দেখে রোগ বা ওষুধ চেনাতে অ্যাকাউন্ট লাগে।","Photo checks need an account."))); LIVE_MODEL ? $("#chatPhoto").click() : toast(L("ছবি দেখার মডেল এখানে চালু নেই","The photo model is not available here")); }
 // one photo, one question to the vision model: is it a crop problem or a pesticide label? then the matching answer
 async function photoReply(file, crop){
   const list = PESTS.map(p => `${p.k} = ${p.en}`).join("; ");
@@ -1540,6 +1621,7 @@ $("#chatPhoto").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = ""; if (f) sendPhoto(f);
 });
 async function sendPhoto(f){
+  if (cloud.guest) return pickPhoto();
   const q = $("#q").value.trim(); $("#q").value = ""; $("#q").style.height = "";
   const crop = cropsIn(q)[0] || ((PROFILE.crops || []).length === 1 ? CROPS.find(c => c.k === PROFILE.crops[0]) : null);
   history.push({role:"user", text: q || L("এই ছবিটা দেখুন","Please look at this photo"), img: await photoURL(f, 320)});
