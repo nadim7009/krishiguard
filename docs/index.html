@@ -1509,7 +1509,7 @@ function monthGuard(text, evidence){ // drop sentences naming a month that the v
 // What the question asks about must be in the answer itself: a "when" question needs a month or date in the answer,
 // a variety question a variety, an irrigation question irrigation. Stops a fertilizer answer for an onion sowing question.
 const TOPICS = [[/কখন|কোন সময়|কোন মাসে|when/i, new RegExp(MONTHS.source + "|\\d+\\s*(দিন|সপ্তাহ)|[০-৯]+\\s*(দিন|সপ্তাহ)")],
-  [/জাত|variety/i, /জাত|ব্রি|বারি|বিনা|BRRI|BARI|BINA|variety/i], [/সেচ|irrigat/i, /সেচ|irrigat/i], [/সার(?![\u0980-\u09FF])|fertili[sz]/i, /সার|Urea|TSP|MP|ইউরিয়া|fertili[sz]/i],
+  [/জাত|variety/i, /জাত|ব্রি|বারি|বিনা|BRRI|BARI|BINA|variety/i], [/সেচ|irrigat/i, /সেচ|irrigat/i], [/সার(?![\u0980-\u09FF])|ইউরিয়া|Urea|TSP|fertili[sz]/i, /সার|Urea|TSP|MP|ইউরিয়া|fertili[sz]/i],
   [/মাটি|soil/i, /মাটি|soil|দোআঁশ|বেলে|এঁটেল/i]];
 // the answer must hold what was asked, and its own question must not be about a different topic (fertilizer, variety...)
 const fitsTopic = (q, a, kq = "") => TOPICS.every(([ask, need], i) => (!ask.test(q) || need.test(a)) && (i === 0 || !ask.test(kq) || ask.test(q)));
