@@ -860,13 +860,13 @@ function remember(f){
 /* ---------- talking about anything ---------- */
 const SELF_HARM = /আত্মহত্যা|মরতে চাই|মরে যেতে ইচ্ছ|বাঁচতে চাই না|বাঁচতে ইচ্ছা করে না|নিজেকে শেষ|জীবন শেষ করে|বিষ খেয়ে|বিষ খাব|কীটনাশক খাব|ওষুধ খেয়ে মর|suicide|kill myself|want to die|end my life/i;
 const HARM_OTHERS = /খাইয়ে মার|মানুষ মার|কাউকে মার|kill (someone|a person)|poison (someone|a person)/i;
-const GREET = /^(হ্যালো|হেলো|হাই|আসসালামু|সালাম|নমস্কার|আদাব|শুভ সকাল|কেমন আছ|hel+o+|hlw|hi+\b|hey+|হায়|হেই|good morning|how are you)/i;
+const GREET = /^(হ্যালো|হেলো|হাই|আসসালামু|সালাম|নমস্কার|আদাব|শুভ সকাল|কেমন আছ|as+alam|salam|slm\b|hel+o+|hlw|hi+\b|hey+|হায়|হেই|good morning|how are you)/i;
 const THANKS = /ধন্যবাদ|থ্যাংক|শুকরিয়া|thank/i;
 const FEEL = /মন খারাপ|মন ভালো না|চিন্তায় আছি|দুশ্চিন্তা|টেনশন|কষ্টে আছি|কষ্ট হচ্ছে|লোকসান|ক্ষতি হয়ে গেছে|সব শেষ|ঋণ|দেনা|টাকা নেই|ভালো লাগছে না|হতাশ|একা লাগ|\bsad\b|worried|stress|\bloss\b|\bdebt\b|lonely/i;
 const hello = () => PROFILE.name ? `${esc(PROFILE.name)}, ` : "";
 function greetBack(q){ // answer a greeting with the same kind of greeting, by name; never start a religious greeting on our own
   const nm = PROFILE.name ? " " + esc(PROFILE.name) : "";
-  const w = /আসসালামু|সালাম/i.test(q) ? L("ওয়ালাইকুম আসসালাম", "Walaikum assalam") : /নমস্কার/.test(q) ? L("নমস্কার", "Namaskar")
+  const w = /আসসালামু|সালাম|as+alam|salam|slm/i.test(q) ? L("ওয়ালাইকুম আসসালাম", "Walaikum assalam") : /নমস্কার/.test(q) ? L("নমস্কার", "Namaskar")
     : /আদাব/.test(q) ? L("আদাব", "Adab") : /শুভ সকাল|good morning/i.test(q) ? L("শুভ সকাল", "Good morning") : L("হ্যালো", "Hello");
   const how = /কেমন আছ|how are you/i.test(q) ? L(" আমি ভালো আছি, ধন্যবাদ।", " I'm well, thank you.") : "";
   return `<p>${w}${nm}!${how} ${L("আজ কী জানতে চান? ফসল, পোকা, রোগ, ওষুধের মাত্রা, সার বা আবহাওয়া, যা দরকার লিখুন বা ছবি পাঠান।","What would you like to know today? Ask about crops, pests, diseases, pesticide doses, fertilizer or weather, or send a photo.")}</p>`;
