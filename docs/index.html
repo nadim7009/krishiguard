@@ -860,10 +860,18 @@ function remember(f){
 /* ---------- talking about anything ---------- */
 const SELF_HARM = /আত্মহত্যা|মরতে চাই|মরে যেতে ইচ্ছ|বাঁচতে চাই না|বাঁচতে ইচ্ছা করে না|নিজেকে শেষ|জীবন শেষ করে|বিষ খেয়ে|বিষ খাব|কীটনাশক খাব|ওষুধ খেয়ে মর|suicide|kill myself|want to die|end my life/i;
 const HARM_OTHERS = /খাইয়ে মার|মানুষ মার|কাউকে মার|kill (someone|a person)|poison (someone|a person)/i;
-const GREET = /^(হ্যালো|হেলো|হাই|আসসালামু|সালাম|নমস্কার|আদাব|শুভ সকাল|কেমন আছ|hello|hi\b|hey|good morning|how are you)/i;
+const GREET = /^(হ্যালো|হেলো|হাই|আসসালামু|সালাম|নমস্কার|আদাব|শুভ সকাল|কেমন আছ|hel+o+|hlw|hi+\b|hey+|হায়|হেই|good morning|how are you)/i;
 const THANKS = /ধন্যবাদ|থ্যাংক|শুকরিয়া|thank/i;
 const FEEL = /মন খারাপ|মন ভালো না|চিন্তায় আছি|দুশ্চিন্তা|টেনশন|কষ্টে আছি|কষ্ট হচ্ছে|লোকসান|ক্ষতি হয়ে গেছে|সব শেষ|ঋণ|দেনা|টাকা নেই|ভালো লাগছে না|হতাশ|একা লাগ|\bsad\b|worried|stress|\bloss\b|\bdebt\b|lonely/i;
 const hello = () => PROFILE.name ? `${esc(PROFILE.name)}, ` : "";
+function greetBack(q){ // answer a greeting with the same kind of greeting, by name; never start a religious greeting on our own
+  const nm = PROFILE.name ? " " + esc(PROFILE.name) : "";
+  const w = /আসসালামু|সালাম/i.test(q) ? L("ওয়ালাইকুম আসসালাম", "Walaikum assalam") : /নমস্কার/.test(q) ? L("নমস্কার", "Namaskar")
+    : /আদাব/.test(q) ? L("আদাব", "Adab") : /শুভ সকাল|good morning/i.test(q) ? L("শুভ সকাল", "Good morning") : L("হ্যালো", "Hello");
+  const how = /কেমন আছ|how are you/i.test(q) ? L(" আমি ভালো আছি, ধন্যবাদ।", " I'm well, thank you.") : "";
+  return `<p>${w}${nm}!${how} ${L("আজ কী জানতে চান? ফসল, পোকা, রোগ, ওষুধের মাত্রা, সার বা আবহাওয়া, যা দরকার লিখুন বা ছবি পাঠান।","What would you like to know today? Ask about crops, pests, diseases, pesticide doses, fertilizer or weather, or send a photo.")}</p>`;
+}
+const smallTalk = (q) => q.length < 40 && (GREET.test(q) || THANKS.test(q)) && !(cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q));
 
 function answer(q){
   q = q.trim();
@@ -873,8 +881,7 @@ function answer(q){
   if (HARM_OTHERS.test(q)) return `<p>${L("এ বিষয়ে আমি সাহায্য করতে পারব না। কেউ বিপদে থাকলে এখনই ৯৯৯ নম্বরে ফোন করুন।","I can't help with that. If someone is in danger, call 999 now.")}</p>`;
   if (!DAE) return `<p>${L("বালাইনাশক তালিকা লোড হয়নি। পাতাটি আবার খুলুন।","The pesticide list did not load. Reload the page.")}</p>`;
   const farmy = cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q);
-  if (!farmy && GREET.test(q) && q.length < 40)
-    return `<p>${hello()}${L("ভালো আছি, ধন্যবাদ। আপনার জমির খবর কী? ফসল, পোকা, রোগ, ওষুধ বা আবহাওয়া, যা নিয়ে ভাবছেন লিখুন। মনের কথাও বলতে পারেন, আমি শুনব।","I'm well, thank you. How is your field? Write about crops, pests, disease, pesticides or the weather. You can also just tell me how you're doing.")}</p>`;
+  if (!farmy && GREET.test(q) && q.length < 40) return greetBack(q);
   if (!farmy && THANKS.test(q) && q.length < 40) return `<p>${hello()}${L("আপনাকেও ধন্যবাদ। আর কিছু জানতে চাইলে লিখুন। ভালো ফলন হোক।","Thank you too. Write any time you need something. I hope the harvest goes well.")}</p>`;
   const feelings = () => `<p>${hello()}${L("শুনে খারাপ লাগছে। ফসলের ক্ষতি আর টাকার চাপ অনেক ভারী জিনিস, আর এটা নিয়ে কথা বলা ঠিক কাজ।","I'm sorry to hear that. Crop losses and money worries are heavy, and it's good that you're talking about it.")}</p>
       <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। জমির কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;
@@ -1420,7 +1427,9 @@ function systemPrompt(evidence, weather){
 ৫. কেউ নিজের ক্ষতি করার কথা বললে নরমভাবে কথা বলবে, পরিবারের কাউকে পাশে ডাকতে বলবে, বিপদে ৯৯৯ নম্বরে ফোন করতে বলবে, কীটনাশক দূরে তালা দিয়ে রাখতে বলবে। এমন সময় কোনো ওষুধ বা বিষের তথ্য দেবে না।
 ৬. কারও ক্ষতি করা, বেআইনি কাজ বা নিষিদ্ধ বালাইনাশক নিয়ে সাহায্য করবে না।
 ৭. উত্তর সাধারণত ১২০ শব্দের মধ্যে রাখবে। কোনো ইমোজি ব্যবহার করবে না। কৃষক নিজে না বললে "ভাই", "আপা" এমন সম্বোধন করবে না, নাম জানা থাকলে নাম ধরে ডাকবে।
-৮. মাত্রার প্রশ্নে উত্তর হবে এভাবে: কোন পণ্য, তার নিবন্ধিত মাত্রা, আর কৃষকের জমির মোট পরিমাণ দেওয়া থাকলে সেটা। নিজে কোনো হিসাব করবে না।`,
+৮. মাত্রার প্রশ্নে উত্তর হবে এভাবে: কোন পণ্য, তার নিবন্ধিত মাত্রা, আর কৃষকের জমির মোট পরিমাণ দেওয়া থাকলে সেটা। নিজে কোনো হিসাব করবে না।
+৯. কৃষক যেভাবে সম্ভাষণ করেন সেভাবেই ফিরিয়ে দেবে: হাই বা হ্যালো বললে "হ্যালো", সালাম দিলে "ওয়ালাইকুম আসসালাম"। নিজে থেকে নমস্কার বা সালাম দিয়ে শুরু করবে না। সম্ভাষণ না থাকলে সরাসরি উত্তর দেবে।
+১০. কৃষক যা জিজ্ঞেস করেছেন শুধু তারই উত্তর দেবে। প্রশ্নের সাথে সম্পর্ক নেই এমন কথা, তথ্য বা উপদেশ যোগ করবে না।`,
 `আজ ${b.d} ${BN_MONTHS[b.m]} ${b.y} বঙ্গাব্দ, ${s.bn}।`,
 prof ? `এই কৃষক নিজে জানিয়েছেন: ${prof}। এগুলো মাথায় রেখে উত্তর দেবে।` : "এই কৃষকের খামারের তথ্য জানা নেই।",
 evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে; পুরো তালিকাটি কৃষককে আলাদা কার্ডে দেখানো হবে, তাই তুমি তালিকা আবার লিখবে না, এক-দুটি পণ্য নিজের কথায় বলবে):\n${evidence}`
@@ -1520,6 +1529,7 @@ async function askModel(text){
 const RADAR_Q = /এলাকায়.*(পোকা|রোগ)|আশেপাশে.*(পোকা|রোগ)|(পোকা|রোগ).*(খবর|রিপোর্ট)|pest radar|pests? (reported|nearby)|in my area/i;
 async function ask(text){
   text = text.trim(); if (!text) return;
+  if (smallTalk(text)){ history.push({role:"user", text}, {role:"bot", html: answer(text)}); renderChat(); return; }
   if (cloud.guest){
     if (!cloud.left()){ history.push({role:"user", text}); botSay(cloud.gateHTML(L(`আজকের ${num(GUEST_QUESTIONS)}টি অতিথি প্রশ্ন শেষ।`, `That's today's ${GUEST_QUESTIONS} guest questions.`))); return; }
     cloud.spend();
