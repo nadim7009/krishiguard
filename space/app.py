@@ -5,7 +5,7 @@ with its vision projector (leaf and bottle photos) and the KrishiGuard LoRA,
 and exposes its OpenAI-style /v1/chat/completions on port 7860 for the KrishiGuard website.
 A small test chat sits at / so the Space page shows something useful. Messages are not stored.
 """
-import io, os, stat, subprocess, threading, time, zipfile, tarfile, glob, asyncio, wave
+import io, os, re, stat, subprocess, threading, time, zipfile, tarfile, glob, asyncio, wave
 import spaces  # free Gradio Spaces run on ZeroGPU hardware; the model itself runs on the CPU with llama.cpp
 import httpx, gradio as gr
 from fastapi import Request
@@ -118,17 +118,28 @@ def load_kb():
         df = pd.concat([pd.read_parquet(io.BytesIO(httpx.get(KB_URL.format(c), follow_redirects=True, timeout=120).content), columns=cols)
                         for c in ("general_qa", "treatment_qa")], ignore_index=True)
         df = df[df["answer_status"].eq("verified")].dropna(subset=["question", "answer"]).reset_index(drop=True)
-        vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4), sublinear_tf=True, min_df=2)
-        KB.update(df=df, vec=vec, X=vec.fit_transform(df["question"]))
+        text = df["question"]
+        cv = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True, min_df=2)
+        wv = TfidfVectorizer(analyzer="word", ngram_range=(1, 2), sublinear_tf=True, min_df=1, token_pattern=r"[\w\u0980-\u09FF]+")
+        KB.update(df=df, cv=cv, cX=cv.fit_transform(text), wv=wv, wX=wv.fit_transform(text),
+                  hay=(df["question"] + " " + df["answer"]).str.lower())
         print("knowledge base:", len(df), "verified answers", flush=True)
     except Exception as e:
         print("knowledge base failed:", e, flush=True)
 threading.Thread(target=load_kb, daemon=True).start()
 
-def kb_search(q, k=3):
-    s = (KB["X"] @ KB["vec"].transform([q]).T).toarray().ravel()
+def kb_search(q, terms=(), k=3):
+    """Half character n-grams (dialect spellings, typos), half words (so the crop and the problem count more
+    than common words like "সময়"). With crop or pest words from the site, only answers that mention one are kept."""
+    s = 0.5 * (KB["cX"] @ KB["cv"].transform([q]).T).toarray().ravel() + 0.5 * (KB["wX"] @ KB["wv"].transform([q]).T).toarray().ravel()
+    terms = [t.lower() for t in terms if t and len(t) > 1][:20]
+    if terms:
+        keep = KB["hay"].str.contains("|".join(map(re.escape, terms)), regex=True).to_numpy()
+        s = s * keep
     out, seen = [], set()
-    for i in s.argsort()[::-1][:40]:
+    for i in s.argsort()[::-1][:60]:
+        if s[i] <= 0:
+            break
         a = KB["df"].at[i, "answer"]
         if a in seen:
             continue  # the same answer is asked in several dialects
@@ -188,12 +199,13 @@ async def tts(request: Request):
 async def search(request: Request):
     """{"q": question} in, the closest verified answers out, each with its score and source."""
     try:
-        q = str((await request.json()).get("q", ""))[:300]
+        body = await request.json()
+        q, terms = str(body.get("q", ""))[:300], [str(t)[:40] for t in body.get("terms", [])][:20]
     except Exception:
         return JSONResponse({"error": "send JSON {\"q\": ...}"}, status_code=400, headers=CORS)
     if "X" not in KB:
         return JSONResponse({"error": "knowledge base is still loading"}, status_code=503, headers=CORS)
-    return JSONResponse({"results": await asyncio.to_thread(kb_search, q) if q.strip() else []}, headers=CORS)
+    return JSONResponse({"results": await asyncio.to_thread(kb_search, q, terms) if q.strip() else []}, headers=CORS)
 
 def test_chat(message, history):
     msgs = [{"role": "system", "content": "তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের বন্ধুর মতো সহকারী। সহজ বাংলায় ছোট উত্তর দেবে। বালাইনাশকের মাত্রা নিজে বানিয়ে বলবে না।"}]

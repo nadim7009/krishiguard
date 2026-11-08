@@ -1495,11 +1495,13 @@ function llmHtml(m){
     + (m.error ? `<p class="muted small">${m.error}</p>` : "")
     + (!m.streaming && m.q ? rememberChips(m.q) + reportChip(m.q) : "");
 }
-const KB_MIN = 0.35; // TF-IDF similarity below this is usually a different question
+// The crop and pest words in the question narrow the search to answers about them; without any, only a close match counts.
 async function kbSearch(q){
+  const p = pestIn(q), terms = [...cropsIn(q).flatMap(c => [c.bn, c.en, ...(c.kw || [])]), ...(p ? [p.bn, p.en, ...p.kw] : [])];
+  const min = terms.length ? 0.2 : 0.45; // similarity cut-offs, checked on the live search
   try {
-    const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/search", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({q}), signal: AbortSignal.timeout(6000)});
-    return r.ok ? ((await r.json()).results || []).filter(x => x.score >= KB_MIN) : [];
+    const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/search", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({q, terms}), signal: AbortSignal.timeout(6000)});
+    return r.ok ? ((await r.json()).results || []).filter(x => x.score >= min) : [];
   } catch (e) { return []; }
 }
 const dropRepeats = (t) => { const seen = new Set(); return t.split(/(?<=[।!?\n])/).filter(sn => { const k = sn.replace(/\s+/g, " ").trim(); if (!k || k.length < 12) return true; if (seen.has(k)) return false; seen.add(k); return true; }).join(""); };
