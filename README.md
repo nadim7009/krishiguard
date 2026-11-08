@@ -22,18 +22,18 @@ Does a small on-device agent that routes every numeric claim through verified to
 
 Each module is a tool the agent can call. The model decides which tool to use, fills in the arguments, and writes the Bangla answer around the tool output.
 
-| # | Module | Input | Source of truth | Phase |
-|---|--------|-------|-----------------|-------|
-| 1 | Extension knowledge search | question | KrishokChat semantic units (284 government publications), hybrid BM25 + e5 retrieval | 1 |
-| 2 | Fertilizer calculator | crop, variety, area, soil fertility class | Fertilizer Recommendation Guide 2018 (BARC) tables, coded as rules | 1 |
-| 3 | Pesticide checker | chemical or product name, crop, pest | DAE list of registered agricultural pesticides; blocks names not on the list | 1 |
-| 4 | Safety layer | every turn | refuse or ask one follow-up (missing crop, symptom, stage) before any chemical advice | 1 |
-| 5 | Crop doctor from a photo | leaf photo | Gemma 4 E2B vision, QLoRA on Bangladesh crop disease images; links the label to module 1 for treatment | 2 |
-| 6 | Weather and climate risk | district or upazila | Open-Meteo forecast; spray window, irrigation timing, heavy rain and heat alerts | 2 |
-| 7 | Water and methane | rice field area, irrigation practice | AWD (alternate wetting and drying) guidance + IPCC 2019 Tier 1 rice methane method, so the farmer sees water saved and methane avoided | 2 |
-| 8 | Voice in and out | Bangla speech | open Bangla speech-to-text and text-to-speech models, for farmers who do not type | 3 |
+| # | Module | Input | Source of truth | Status |
+|---|--------|-------|-----------------|--------|
+| 1 | Extension knowledge search | question | KrishokChat semantic units (284 government publications), hybrid BM25 + e5 retrieval | built (notebooks) |
+| 2 | Fertilizer calculator | crop, variety, area, soil fertility class | BARC Fertilizer Recommendation Guide 2024, chapter 7 tables for 85 crops (src/frg/) | built (website) |
+| 3 | Pesticide checker | chemical or product name, crop, pest | DAE list of registered agricultural pesticides; blocks names not on the list | built |
+| 4 | Safety layer | every turn | refuse or ask one follow-up (missing crop, symptom, stage) before any chemical advice | built |
+| 5 | Crop doctor from a photo | leaf or bottle photo | Gemma 4 E2B vision on the model server, no image fine-tuning yet; a crop photo links to the DAE list for treatment, a bottle photo is checked against it | built, not evaluated |
+| 6 | Weather and climate risk | district | Open-Meteo forecast; spray window, irrigation timing, heavy rain and heat alerts | built (website) |
+| 7 | Water and methane | rice field area, irrigation practice | AWD (alternate wetting and drying) guidance + IPCC 2019 Tier 1 rice methane method, so the farmer sees water saved and methane avoided | not built |
+| 8 | Voice in and out | Bangla speech | the browser's speech recognition for input; Meta MMS-TTS on the model server for Bangla speech out | built (website) |
 
-Phase 1 is the paper. Phase 2 makes the system clearly broader than a QA bot. Phase 3 is for the public demo.
+Modules 1 to 4 are what the paper measures. The rest serve the public website.
 
 ## Experiment matrix
 
@@ -59,7 +59,7 @@ Reused from KrishokChat, so numbers line up with a published table:
 New benchmark built for this project (released with the paper):
 
 - KrishiTools-300: about 300 Bangla farmer requests that need a tool, written across the six dialects in KrishokChat, each with the correct tool and arguments. Scored on tool choice accuracy, argument accuracy and final number correctness.
-- Photo diagnosis: accuracy and macro F1 on a held-out image split (phase 2).
+- Photo diagnosis: accuracy and macro F1 on a held-out image split (planned, not run yet).
 - Deployment: seconds per answer on 2 vCPU, model size on disk.
 
 ## Notebooks
@@ -70,14 +70,14 @@ The Kaggle runs use the .ipynb files at the repo root; src/ holds the same code 
 |----------|--------------|----------|--------|
 | 01_data_and_retrieval | KrishokChat loading, BM25 / dense / hybrid search, Recall@k by dialect | CPU or T4 | done |
 | 02_baselines | Systems A and B | T4 | superseded by 04 |
-| 03_tools | DAE pesticide checker, safety gate, FRG formula, safety metric | CPU | done (FRG tables pending) |
+| 03_tools | DAE pesticide checker, safety gate, FRG formula, safety metric | CPU | done (FRG crop tables later added in src/frg/) |
 | 04_agent | Systems A, B, C; router, DAE lookup first, number guard (v3) | T4 | done |
 | 05_krishitools | KrishiTools-300 benchmark from the DAE list | CPU | done |
 | 06_finetune | QLoRA on Gemma 4 E2B: DAE answers, KrishokChat, safety, personal talk | T4 | done |
 | 07_eval_finetuned | Systems D (fine-tuned alone) and E (fine-tuned + agent) | T4 | done |
 | 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 and v5 | T4 | done |
 | 09_export_lora | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
-| 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | running |
+| 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | done |
 | 11_deployed | The deployed setup: llama.cpp Q4_0 + GGUF LoRA at strength 0, 0.7 and 1.0 on KrishiTools-Messy; ask-back set; scorer fix | T4 | running |
 
 ## Metric note
@@ -90,7 +90,7 @@ Notebook 02 counted list markers ("১.", "২.") as numbers, which inflated its
 - KrishiGyan (5,529 Bangla QA pairs, CC-BY-4.0) for out-of-distribution testing.
 - The `semantic_units` table only ships a 512-character preview of each source passage (full passages average tens of thousands of characters). Notebook 01 rebuilds each passage from its title, the preview and the train/dev answers taken from it, which are verbatim extracts. Test answers are never used. Only 7% of general-QA test passages and 37% of treatment-QA test passages have any train/dev answers, so retrieval on the general test set is close to matching titles and previews.
 - DAE list of registered agricultural pesticides, approved up to the 81st PTAC meeting (189 pages): parsed to 7,215 product/crop/pest rows, 4,728 products, 380 active ingredients, with registered doses. Known issues: the PDF itself has errors (Blastin 75WDG, a fungicide, is listed for rice BPH, most likely a typo for blast), and 21 rows carry a company name in the crop column. The checker always returns the registration number so answers can be traced. The first parse (notebook 03) lost the active ingredient name for 608 products, where the PDF's merged name cell left only a strength like "(64% + 4%)" or a stray number; src/dae/fix_names.py reads the PDF again by block and fills them in for the website's docs/dae.json (2 products still have no readable name). Where the names' strengths do not add up to the brand's number, the site shows the ingredient names without strengths.
-- BARC Fertilizer Recommendation Guide 2024: the formula is implemented; the crop tables still need the guide PDF.
+- BARC Fertilizer Recommendation Guide 2024: chapter 7 crop tables (101 tables, 85 crops) parsed by src/frg/ into docs/frg.json; the website uses the medium-fertility class by default and the middle of each range. Fruit trees and the AEZ cropping-pattern tables are not included.
 - KrishokChat safety subsets: T3 `safety_refusal` (prompt in `harmful_prompt`, reply in `safe_response`, four refusal types incl. 144 over-refusal tests) and T4 `safety_requery` (prompt in `incomplete_query`, reply in `requery_response`). The notebook 03 metric agrees with 98.2% of T3 and 100% of T4 gold replies.
 
 ## Kaggle setup
