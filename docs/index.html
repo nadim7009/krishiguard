@@ -1180,7 +1180,7 @@ document.addEventListener("click", e => {
    The key is the project's publishable key, meant to be public; row level security in supabase/schema.sql
    lets each person read and write only their own rows, and the radar returns counts only.
    Guests can look around with 3 text questions a day; photos, voice, saved chats and the pest radar need an account.
-   If the Supabase library cannot load (no internet on first visit), the assistant opens without limits rather than not at all. */
+   Every visit starts on the sign-in screen unless the person is signed in; choosing guest lasts only until the page is closed. */
 const GUEST_QUESTIONS = 3;
 const cloud = (() => {
   const URL_ = "https://kwmnpumiraboztfcepbv.supabase.co", KEY = "sb_publishable_bvmH92t5SlJ02g_L19eM_A_7zIHWdKx";
@@ -1195,7 +1195,7 @@ const cloud = (() => {
   const used = () => { try { const g = JSON.parse(store.get("kg_gq") || "{}"); return g.d === today() ? g.n : 0; } catch (e) { return 0; } };
   const api = {ok: !!sb,
     get email(){ return real() ? user.email : ""; },
-    get guest(){ return !!sb && !real(); },
+    get guest(){ return !real(); },
     left(){ return Math.max(0, GUEST_QUESTIONS - used()); },
     spend(){ store.set("kg_gq", JSON.stringify({d: today(), n: used() + 1})); api.renderGuest(); },
     gateHTML(why){ // the card a guest sees when they reach something that needs an account
@@ -1264,7 +1264,7 @@ const cloud = (() => {
       : /rate|seconds|security purposes|too many/i.test(m) ? L("অল্প সময়ে অনেকবার চেষ্টা হয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।","Too many tries just now. Wait a minute and try again.")
       : /fetch|network/i.test(m) ? L("ইন্টারনেট সংযোগ পাওয়া যাচ্ছে না।","No internet connection.")
       : L("এখন করা গেল না। আবার চেষ্টা করুন।","That did not work. Please try again."); };
-  async function busy(btn, fn){ btn.disabled = true; try { return await fn(); } finally { btn.disabled = false; } }
+  async function busy(btn, fn){ if (!sb) return {error: {message: "network"}}; btn.disabled = true; try { return await fn(); } finally { btn.disabled = false; } }
 
   $("#stepIn").addEventListener("submit", async e => {
     e.preventDefault();
@@ -1320,8 +1320,8 @@ const cloud = (() => {
     const a = e.target.closest("[data-auth]"); if (a) return showAuth(a.dataset.auth);
     const eye = e.target.closest("[data-eye]"); if (eye){ const i = eye.previousElementSibling, show = i.type === "password"; i.type = show ? "text" : "password"; eye.textContent = show ? L("লুকান","Hide") : L("দেখুন","Show"); }
   });
-  $("#authGoogle").onclick = () => sb.auth.signInWithOAuth({provider: "google", options: {redirectTo: HOME}});
-  $("#authGuest").onclick = () => { store.set("kg_guest", "1"); hideAuth(); api.renderMe(); };
+  $("#authGoogle").onclick = () => sb?.auth.signInWithOAuth({provider: "google", options: {redirectTo: HOME}});
+  $("#authGuest").onclick = () => { hideAuth(); api.renderMe(); }; // not remembered: the next visit starts on the sign-in screen again
   $("#authPrivacy").onclick = () => $("#privacyDlg").showModal();
   $("#authLang").onclick = () => setLang(lang === "bn" ? "en" : "bn");
 
@@ -1337,7 +1337,6 @@ const cloud = (() => {
   }
   async function signedIn(){
     if (recovering) return showAuth("new"); // came from a reset link: set the password first
-    store.set("kg_guest", "");
     await pull().catch(() => {});
     const meta = user.user_metadata || {};
     if (!PROFILE.name && (meta.name || meta.full_name)){ PROFILE.name = (meta.name || meta.full_name.split(" ")[0]).slice(0, 60); saveProfile(); }
@@ -1348,7 +1347,7 @@ const cloud = (() => {
     await Promise.all(loadChats().map(c => api.pushChat({...c, at: c.at || Date.now()}))); // nothing on this phone is lost
     await sb.auth.signOut().catch(() => {});
     // a shared phone: the next person must not see these chats
-    store.set("kg_chats", "[]"); store.set("kg_profile", "{}"); store.set("kg_guest", ""); PROFILE = {};
+    store.set("kg_chats", "[]"); store.set("kg_profile", "{}"); PROFILE = {};
     newChat(); refreshAll(); api.renderMe(); showAuth("in");
   };
 
@@ -1356,16 +1355,16 @@ const cloud = (() => {
     // decide before the first paint, from what supabase-js keeps in this browser, so the screen does not flash
     let had = false; try { had = !!localStorage.getItem(TOKEN); } catch (e) {}
     const fromLink = /access_token|error_description/.test(location.hash);
-    if (!had && !fromLink && !store.get("kg_guest")) showAuth("in");
+    if (!had && !fromLink) showAuth("in");
     fetch(URL_ + "/auth/v1/settings", {headers: {apikey: KEY}}).then(r => r.json()).then(s => { api.google = !!s.external?.google; $("#authOAuth").hidden = !(api.google && (!$("#stepIn").hidden || !$("#stepUp").hidden)); }).catch(() => {});
     sb.auth.onAuthStateChange((ev, session) => {
       const was = real(); user = session?.user || null; api.renderMe();
       if (ev === "PASSWORD_RECOVERY"){ recovering = true; setTimeout(() => showAuth("new"), 0); return; }
       if (real() && !was) setTimeout(signedIn, 0); // outside the auth callback, as supabase-js asks
-      if (!session && ev === "INITIAL_SESSION" && !store.get("kg_guest")) showAuth("in");
+      if (!session && ev === "INITIAL_SESSION") showAuth("in");
       if (user?.is_anonymous) quiet(sb.auth.signOut()); // left over from the first radar version
     });
-  } else $("#meBtn").hidden = true;
+  } else showAuth("in"); // offline on a first visit: the screen still comes first, and guest works
   return api;
 })();
 document.addEventListener("click", async e => {
