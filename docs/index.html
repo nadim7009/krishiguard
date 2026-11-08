@@ -96,7 +96,7 @@ main{min-width:0;overflow:auto}
 .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
 .btn.soft{background:var(--forest-soft);color:var(--forest)}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:.88rem;color:var(--muted);font-weight:500;min-width:0}
-input[type=text],input[type=search],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;min-width:0;color:var(--ink)}
+input[type=text],input[type=search],input[type=email],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;min-width:0;color:var(--ink)}
 input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;box-shadow:0 0 0 3px var(--forest-soft)}
 
 /* home / chat */
@@ -340,6 +340,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c-1-3.5-3.6-5.4-7.5-5.5.1 3.9 3.3 6 7.5 5.5zM12 14c.8-3.4 3.3-5.3 7.5-5.5-.1 4-3.2 6-7.5 5.5zM6 20h12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.5 4.5 0 0 0 7 18z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 12l6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></symbol>
     <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l1.8-2.5h6.4L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
     <symbol id="logo" viewBox="0 0 40 40"><path d="M20 3l14 5v11c0 9-6 15.5-14 18C12 34.5 6 28 6 19V8z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M20 31V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20 21c-4-.3-6.3-2.8-6.5-6.5 4 .2 6.3 2.6 6.5 6.5zM20 17.5c4-.3 6.3-2.8 6.5-6.5-4 .2-6.3 2.6-6.5 6.5zM20 26c-3.4-.3-5.4-2.3-5.6-5.5 3.4.2 5.4 2.2 5.6 5.5z" fill="var(--mustard)"/></symbol>
   </defs>
@@ -359,12 +361,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
         <li><svg width="17" height="17"><use href="#i-leaf"/></svg><span data-bn="পাতা বা পোকার ছবি" data-en="Photo of a leaf or pest">পাতা বা পোকার ছবি</span></li>
         <li><svg width="17" height="17"><use href="#i-bottle"/></svg><span data-bn="ওষুধের বোতলের ছবি" data-en="Photo of a pesticide bottle">ওষুধের বোতলের ছবি</span></li>
         <li><svg width="17" height="17"><use href="#i-sky"/></svg><span data-bn="আবহাওয়া ও স্প্রের সময়" data-en="Weather and spray times">আবহাওয়া ও স্প্রের সময়</span></li>
+        <li><svg width="17" height="17"><use href="#i-radar"/></svg><span data-bn="এলাকায় কোন পোকা লাগছে" data-en="Pests reported nearby">এলাকায় কোন পোকা লাগছে</span></li>
       </ul>
     </div>
     <p class="side-h" data-bn="আগের চ্যাট" data-en="Recent chats">আগের চ্যাট</p>
     <div class="recent" id="recent"></div>
     <div class="side-foot">
       <div class="today" id="today"></div>
+      <button class="side-item" id="accountBtn"><svg width="19" height="19"><use href="#i-cloud"/></svg><span id="accountLabel">লগইন: সব ফোনে চ্যাট</span></button>
       <button class="side-item" id="profileBtn"><svg width="19" height="19"><use href="#i-user"/></svg><span data-bn="আমার খামার" data-en="My farm">আমার খামার</span></button>
       <div class="side-row"><button class="ghost" id="langBtn">English</button><button class="round" id="themeBtn" aria-label="Dark or light"><svg width="17" height="17"><use href="#i-moon"/></svg></button></div>
     </div>
@@ -446,7 +450,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
   <form id="profileForm" method="dialog">
     <div>
       <h3 id="pfTitle" data-bn="আমার খামার" data-en="My farm">আমার খামার</h3>
-      <p class="muted small" data-bn="এগুলো শুধু এই ফোনে থাকে। উত্তর আপনার জমি আর ফসল মিলিয়ে দেওয়ার জন্য লাগে। যেকোনো সময় মুছে দিতে পারবেন।" data-en="This stays on this phone only. It lets answers fit your own land and crops. You can delete it any time.">এগুলো শুধু এই ফোনে থাকে। উত্তর আপনার জমি আর ফসল মিলিয়ে দেওয়ার জন্য লাগে। যেকোনো সময় মুছে দিতে পারবেন।</p>
+      <p class="muted small" data-bn="এগুলো এই ফোনে থাকে, লগইন করলে আপনার অ্যাকাউন্টেও। উত্তর আপনার জমি আর ফসল মিলিয়ে দেওয়ার জন্য লাগে। যেকোনো সময় মুছে দিতে পারবেন।" data-en="This stays on this phone, and in your account if you log in. It lets answers fit your own land and crops. You can delete it any time.">এগুলো এই ফোনে থাকে, লগইন করলে আপনার অ্যাকাউন্টেও। উত্তর আপনার জমি আর ফসল মিলিয়ে দেওয়ার জন্য লাগে। যেকোনো সময় মুছে দিতে পারবেন।</p>
     </div>
     <label class="f" for="pfName"><span data-bn="নাম (না দিলেও চলবে)" data-en="Name (optional)">নাম (না দিলেও চলবে)</span><input type="text" id="pfName" autocomplete="given-name"></label>
     <label class="f" for="pfDistrict"><span data-bn="জেলা" data-en="District">জেলা</span><select id="pfDistrict"></select></label>
@@ -465,6 +469,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
     </div>
   </form>
 </dialog>
+<dialog class="dlg" id="accountDlg" aria-labelledby="acTitle">
+  <form id="accountForm" method="dialog">
+    <div>
+      <h3 id="acTitle" data-bn="লগইন" data-en="Log in">লগইন</h3>
+      <p class="muted small" data-bn="ইমেইল দিন, একটি লগইন লিংক যাবে। লগইন করলে আপনার চ্যাট আর খামারের তথ্য যেকোনো ফোনে পাবেন। পাসওয়ার্ড লাগবে না।" data-en="Enter your email and we'll send a login link. Logged in, your chats and farm details follow you to any phone. No password needed.">ইমেইল দিন, একটি লগইন লিংক যাবে। লগইন করলে আপনার চ্যাট আর খামারের তথ্য যেকোনো ফোনে পাবেন। পাসওয়ার্ড লাগবে না।</p>
+    </div>
+    <label class="f" for="acEmail" id="accountIn"><span data-bn="ইমেইল" data-en="Email">ইমেইল</span><input type="email" id="acEmail" autocomplete="email"></label>
+    <p class="small" id="accountMsg" role="status" hidden></p>
+    <div class="dlg-actions">
+      <button type="button" class="linkish danger" id="acOut" hidden data-bn="লগআউট" data-en="Log out">লগআউট</button>
+      <span class="grow"></span>
+      <button type="button" class="btn soft" id="acCancel" data-bn="বন্ধ" data-en="Close">বন্ধ</button>
+      <button type="submit" class="btn" id="acSend" data-bn="লিংক পাঠান" data-en="Send link">লিংক পাঠান</button>
+    </div>
+  </form>
+</dialog>
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="vmode" id="vmode" hidden role="dialog" aria-label="Voice mode">
   <button class="vm-orb" id="vmOrb" aria-label="Talk"><svg width="54" height="54"><use href="#logo"/></svg></button>
@@ -473,6 +493,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
   <button class="vm-stop" id="vmStop"><svg width="20" height="20"><use href="#i-x"/></svg><span data-bn="ভয়েস মোড বন্ধ" data-en="End voice mode">ভয়েস মোড বন্ধ</span></button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ---------- settings ---------- */
 // The KrishiGuard model (llama.cpp server with Gemma 4 E2B) on a Hugging Face Space. Empty means DAE-tool answers only.
@@ -600,7 +621,7 @@ const DOSE_Q = /কত|মাত্রা|কতটুকু|কতখানি|
 const TREAT_Q = /দমন|কী দি|কি দি|ওষুধ|অষুধ|স্প্রে|কীটনাশক|বালাইনাশক|ছত্রাকনাশক|লেগেছে|লাগছে|ধরেছে|আক্রমণ|treat|control|spray|pesticide|fungicide|insecticide/i;
 const WEATHER_Q = /আবহাওয়া|আবহাওয়া|বৃষ্টি|বাতাস|কখন স্প্রে|স্প্রে করা যাবে|স্প্রে করব কখন|স্প্রের সময়|weather|rain|forecast|when (can|should) i spray/i;
 
-/* ---------- my farm: kept on this phone only until accounts exist ---------- */
+/* ---------- my farm: kept on this phone, and in the account when logged in ---------- */
 const LAND_UNITS = [ // hectares per unit: bigha = 33 decimals and katha = 1.65 decimals, the common Bangladesh measures; some regions differ
   {k:"bigha", bn:"বিঘা", en:"bigha", ha:0.13355, kw:["বিঘা","bigha"]},
   {k:"decimal", bn:"শতাংশ", en:"decimal", ha:0.004047, kw:["শতাংশ","শতক","decimal"]},
@@ -609,7 +630,7 @@ const LAND_UNITS = [ // hectares per unit: bigha = 33 decimals and katha = 1.65 
   {k:"ha", bn:"হেক্টর", en:"hectare", ha:1, kw:["হেক্টর","hectare"]},
 ];
 let PROFILE = (() => { try { return JSON.parse(store.get("kg_profile")) || {}; } catch (e) { return {}; } })();
-const saveProfile = () => store.set("kg_profile", JSON.stringify(PROFILE));
+const saveProfile = () => { store.set("kg_profile", JSON.stringify(PROFILE)); cloud.pushProfile(); };
 const enNum = (s) => String(s).replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d));
 const unitOf = (k) => LAND_UNITS.find(u => u.k === k);
 const landHa = () => PROFILE.land && unitOf(PROFILE.land.unit) ? PROFILE.land.n * unitOf(PROFILE.land.unit).ha : 0;
@@ -651,6 +672,8 @@ function factsIn(q){
 const factLabel = (f) => f.type === "land" ? L(`আমার জমি ${landText(f.land)}`, `My land: ${landText(f.land)}`)
   : f.type === "name" ? L(`আমার নাম ${f.name}`, `My name is ${f.name}`)
   : L(`আমি ${CROPS.find(c => c.k === f.crop).bn} চাষ করি`, `I grow ${CROPS.find(c => c.k === f.crop).en}`);
+const pestOf = (q) => PESTS.find(p => p.kw.some(k => String(q).includes(k)) || p.re.test(q));
+const reportChip = (q) => { const p = pestOf(q), c = cropsIn(q)[0]; return p && cloud.ok ? `<div class="remember"><span>${L("আপনার জমিতে লেগেছে?","In your field?")}</span><button class="chip" data-report="${p.k}|${c ? c.k : ""}">${L("এলাকার কৃষকদের জানান","Tell farmers nearby")}</button></div>` : ""; };
 const rememberChips = (q) => { const facts = factsIn(q); return facts.length ? `<div class="remember"><span>${L("মনে রাখব?","Remember this?")}</span>${facts.map(f => `<button class="chip" data-remember="${esc(JSON.stringify(f))}">${esc(factLabel(f))}</button>`).join("")}</div>` : ""; };
 function remember(f){
   if (f.type === "land") PROFILE.land = f.land;
@@ -869,6 +892,7 @@ const IDEAS = () => [
   ["i-check", L("নিবন্ধিত কিনা","Is it registered?"), L("Neptune 48EC পাটে দেওয়া যাবে?","Can I use Neptune 48EC on jute?")],
   ["i-bug", L("পোকা দমন","Pest control"), L("বেগুনে ডগা ও ফল ছিদ্রকারী পোকা, কী স্প্রে করমু?","Shoot and fruit borer on brinjal, what should I spray?")],
   ["i-leaf", L("রোগ দমন","Disease control"), L("আলুতে নাবি ধসা রোগ, কোন ছত্রাকনাশক নিবন্ধিত?","Which fungicide is registered for potato late blight?")],
+  ["i-radar", L("এলাকার খবর","Nearby reports"), L("আমার এলাকায় এখন কোন পোকা বা রোগ লাগছে?","Which pests are farmers reporting in my area?")],
 ];
 const scroller = $("#chatScroll");
 function renderChat(){
@@ -879,7 +903,7 @@ function renderChat(){
   $("#ideas").innerHTML = IDEAS().map(([ic, t, q]) => `<button class="starter" data-ask="${esc(q)}" title="${esc(t)}"><svg width="18" height="18"><use href="#${ic}"/></svg><span><b>${t}</b><span>${esc(q)}</span></span></button>`).join("");
   thread.innerHTML = history.map((m, i) => m.role === "user"
     ? `<div class="msg user">${m.img ? `<img class="uimg" src="${m.img}" alt="${L("আপনার দেওয়া ছবি","Your photo")}">` : ""}${esc(m.text)}</div>`
-    : `<div class="msg bot"><svg class="mark"><use href="#logo"/></svg><div class="bub"><div class="who">${L("কৃষিগার্ড","KrishiGuard")}</div><div class="answer" id="m${i}">${m.llm ? llmHtml(m) : (m.html ?? (answer(m.q) ?? m.fallback())) + (m.q ? rememberChips(m.q) : "")}</div>${m.streaming ? "" : acts(i)}</div></div>`).join("");
+    : `<div class="msg bot"><svg class="mark"><use href="#logo"/></svg><div class="bub"><div class="who">${L("কৃষিগার্ড","KrishiGuard")}</div><div class="answer" id="m${i}">${m.llm ? llmHtml(m) : (m.html ?? (answer(m.q) ?? m.fallback())) + (m.q ? rememberChips(m.q) + reportChip(m.q) : "")}</div>${m.streaming ? "" : acts(i)}</div></div>`).join("");
   scroller.scrollTop = history.length ? scroller.scrollHeight : 0;
   saveChat();
 }
@@ -968,7 +992,92 @@ document.addEventListener("click", e => {
   if (q.dataset.qa === "spray") ask(L("আজ কখন স্প্রে করা যাবে?","When can I spray today?"));
 });
 
-/* ---------- recent chats, kept in this browser only ---------- */
+/* ---------- cloud (Supabase): login, chats and farm details on every phone, pest radar ----------
+   Without the library or the internet the site works as before, from this phone's storage.
+   The key is the project's publishable key, meant to be public; row level security in supabase/schema.sql
+   lets each person read and write only their own rows, and the radar returns counts only. */
+const cloud = (() => {
+  const URL_ = "https://kwmnpumiraboztfcepbv.supabase.co", KEY = "sb_publishable_bvmH92t5SlJ02g_L19eM_A_7zIHWdKx";
+  let sb = null;
+  try { sb = window.supabase?.createClient(URL_, KEY, {auth: {persistSession: true, detectSessionInUrl: true}}) || null; } catch (e) {}
+  let user = null;
+  const real = () => !!user && !user.is_anonymous;
+  const quiet = (q) => q.then(() => {}, () => {});
+  const district = () => PROFILE.district || store.get("kg_district");
+  const api = {ok: !!sb,
+    get email(){ return real() ? user.email : ""; },
+    pushProfile(){ if (real()) quiet(sb.from("profiles").upsert({id: user.id, data: PROFILE, updated_at: new Date().toISOString()})); },
+    pushChat(c){ if (real()) quiet(sb.from("chats").upsert({id: c.id, title: c.title, msgs: c.msgs.map(({img, ...m}) => m), updated_at: new Date(c.at).toISOString()})); },
+    dropChat(id){ if (real()) quiet(sb.from("chats").delete().eq("id", id)); },
+    async report(pest, crop, source){
+      if (!district()){ toast(L("আগে 'আমার খামার'-এ আপনার জেলা দিন।","First set your district in My farm.")); openProfile(); return false; }
+      if (!user){ const {data, error} = await sb.auth.signInAnonymously(); if (error){ toast(L("এখন জানানো গেল না। ইন্টারনেট দেখে আবার চেষ্টা করুন।","Could not send it now. Check the internet and try again.")); return false; } user = data.user; }
+      const {error} = await sb.from("pest_reports").insert({district: district(), crop: crop || null, pest, source: source || "chat"});
+      toast(!error ? L("জানানো হয়েছে। আপনার জেলার কৃষকেরা এলাকার খবরে দেখবেন, আপনার নাম ছাড়া।","Sent. Farmers in your district will see it, without your name.")
+        : /already/.test(error.message) ? L("আজ এটি আগেই জানিয়েছেন।","You already reported this today.")
+        : /too many/.test(error.message) ? L("আজ অনেকগুলো জানিয়েছেন, কাল আবার পারবেন।","That is enough reports for today.")
+        : L("এখন জানানো গেল না। একটু পরে আবার চেষ্টা করুন।","Could not send it now. Try again shortly."));
+      return !error;
+    },
+    async radarHTML(){
+      const d = DISTRICTS.find(x => x.k === district());
+      if (!d) return `<p>${L("আপনার জেলা জানা নেই। 'আমার খামার'-এ জেলা দিলে সেই জেলার কৃষকদের জানানো পোকা আর রোগ দেখাব।","I don't know your district yet. Set it in My farm and I'll show the pests farmers there are reporting.")}</p><button class="btn soft" data-profile>${L("আমার খামার","My farm")}</button>`;
+      const {data, error} = await sb.rpc("pest_radar", {p_district: d.k, p_days: 14});
+      if (error) throw error;
+      if (!data.length) return `<p>${L(`গত ১৪ দিনে ${d.bn} জেলা থেকে কেউ কোনো পোকা বা রোগ জানায়নি।`, `No pest or disease reports from ${d.en} district in the last 14 days.`)}</p><p class="muted small">${L("আপনার জমিতে কিছু দেখলে উত্তরের নিচে 'এলাকার কৃষকদের জানান' চাপুন, অন্যরা সতর্ক হবেন।","If you see a pest, tap 'Tell farmers nearby' under the answer so others can watch for it.")}</p>`;
+      const ago = (t) => { const h = Math.max(1, Math.round((Date.now() - Date.parse(t)) / 36e5)); return h < 24 ? L(`${num(h)} ঘণ্টা আগে`, `${h} h ago`) : L(`${num(Math.round(h / 24))} দিন আগে`, `${Math.round(h / 24)} days ago`); };
+      return `<p>${L(`গত ১৪ দিনে ${d.bn} জেলার কৃষকেরা যা জানিয়েছেন:`, `Reported by farmers in ${d.en} district in the last 14 days:`)}</p><div class="toolbox"><div class="doses">`
+        + data.map(r => { const p = PESTS.find(x => x.k === r.pest), c = CROPS.find(x => x.k === r.crop);
+            return `<div class="dose"><div class="nm">${esc(p ? pestName(p) : r.pest)}${c ? ` · ${esc(cropName(c))}` : ""}</div><div class="meta">${L("সর্বশেষ", "Latest")} ${ago(r.last_seen)}</div><div class="amt">${num(r.farmers)}<small>${L("জন কৃষক", r.farmers == 1 ? "farmer" : "farmers")}</small></div></div>`; }).join("")
+        + `</div></div><p class="muted small">${L("কৃষকদের নিজেদের জানানো, যাচাই করা নয়। একজন কৃষক দিনে একটি পোকা একবারই জানাতে পারেন।","Reported by farmers themselves, not verified. Each farmer can report a pest once a day.")}</p>`;
+    },
+    sendLink(email){ return sb.auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname}}); },
+    logout(){ return sb.auth.signOut(); },
+    label(){ $("#accountLabel").textContent = real() ? user.email : L("লগইন: সব ফোনে চ্যাট", "Log in: chats on every phone"); },
+  };
+  async function pull(){ // after login: merge the account's farm details and chats with this phone's, newer chat wins
+    const [{data: prof}, {data: rows}] = await Promise.all([sb.from("profiles").select("data").maybeSingle(), sb.from("chats").select("id, title, msgs, updated_at")]);
+    if (prof?.data && Object.keys(prof.data).length && !Object.keys(PROFILE).length){ PROFILE = prof.data; store.set("kg_profile", JSON.stringify(PROFILE)); refreshAll(); }
+    else if (Object.keys(PROFILE).length) api.pushProfile();
+    const remote = new Map((rows || []).map(r => [r.id, Date.parse(r.updated_at)])), byId = new Map(loadChats().map(c => [c.id, c]));
+    for (const r of rows || []){ const l = byId.get(r.id); if (!l || (l.at || 0) < remote.get(r.id)) byId.set(r.id, {id: r.id, title: r.title, msgs: r.msgs, at: remote.get(r.id)}); }
+    const merged = [...byId.values()].sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 30);
+    store.set("kg_chats", JSON.stringify(merged)); renderRecent();
+    for (const c of merged) if (!remote.has(c.id) || remote.get(c.id) < (c.at || 0)) api.pushChat({...c, at: c.at || Date.now()});
+  }
+  if (sb) sb.auth.onAuthStateChange((ev, session) => {
+    const was = real(); user = session?.user || null; api.label();
+    if (real() && !was) setTimeout(() => pull().catch(() => {}), 0); // outside the auth callback, as supabase-js asks
+    if (ev === "SIGNED_IN" && real() && !was) toast(L(`লগইন হয়েছে: ${user.email}`, `Logged in: ${user.email}`));
+  });
+  else $("#accountBtn").hidden = true;
+  return api;
+})();
+document.addEventListener("click", async e => {
+  const r = e.target.closest("[data-report]"); if (!r) return;
+  const [pest, crop, source] = r.dataset.report.split("|"); r.disabled = true;
+  if (!await cloud.report(pest, crop, source)) r.disabled = false;
+});
+$("#accountBtn").onclick = () => {
+  const inn = !!cloud.email;
+  $("#accountIn").hidden = inn; $("#acSend").hidden = inn; $("#acOut").hidden = !inn; $("#accountMsg").hidden = !inn;
+  $("#accountMsg").textContent = inn ? L(`লগইন করা আছে: ${cloud.email}। আপনার চ্যাট আর খামারের তথ্য এই অ্যাকাউন্টে জমা থাকছে।`, `Logged in as ${cloud.email}. Your chats and farm details are kept in this account.`) : "";
+  closeSide(); $("#accountDlg").showModal();
+};
+$("#acCancel").onclick = () => $("#accountDlg").close();
+$("#acOut").onclick = async () => { await cloud.logout(); $("#accountDlg").close(); toast(L("লগআউট হয়েছে। এই ফোনের চ্যাট এই ফোনেই থাকবে।","Logged out. Chats on this phone stay on this phone.")); };
+$("#accountForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = $("#acEmail").value.trim(), msg = $("#accountMsg");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.hidden = false; msg.textContent = L("ইমেইল ঠিকানাটি ঠিক করে লিখুন।","Please enter a valid email address."); return; }
+  $("#acSend").disabled = true;
+  const {error} = await cloud.sendLink(email).catch(err => ({error: err}));
+  $("#acSend").disabled = false; msg.hidden = false;
+  msg.textContent = error ? (/rate|seconds/i.test(error.message) ? L("এখন অনেক লিংক পাঠানো হয়েছে। একটু পরে আবার চেষ্টা করুন।","Too many links just now. Try again in a little while.") : L("লিংক পাঠানো গেল না। ইমেইল ঠিক আছে কিনা দেখুন।","Could not send the link. Check the email address."))
+    : L(`${email}-এ লিংক পাঠানো হয়েছে। এই ফোনেই ইমেইলটি খুলে লিংকে চাপ দিন।`, `A link is on its way to ${email}. Open the email on this phone and tap the link.`);
+});
+
+/* ---------- recent chats: this browser, plus the account when logged in ---------- */
 let chatId = null;
 const loadChats = () => { try { return JSON.parse(store.get("kg_chats") || "[]"); } catch (e) { return []; } };
 function saveChat(){
@@ -976,8 +1085,9 @@ function saveChat(){
   chatId ??= Date.now().toString(36);
   const msgs = history.map((m, i) => m.role === "user" ? {role:"user", text:m.text, img:m.img}
     : {role:"bot", html:document.getElementById("m" + i)?.innerHTML || "", text:m.text || ""});
-  const chats = [{id:chatId, title:history[0].text.slice(0, 60), msgs}, ...loadChats().filter(c => c.id !== chatId)].slice(0, 30);
-  store.set("kg_chats", JSON.stringify(chats)); renderRecent();
+  const old = loadChats().find(c => c.id === chatId), chat = {id:chatId, title:history[0].text.slice(0, 60), msgs, at:Date.now()};
+  store.set("kg_chats", JSON.stringify([chat, ...loadChats().filter(c => c.id !== chatId)].slice(0, 30))); renderRecent();
+  if (JSON.stringify(old?.msgs) !== JSON.stringify(msgs)) cloud.pushChat(chat); // renderChat saves often; upload only real changes
 }
 function renderRecent(){
   const chats = loadChats();
@@ -987,7 +1097,7 @@ function renderRecent(){
 function newChat(){ history = []; chatId = null; renderChat(); go("chat"); closeSide(); $("#q").focus(); }
 $("#recent").addEventListener("click", e => {
   const o = e.target.closest("[data-open]"), d = e.target.closest("[data-del]");
-  if (d){ store.set("kg_chats", JSON.stringify(loadChats().filter(c => c.id !== d.dataset.del))); if (d.dataset.del === chatId) newChat(); else renderRecent(); }
+  if (d){ store.set("kg_chats", JSON.stringify(loadChats().filter(c => c.id !== d.dataset.del))); cloud.dropChat(d.dataset.del); if (d.dataset.del === chatId) newChat(); else renderRecent(); }
   else if (o){ const c = loadChats().find(c => c.id === o.dataset.open); if (!c) return; chatId = c.id; history = c.msgs; renderChat(); go("chat"); closeSide(); }
 });
 document.querySelectorAll("[data-new]").forEach(b => b.addEventListener("click", newChat));
@@ -1071,7 +1181,7 @@ function llmHtml(m){
     + (m.dropped ? `<p class="muted small">${L("একটি পরিমাণ সরিয়ে দেওয়া হয়েছে, কারণ সেটি DAE তালিকায় নেই।","An amount was removed because it is not in the DAE list.")}</p>` : "")
     + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker"><svg width="17" height="17"><use href="#${m.tool.includes('class="wcard"') ? "i-sky" : "i-shield"}"/></svg>${m.tool.includes('class="wcard"') ? L("আপনার জেলার আবহাওয়া পূর্বাভাস","Forecast for your district") : m.tool.includes('class="doses frg"') ? L("সরকারি সার সুপারিশ নির্দেশিকা (BARC ২০২৪) থেকে","From the government Fertilizer Recommendation Guide (BARC 2024)") : L("সরকারি DAE তালিকা থেকে যাচাই করা","Checked against the government DAE list")}</div>${m.tool}</div>` : "")
     + (m.error ? `<p class="muted small">${m.error}</p>` : "")
-    + (!m.streaming && m.q ? rememberChips(m.q) : "");
+    + (!m.streaming && m.q ? rememberChips(m.q) + reportChip(m.q) : "");
 }
 async function askModel(text){
   let tool = toolPart(text);
@@ -1109,8 +1219,10 @@ async function askModel(text){
   slot.streaming = false; renderChat();
 }
 
+const RADAR_Q = /এলাকায়.*(পোকা|রোগ)|আশেপাশে.*(পোকা|রোগ)|(পোকা|রোগ).*(খবর|রিপোর্ট)|pest radar|pests? (reported|nearby)|in my area/i;
 async function ask(text){
   text = text.trim(); if (!text) return;
+  if (RADAR_Q.test(text) && cloud.ok){ history.push({role:"user", text}); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); slot.html = await cloud.radarHTML().catch(() => `<p>${L("এখন এলাকার খবর আনা গেল না। ইন্টারনেট দেখে আবার জিজ্ঞেস করুন।","Could not load nearby reports now. Check the internet and ask again.")}</p>`); slot.streaming = false; renderChat(); return; }
   if (WEATHER_Q.test(text) && !WX){ history.push({role:"user", text}); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); await loadWeather(); history.splice(-2); }
   history.push({role:"user", text});
   if (!LIVE_MODEL || SELF_HARM.test(text) || HARM_OTHERS.test(text)){ history.push({role:"bot", q:text, fallback:noModel}); renderChat(); return; }
@@ -1264,7 +1376,8 @@ async function photoReply(file, crop){
   return `<p><b>${L("সম্ভাব্য সমস্যা","Likely problem")}: ${esc(name)}</b>${crop ? ` (${esc(cropName(crop))})` : ""} <span class="muted small">${L("নিশ্চয়তা","confidence")}: ${sure}</span></p>`
     + (d.signs_bn ? `<p>${esc(d.signs_bn)}</p>` : "")
     + (dae ? `<div class="toolbox">${dae}</div>` : p ? `<p class="muted small">${L("কোন ফসল লিখে জানালে নিবন্ধিত ওষুধ ও মাত্রা দেখাব।","Tell me the crop and I'll show registered products and doses.")}</p>` : "")
-    + `<p class="muted small">${L("এটি ছবি দেখে অনুমান। স্প্রে করার আগে উপজেলা কৃষি অফিসে নিশ্চিত হোন।","This is a guess from a photo. Confirm with your upazila agriculture office before spraying.")}</p>`;
+    + `<p class="muted small">${L("এটি ছবি দেখে অনুমান। স্প্রে করার আগে উপজেলা কৃষি অফিসে নিশ্চিত হোন।","This is a guess from a photo. Confirm with your upazila agriculture office before spraying.")}</p>`
+    + (p && cloud.ok ? `<div class="remember"><span>${L("আপনার জমিতে লেগেছে?","In your field?")}</span><button class="chip" data-report="${p.k}|${crop ? crop.k : ""}|photo">${L("এলাকার কৃষকদের জানান","Tell farmers nearby")}</button></div>` : "");
 }
 $("#chatPhoto").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = ""; if (f) sendPhoto(f);
@@ -1450,7 +1563,7 @@ function applyLang(){
   $("#langBtn").textContent = lang === "bn" ? "English" : "বাংলা";
   $("#chatNote").textContent = LIVE_MODEL ? L("মাত্রা আসে শুধু সরকারি নিবন্ধন তালিকা থেকে। ব্যবহারের আগে কৃষি অফিসারের সাথে মিলিয়ে নিন।","Doses come only from the government registration list. Check with your agriculture officer before use.")
     : L("প্রিভিউ: এখানে ওষুধের তালিকা ও আবহাওয়া চলে। ভাষা মডেল চলবে প্রকাশিত সাইটে।","Preview: the pesticide list and weather work here. The language model runs on the published site.");
-  renderStatus();
+  renderStatus(); cloud.label();
   route();
   renderDate();
   const dv = $("#district").value || PROFILE.district || store.get("kg_district") || "dhaka";
