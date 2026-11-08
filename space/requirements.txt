@@ -1,3 +1,5 @@
 httpx
 spaces
 kagglehub
+torch
+transformers

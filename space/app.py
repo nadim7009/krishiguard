@@ -5,12 +5,13 @@ with its vision projector (leaf and bottle photos) and the KrishiGuard LoRA,
 and exposes its OpenAI-style /v1/chat/completions on port 7860 for the KrishiGuard website.
 A small test chat sits at / so the Space page shows something useful. Messages are not stored.
 """
-import io, os, stat, subprocess, threading, time, zipfile, tarfile, glob
+import io, os, stat, subprocess, threading, time, zipfile, tarfile, glob, asyncio, wave
 import spaces  # free Gradio Spaces run on ZeroGPU hardware; the model itself runs on the CPU with llama.cpp
 import httpx, gradio as gr
 from fastapi import Request
 from fastapi.routing import APIRoute
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, Response
+from bn_speech import speakable
 
 MODEL = "ggml-org/gemma-4-E2B-it-GGUF:Q4_0"
 BIN_DIR = "/tmp/llama"
@@ -68,6 +69,41 @@ def start_llama():
 
 threading.Thread(target=start_llama, daemon=True).start()
 
+# Bangla voice for the website's voice mode. Phones and PCs often have no Bangla voice of their own, and then the
+# browser reads Bangla with an English voice, which sounds like no language at all. MMS-TTS (Meta, CC BY-NC 4.0) is
+# small enough for the CPU: about a second per short sentence.
+TTS = {}
+def load_tts():
+    if "model" not in TTS:
+        import torch
+        from transformers import VitsModel, AutoTokenizer
+        torch.set_num_threads(2)
+        TTS["tok"] = AutoTokenizer.from_pretrained("facebook/mms-tts-ben")
+        TTS["model"] = VitsModel.from_pretrained("facebook/mms-tts-ben").eval()
+        print("TTS ready", flush=True)
+    return TTS["tok"], TTS["model"]
+threading.Thread(target=load_tts, daemon=True).start()
+TTS_LOCK = threading.Lock()
+
+def synth(text):
+    import torch, numpy as np
+    tok, model = load_tts()
+    rate, pause, parts = model.config.sampling_rate, None, []
+    pause = np.zeros(int(rate * 0.28), dtype=np.float32)
+    with TTS_LOCK, torch.no_grad():
+        for phrase in speakable(text)[:12]:
+            ids = tok(phrase, return_tensors="pt")
+            if ids["input_ids"].shape[1] < 2:
+                continue
+            parts += [model(**ids).waveform[0].numpy(), pause]
+    if not parts:
+        return None
+    pcm = (np.clip(np.concatenate(parts), -1, 1) * 32767).astype("<i2").tobytes()
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate); w.writeframes(pcm)
+    return buf.getvalue()
+
 @spaces.GPU
 def _gpu_probe():
     """ZeroGPU Spaces expect at least one GPU function; the chat itself does not use the GPU yet."""
@@ -100,6 +136,21 @@ async def chat(request: Request):
             await r.aclose(); await client.aclose()
     return StreamingResponse(relay(), status_code=r.status_code, headers=CORS, media_type=r.headers.get("content-type", "application/json"))
 
+async def tts(request: Request):
+    """Bangla text in, WAV out."""
+    try:
+        text = str((await request.json()).get("text", ""))[:700]
+    except Exception:
+        return JSONResponse({"error": "send JSON {\"text\": ...}"}, status_code=400, headers=CORS)
+    try:
+        audio = await asyncio.to_thread(synth, text)
+    except Exception as e:
+        print("tts failed:", e, flush=True)
+        return JSONResponse({"error": "voice is not ready yet"}, status_code=503, headers=CORS)
+    if not audio:
+        return JSONResponse({"error": "nothing to say"}, status_code=400, headers=CORS)
+    return Response(audio, media_type="audio/wav", headers=CORS)
+
 def test_chat(message, history):
     msgs = [{"role": "system", "content": "তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের বন্ধুর মতো সহকারী। সহজ বাংলায় ছোট উত্তর দেবে। বালাইনাশকের মাত্রা নিজে বানিয়ে বলবে না।"}]
     for m in history:  # Gradio passes dicts (messages) or [user, bot] pairs depending on version
@@ -118,6 +169,6 @@ demo = gr.ChatInterface(test_chat, title="KrishiGuard model test",
                         description="Gemma 4 E2B (4-bit, llama.cpp). The full app is the KrishiGuard website; this page is for testing the model.")
 demo.launch(prevent_thread_lock=True, ssr_mode=False)  # plain Python server, so our extra routes are reachable
 # put our routes in front of Gradio's catch-all page route; Gradio's own CORS middleware answers the browser preflight
-for path, fn, methods in [("/health", health, ["GET"]), ("/v1/chat/completions", chat, ["POST"])]:
+for path, fn, methods in [("/health", health, ["GET"]), ("/v1/chat/completions", chat, ["POST"]), ("/tts", tts, ["POST"])]:
     demo.app.router.routes.insert(0, APIRoute(path, fn, methods=methods))
 demo.block_thread()

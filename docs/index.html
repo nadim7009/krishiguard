@@ -856,10 +856,10 @@ async function checkModel(){
 addEventListener("online", () => { renderStatus(); checkModel(); }); addEventListener("offline", renderStatus);
 
 /* ---------- listen and copy under each reply ---------- */
-const TTS = "speechSynthesis" in window;
+const HAS_SYS = "speechSynthesis" in window, TTS = LIVE_MODEL || HAS_SYS;
 const acts = (i) => `<div class="acts">${TTS ? `<button class="act" data-speak="${i}"><svg width="16" height="16"><use href="#i-speak"/></svg>${L("শুনুন","Listen")}</button>` : ""}<button class="act" data-copy="${i}"><svg width="16" height="16"><use href="#i-copy"/></svg>${L("কপি","Copy")}</button></div>`;
 let VOICES = [];
-if (TTS){ const load = () => VOICES = speechSynthesis.getVoices(); load(); speechSynthesis.addEventListener?.("voiceschanged", load); }
+if (HAS_SYS){ const load = () => VOICES = speechSynthesis.getVoices(); load(); speechSynthesis.addEventListener?.("voiceschanged", load); }
 // text as a person would say it: no symbols, codes or registration numbers; units and digits in Bangla
 function sayable(t){
   t = String(t).replace(/[*#_`>|•]/g, " ").replace(/^\s*[-–]\s+/gm, "")
@@ -872,18 +872,38 @@ function sayable(t){
   return num(t).replace(/\s+/g, " ").replace(/[:।]\s*।/g, "।").replace(/\s+([,।?:])/g, "$1").trim();
 }
 console.assert(sayable("নিবন্ধিত মাত্রা 100 g/ha প্রতি হেক্টরে। নিবন্ধন নম্বর DAE AP-4578।") === "নিবন্ধিত মাত্রা প্রতি হেক্টরে ১০০ গ্রাম।", "sayable");
-function speak(text, done){
-  const u = new SpeechSynthesisUtterance(sayable(text)); u.lang = lang === "bn" ? "bn-BD" : "en-GB"; u.rate = 0.95;
-  const v = VOICES.find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en")); if (v) u.voice = v;
-  if (lang === "bn" && VOICES.length && !v) toast(L("এই ফোনে বাংলা কণ্ঠ নেই। ফোনের সেটিংসে Google Text-to-speech-এ বাংলা যোগ করুন।","No Bangla voice on this phone. Add Bangla in the phone's text-to-speech settings."));
-  u.onend = u.onerror = () => done && done(); speechSynthesis.cancel(); speechSynthesis.speak(u);
+// Bangla is spoken by the model server (MMS-TTS): many phones and most PCs have no Bangla voice, and the browser then
+// reads Bangla with an English voice, which sounds like no language at all. The phone's own voice is used only for
+// English, or for Bangla when the server cannot be reached and the phone really has a Bangla voice.
+let AUDIO = null, SPEAK_ID = 0;
+function stopSpeak(){ SPEAK_ID++; if (AUDIO){ AUDIO.pause(); AUDIO = null; } if (HAS_SYS) speechSynthesis.cancel(); }
+async function speak(text, done){
+  stopSpeak(); const id = SPEAK_ID, fin = () => { if (id === SPEAK_ID && done) done(); };
+  const t = sayable(text); if (!t) return fin();
+  if (lang === "bn" && LIVE_MODEL){
+    try {
+      const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/tts", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({text: t})});
+      if (!r.ok) throw new Error(r.status);
+      const url = URL.createObjectURL(await r.blob()); if (id !== SPEAK_ID) return URL.revokeObjectURL(url);
+      AUDIO = new Audio(url); AUDIO.onended = AUDIO.onerror = () => { URL.revokeObjectURL(url); AUDIO = null; fin(); };
+      await AUDIO.play(); return;
+    } catch (e) { if (id !== SPEAK_ID) return; }
+  }
+  const v = VOICES.find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en"));
+  if (!HAS_SYS || (lang === "bn" && !v)){
+    toast(L("এখন বাংলায় পড়ে শোনানো যাচ্ছে না। ইন্টারনেট দেখে একটু পরে আবার চেষ্টা করুন।","Cannot read aloud right now. Check the internet and try again shortly."));
+    return fin();
+  }
+  const u = new SpeechSynthesisUtterance(t); u.lang = lang === "bn" ? "bn-BD" : "en-GB"; u.rate = 0.95; if (v) u.voice = v;
+  u.onend = u.onerror = fin; speechSynthesis.speak(u);
 }
 const replyText = (i) => (document.getElementById("m" + i)?.innerText || "").replace(/\n{2,}/g, "\n").trim();
 document.addEventListener("click", e => {
   const sp = e.target.closest("[data-speak]"), cp = e.target.closest("[data-copy]");
   if (sp){
-    if (speechSynthesis.speaking){ speechSynthesis.cancel(); if (sp.classList.contains("on")){ sp.classList.remove("on"); return; } }
-    document.querySelectorAll(".act.on").forEach(b => b.classList.remove("on"));
+    const was = sp.classList.contains("on");
+    stopSpeak(); document.querySelectorAll(".act.on").forEach(b => b.classList.remove("on"));
+    if (was) return;
     sp.classList.add("on"); speak(replyText(sp.dataset.speak), () => sp.classList.remove("on"));
   }
   if (cp){ navigator.clipboard?.writeText(replyText(cp.dataset.copy)).then(() => toast(L("কপি হয়েছে","Copied")), () => toast(L("কপি করা গেল না","Could not copy"))); }
@@ -1088,7 +1108,7 @@ if (SR && TTS){
   };
   function listen(){
     if (!on) return;
-    speechSynthesis.cancel(); state("listen");
+    stopSpeak(); state("listen");
     rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
     let said = "";
     rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); $("#vmHeard").textContent = said; };
@@ -1101,7 +1121,7 @@ if (SR && TTS){
     };
     rec.start();
   }
-  function stop(){ on = VOICE = false; ov.hidden = true; rec?.abort(); speechSynthesis.cancel(); }
+  function stop(){ on = VOICE = false; ov.hidden = true; rec?.abort(); stopSpeak(); }
   vb.onclick = () => { on = VOICE = true; ov.hidden = false; listen(); };
   $("#vmStop").onclick = stop;
   $("#vmOrb").onclick = () => ov.dataset.state === "listen" ? rec?.stop() : listen(); // talking or idle: start listening; listening: send now

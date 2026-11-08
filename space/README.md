@@ -17,6 +17,7 @@ Runs Gemma 4 E2B (4-bit GGUF from ggml-org) with the official llama.cpp server o
 
 - `POST /v1/chat/completions`: OpenAI format, `stream: true` supported, open to the KrishiGuard website (CORS)
 - `GET /health`: whether the model has finished loading
+- `POST /tts`: Bangla text in, WAV audio out (Meta MMS-TTS `facebook/mms-tts-ben`, CC BY-NC 4.0), for the website's voice mode
 - The page at `/` is a small test chat.
 
 Doses and product names never come from the model alone: the website only shows amounts that appear in the DAE rows it sent. Conversations are not stored by this Space.
