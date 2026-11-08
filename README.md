@@ -160,7 +160,7 @@ The deployed setup itself (notebook 11): the same 297 KrishiTools-Messy question
 
 - 0.7 is the only strength with no broken Bangla, which backs the website's choice. At 1.0 the answers drift into loops ("৫ লিটার পানিতে মিশিয়ে" again and again) and miss more doses and registrations.
 - Correctness is scored on the lookup's lead sentence plus the model text, so the base model's 1.000 says the lookup carries the facts; the LoRA is there for the Bangla and the tone, not the numbers.
-- The one 0.7 miss: asked which product to use on maize cutworm, the model added a second product of its own ("Dithane 2.5EC (Cypermethrin)") after the real one, with the real one's dose and registration number. The made-up-number check does not catch this, because every number in it is in the rows. The website shows the DAE card next to the model text, but a check that every product name in the text is in the rows is still needed.
+- The one 0.7 miss: asked which product to use on maize cutworm, the model added a second product of its own ("Dithane 2.5EC (Cypermethrin)") after the real one, with the real one's dose and registration number. The made-up-number check does not catch this, because every number in it is in the rows. The website now drops any sentence that names a product not in the rows (a farmer's typo echoed back, like Orzole for Orozole 5SC, is still allowed) and says that part was removed; tests/site_guard.js checks this case.
 
 Deployment:
 - Website: nadim7009.github.io/krishiguard (docs/).

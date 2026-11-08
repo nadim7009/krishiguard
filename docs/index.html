@@ -1451,12 +1451,18 @@ function toolPart(q){ // the deterministic DAE card for this message, and the sa
   return {html, text: lines.filter(Boolean).join("\n")};
 }
 const UNIT_WORD = /গ্রাম|মিলি|লিটার|কেজি|হেক্টর|বিঘা|শতাংশ|\b(g|gm|ml|kg|l|ha)\b|%/i;
-function numberGuard(text, evidence){ // drop sentences with an amount that is not in the DAE rows we sent
+// brand names with a strength and formulation code, e.g. "Karate 2.5EC", "Orozole 5SC"
+const BRAND_RE = /([A-Z][A-Za-z+-]*(?: [A-Z][A-Za-z+-]*)?) ?(\d+(?:\.\d+)?) ?(EC|WP|WDG|WG|SC|SL|GR|G|EW|CS|OD|SP|DF|FS|ME|ZC|DP|SG|WS|SE|FW)\b/g;
+const brandsIn = (t) => [...enNum(t).matchAll(BRAND_RE)].map(m => ({name: m[1].toLowerCase().replace(/\W/g, ""), form: (m[2] + m[3]).toLowerCase()}));
+const editDist = (a, b) => { const d = [...Array(b.length + 1).keys()]; for (let i = 1; i <= a.length; i++){ let p = d[0]; d[0] = i; for (let j = 1; j <= b.length; j++){ const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, p + (a[i - 1] === b[j - 1] ? 0 : 1)); p = t; } } return d[b.length]; };
+function numberGuard(text, evidence){ // drop sentences with an amount or a product that is not in the DAE rows we sent
   const ok = new Set((enNum(evidence).match(/\d+(\.\d+)?/g) || []).map(Number));
+  const known = brandsIn(evidence);
+  const knownBrand = (x) => known.some(k => k.form === x.form && editDist(k.name, x.name) <= 2); // allows the farmer's typo echoed back
   let dropped = 0;
   const out = text.split(/(?<=[।!?\n]|\.\s)/).filter(sn => {
     const nums = (enNum(sn).match(/\d+(\.\d+)?/g) || []).map(Number);
-    const bad = UNIT_WORD.test(sn) && nums.some(n => !ok.has(n));
+    const bad = (UNIT_WORD.test(sn) && nums.some(n => !ok.has(n))) || (known.length > 0 && brandsIn(sn).some(x => !knownBrand(x)));
     if (bad) dropped++;
     return !bad;
   }).join("");
@@ -1470,7 +1476,7 @@ function mdLite(t){ // paragraphs, simple bullet lists, **bold**
 }
 function llmHtml(m){
   return (m.text ? mdLite(m.text) : `<span class="typing" aria-label="${L("লিখছি","Writing")}"><i></i><i></i><i></i></span>`)
-    + (m.dropped ? `<p class="muted small">${L("একটি পরিমাণ সরিয়ে দেওয়া হয়েছে, কারণ সেটি DAE তালিকায় নেই।","An amount was removed because it is not in the DAE list.")}</p>` : "")
+    + (m.dropped ? `<p class="muted small">${L("উত্তরের একটি অংশ সরিয়ে দেওয়া হয়েছে, কারণ সেই পরিমাণ বা পণ্য DAE তালিকায় নেই।","Part of the answer was removed because that amount or product is not in the DAE list.")}</p>` : "")
     + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker"><svg width="17" height="17"><use href="#${m.tool.includes('class="wcard"') ? "i-sky" : "i-shield"}"/></svg>${m.tool.includes('class="wcard"') ? L("আপনার জেলার আবহাওয়া পূর্বাভাস","Forecast for your district") : m.tool.includes('class="doses frg"') ? L("সরকারি সার সুপারিশ নির্দেশিকা (BARC ২০২৪) থেকে","From the government Fertilizer Recommendation Guide (BARC 2024)") : L("সরকারি DAE তালিকা থেকে যাচাই করা","Checked against the government DAE list")}</div>${m.tool}</div>` : "")
     + (m.error ? `<p class="muted small">${m.error}</p>` : "")
     + (!m.streaming && m.q ? rememberChips(m.q) + reportChip(m.q) : "");
