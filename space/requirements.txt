@@ -3,3 +3,6 @@ spaces
 kagglehub
 torch
 transformers
+pandas
+pyarrow
+scikit-learn

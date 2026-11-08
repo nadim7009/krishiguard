@@ -104,6 +104,40 @@ def synth(text):
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate); w.writeframes(pcm)
     return buf.getvalue()
 
+# Verified farming knowledge for general questions (sowing times, varieties, care, symptoms): the KrishokChat
+# question-answer pairs, whose answers are extracts from BARC, BRRI, DAE and other government publications.
+# Character n-gram TF-IDF copes with dialect spellings and typos; the website puts the best matches in the prompt.
+KB = {}
+KB_URL = "https://huggingface.co/datasets/RaiyanKhaan/KrishokChat/resolve/refs%2Fconvert%2Fparquet/{}/train/0000.parquet"
+
+def load_kb():
+    try:
+        import pandas as pd
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        cols = ["question", "answer", "citation", "answer_status"]
+        df = pd.concat([pd.read_parquet(io.BytesIO(httpx.get(KB_URL.format(c), follow_redirects=True, timeout=120).content), columns=cols)
+                        for c in ("general_qa", "treatment_qa")], ignore_index=True)
+        df = df[df["answer_status"].eq("verified")].dropna(subset=["question", "answer"]).reset_index(drop=True)
+        vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4), sublinear_tf=True, min_df=2)
+        KB.update(df=df, vec=vec, X=vec.fit_transform(df["question"]))
+        print("knowledge base:", len(df), "verified answers", flush=True)
+    except Exception as e:
+        print("knowledge base failed:", e, flush=True)
+threading.Thread(target=load_kb, daemon=True).start()
+
+def kb_search(q, k=3):
+    s = (KB["X"] @ KB["vec"].transform([q]).T).toarray().ravel()
+    out, seen = [], set()
+    for i in s.argsort()[::-1][:40]:
+        a = KB["df"].at[i, "answer"]
+        if a in seen:
+            continue  # the same answer is asked in several dialects
+        seen.add(a)
+        out.append({"q": KB["df"].at[i, "question"], "a": a, "src": KB["df"].at[i, "citation"], "score": round(float(s[i]), 3)})
+        if len(out) == k:
+            break
+    return out
+
 @spaces.GPU
 def _gpu_probe():
     """ZeroGPU Spaces expect at least one GPU function; the chat itself does not use the GPU yet."""
@@ -151,6 +185,16 @@ async def tts(request: Request):
         return JSONResponse({"error": "nothing to say"}, status_code=400, headers=CORS)
     return Response(audio, media_type="audio/wav", headers=CORS)
 
+async def search(request: Request):
+    """{"q": question} in, the closest verified answers out, each with its score and source."""
+    try:
+        q = str((await request.json()).get("q", ""))[:300]
+    except Exception:
+        return JSONResponse({"error": "send JSON {\"q\": ...}"}, status_code=400, headers=CORS)
+    if "X" not in KB:
+        return JSONResponse({"error": "knowledge base is still loading"}, status_code=503, headers=CORS)
+    return JSONResponse({"results": await asyncio.to_thread(kb_search, q) if q.strip() else []}, headers=CORS)
+
 def test_chat(message, history):
     msgs = [{"role": "system", "content": "তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের বন্ধুর মতো সহকারী। সহজ বাংলায় ছোট উত্তর দেবে। বালাইনাশকের মাত্রা নিজে বানিয়ে বলবে না।"}]
     for m in history:  # Gradio passes dicts (messages) or [user, bot] pairs depending on version
@@ -169,6 +213,6 @@ demo = gr.ChatInterface(test_chat, title="KrishiGuard model test",
                         description="Gemma 4 E2B (4-bit, llama.cpp). The full app is the KrishiGuard website; this page is for testing the model.")
 demo.launch(prevent_thread_lock=True, ssr_mode=False)  # plain Python server, so our extra routes are reachable
 # put our routes in front of Gradio's catch-all page route; Gradio's own CORS middleware answers the browser preflight
-for path, fn, methods in [("/health", health, ["GET"]), ("/v1/chat/completions", chat, ["POST"]), ("/tts", tts, ["POST"])]:
+for path, fn, methods in [("/health", health, ["GET"]), ("/v1/chat/completions", chat, ["POST"]), ("/tts", tts, ["POST"]), ("/search", search, ["POST"])]:
     demo.app.router.routes.insert(0, APIRoute(path, fn, methods=methods))
 demo.block_thread()

@@ -1412,10 +1412,10 @@ const noModel = () => `<p>${L("এই প্রশ্নের পুরো উ�
    The page builds the prompt: rules, the farmer's own profile, the DAE rows that match the message and the weather.
    The model writes the reply; registered doses are also shown as cards straight from the DAE list, and any
    amount in the model's text that is not in those rows is removed before it is shown. */
-function systemPrompt(evidence, weather){
+function systemPrompt(evidence, weather, kb){
   const now = new Date(), s = season(now), b = bnCalendar(now);
   const d = DISTRICTS.find(x => x.k === PROFILE.district);
-  const prof = [PROFILE.name && `নাম ${PROFILE.name}`, d && `জেলা ${d.bn}`,
+  const prof = [d && `জেলা ${d.bn}`,
     PROFILE.crops?.length && `ফসল ${PROFILE.crops.map(k => CROPS.find(c => c.k === k).bn).join(", ")}`,
     PROFILE.land && `জমি ${PROFILE.land.n} ${unitOf(PROFILE.land.unit).bn}`, PROFILE.tank && `স্প্রে ট্যাংক ${PROFILE.tank} লিটার`].filter(Boolean).join("; ");
   return [
@@ -1429,12 +1429,16 @@ function systemPrompt(evidence, weather){
 ৭. উত্তর সাধারণত ১২০ শব্দের মধ্যে রাখবে। কোনো ইমোজি ব্যবহার করবে না। কৃষক নিজে না বললে "ভাই", "আপা" এমন সম্বোধন করবে না, নাম জানা থাকলে নাম ধরে ডাকবে।
 ৮. মাত্রার প্রশ্নে উত্তর হবে এভাবে: কোন পণ্য, তার নিবন্ধিত মাত্রা, আর কৃষকের জমির মোট পরিমাণ দেওয়া থাকলে সেটা। নিজে কোনো হিসাব করবে না।
 ৯. কৃষক যেভাবে সম্ভাষণ করেন সেভাবেই ফিরিয়ে দেবে: হাই বা হ্যালো বললে "হ্যালো", সালাম দিলে "ওয়ালাইকুম আসসালাম"। নিজে থেকে নমস্কার বা সালাম দিয়ে শুরু করবে না। সম্ভাষণ না থাকলে সরাসরি উত্তর দেবে।
-১০. কৃষক যা জিজ্ঞেস করেছেন শুধু তারই উত্তর দেবে। প্রশ্নের সাথে সম্পর্ক নেই এমন কথা, তথ্য বা উপদেশ যোগ করবে না।`,
+১০. কৃষক যা জিজ্ঞেস করেছেন শুধু তারই উত্তর দেবে। প্রশ্নের সাথে সম্পর্ক নেই এমন কথা, তথ্য বা উপদেশ যোগ করবে না। একই কথা দুবার লিখবে না। কৃষকের নাম লিখবে না।
+১১. চাষের সময়, জাত, পরিচর্যা, রোগ বা পোকার লক্ষণের মতো প্রশ্নে শুধু নিচের "যাচাই করা তথ্য" থেকে উত্তর দেবে। সেখানে উত্তর না থাকলে মাস, তারিখ, জাত বা পরিমাণ অনুমান করে বলবে না; বলবে এ বিষয়ে নিশ্চিত তথ্য হাতে নেই, উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ জিজ্ঞেস করতে।
+১২. DAE তালিকার তথ্য দেওয়া থাকলে সরাসরি দুই-তিনটি পণ্যের নাম ও নিবন্ধিত মাত্রা বলবে। জমির মাপ বা কত দিন ধরে সমস্যা, এমন প্রশ্ন করবে না; পুরো তালিকা কৃষক নিচের কার্ডে দেখবেন।`,
 `আজ ${b.d} ${BN_MONTHS[b.m]} ${b.y} বঙ্গাব্দ, ${s.bn}।`,
 prof ? `এই কৃষক নিজে জানিয়েছেন: ${prof}। এগুলো মাথায় রেখে উত্তর দেবে।` : "এই কৃষকের খামারের তথ্য জানা নেই।",
 evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে; পুরো তালিকাটি কৃষককে আলাদা কার্ডে দেখানো হবে, তাই তুমি তালিকা আবার লিখবে না, এক-দুটি পণ্য নিজের কথায় বলবে):\n${evidence}`
   : "এই প্রশ্নের জন্য DAE তালিকা থেকে কোনো তথ্য দেওয়া হয়নি, তাই কোনো বালাইনাশকের নাম বা মাত্রা বলবে না।",
 weather ? `কৃষকের জেলার আবহাওয়া:\n${weather}` : "",
+kb?.length ? `যাচাই করা তথ্য (সরকারি কৃষি প্রকাশনা থেকে; প্রশ্নের সাথে যা মেলে শুধু সেটুকু ব্যবহার করবে):\n${kb.map(r => `- প্রশ্ন: ${r.q}\n  উত্তর: ${r.a}`).join("\n")}`
+  : evidence || weather ? "" : "এই প্রশ্নের জন্য কোনো যাচাই করা তথ্য পাওয়া যায়নি। তাই কোনো মাস, তারিখ, জাত বা পরিমাণ বলবে না (নিয়ম ১১)।",
 lang === "en" ? "The farmer is using the English version: reply in English." : "",
 VOICE && lang === "bn" ? VOICE_RULE : ""].filter(Boolean).join("\n\n");
 }
@@ -1487,9 +1491,18 @@ function llmHtml(m){
   return (m.text ? mdLite(m.text) : `<span class="typing" aria-label="${L("লিখছি","Writing")}"><i></i><i></i><i></i></span>`)
     + (m.dropped ? `<p class="muted small">${L("উত্তরের একটি অংশ সরিয়ে দেওয়া হয়েছে, কারণ সেই পরিমাণ বা পণ্য DAE তালিকায় নেই।","Part of the answer was removed because that amount or product is not in the DAE list.")}</p>` : "")
     + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker"><svg width="17" height="17"><use href="#${m.tool.includes('class="wcard"') ? "i-sky" : "i-shield"}"/></svg>${m.tool.includes('class="wcard"') ? L("আপনার জেলার আবহাওয়া পূর্বাভাস","Forecast for your district") : m.tool.includes('class="doses frg"') ? L("সরকারি সার সুপারিশ নির্দেশিকা (BARC ২০২৪) থেকে","From the government Fertilizer Recommendation Guide (BARC 2024)") : L("সরকারি DAE তালিকা থেকে যাচাই করা","Checked against the government DAE list")}</div>${m.tool}</div>` : "")
+    + (m.src?.length && !m.streaming ? `<p class="muted small">${L("সূত্র", "Source")}: ${m.src.map(esc).join("; ")}</p>` : "")
     + (m.error ? `<p class="muted small">${m.error}</p>` : "")
     + (!m.streaming && m.q ? rememberChips(m.q) + reportChip(m.q) : "");
 }
+const KB_MIN = 0.35; // TF-IDF similarity below this is usually a different question
+async function kbSearch(q){
+  try {
+    const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/search", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({q}), signal: AbortSignal.timeout(6000)});
+    return r.ok ? ((await r.json()).results || []).filter(x => x.score >= KB_MIN) : [];
+  } catch (e) { return []; }
+}
+const dropRepeats = (t) => { const seen = new Set(); return t.split(/(?<=[।!?\n])/).filter(sn => { const k = sn.replace(/\s+/g, " ").trim(); if (!k || k.length < 12) return true; if (seen.has(k)) return false; seen.add(k); return true; }).join(""); };
 async function askModel(text){
   let tool = toolPart(text);
   if (!tool.html){ const r = rotation(text); if (r && r.text) tool = r; }
@@ -1497,10 +1510,12 @@ async function askModel(text){
   const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
   history.push(slot); renderChat();
+  const kb = tool.text || weather ? [] : await kbSearch(text);
+  slot.src = [...new Set(kb.map(r => r.src).filter(Boolean))].slice(0, 2);
   const el = () => document.getElementById("m" + history.indexOf(slot));
   try {
     const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({messages:[{role:"system", content:systemPrompt(tool.text, weather)}, ...past, {role:"user", content:text}], stream:true, temperature:0.4, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale:LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
+      body: JSON.stringify({messages:[{role:"system", content:systemPrompt(tool.text, weather, kb)}, ...past, {role:"user", content:text}], stream:true, temperature:0.3, repeat_penalty:1.15, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale:LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
     if (!r.ok || !r.body) throw new Error(r.status);
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;){
@@ -1514,7 +1529,7 @@ async function askModel(text){
       }
       const node = el(); if (node){ node.innerHTML = llmHtml(slot); scroller.scrollTop = scroller.scrollHeight; }
     }
-    const g = numberGuard(slot.text, tool.text); slot.text = g.text.trim(); slot.dropped = g.dropped;
+    const g = numberGuard(dropRepeats(slot.text), tool.text + "\n" + kb.map(r => r.a).join("\n")); slot.text = g.text.trim(); slot.dropped = g.dropped;
     if (!slot.text) throw new Error("empty");
     MODEL = "on"; renderStatus();
   } catch (e) {
