@@ -203,11 +203,12 @@ async def search(request: Request):
     try:
         body = await request.json()
         q, terms = str(body.get("q", ""))[:300], [str(t)[:40] for t in body.get("terms", [])][:20]
+        k = max(1, min(int(body.get("k", 3)), 15))
     except Exception:
         return JSONResponse({"error": "send JSON {\"q\": ...}"}, status_code=400, headers=CORS)
     if "cX" not in KB:
         return JSONResponse({"error": "knowledge base is still loading"}, status_code=503, headers=CORS)
-    return JSONResponse({"results": await asyncio.to_thread(kb_search, q, terms) if q.strip() else []}, headers=CORS)
+    return JSONResponse({"results": await asyncio.to_thread(kb_search, q, terms, k) if q.strip() else []}, headers=CORS)
 
 def test_chat(message, history):
     msgs = [{"role": "system", "content": "তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের বন্ধুর মতো সহকারী। সহজ বাংলায় ছোট উত্তর দেবে। বালাইনাশকের মাত্রা নিজে বানিয়ে বলবে না।"}]

@@ -1414,7 +1414,6 @@ const noModel = () => `<p>${L("এই প্রশ্নের পুরো উ�
    amount in the model's text that is not in those rows is removed before it is shown. */
 function systemPrompt(evidence, weather, kb, q = ""){
   const now = new Date(), s = season(now), b = bnCalendar(now);
-  const named = cropsIn(q).map(c => c.bn).join(", ");
   const d = DISTRICTS.find(x => x.k === PROFILE.district);
   const prof = [d && `জেলা ${d.bn}`,
     PROFILE.crops?.length && `ফসল ${PROFILE.crops.map(k => CROPS.find(c => c.k === k).bn).join(", ")}`,
@@ -1435,7 +1434,6 @@ function systemPrompt(evidence, weather, kb, q = ""){
 ১২. DAE তালিকার তথ্য দেওয়া থাকলে সরাসরি দুই-তিনটি পণ্যের নাম ও নিবন্ধিত মাত্রা বলবে। জমির মাপ বা কত দিন ধরে সমস্যা, এমন প্রশ্ন করবে না; পুরো তালিকা কৃষক নিচের কার্ডে দেখবেন।`,
 `আজ ${b.d} ${BN_MONTHS[b.m]} ${b.y} বঙ্গাব্দ, ${s.bn}।`,
 prof ? `এই কৃষক নিজে জানিয়েছেন: ${prof}। এগুলো মাথায় রেখে উত্তর দেবে।` : "এই কৃষকের খামারের তথ্য জানা নেই।",
-named ? `কৃষকের প্রশ্নে ফসল: ${named}। কোন ফসল তা আর জিজ্ঞেস করবে না।` : "",
 evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে; পুরো তালিকাটি কৃষককে আলাদা কার্ডে দেখানো হবে, তাই তুমি তালিকা আবার লিখবে না, এক-দুটি পণ্য নিজের কথায় বলবে):\n${evidence}`
   : "এই প্রশ্নের জন্য DAE তালিকা থেকে কোনো তথ্য দেওয়া হয়নি, তাই কোনো বালাইনাশকের নাম বা মাত্রা বলবে না।",
 weather ? `কৃষকের জেলার আবহাওয়া:\n${weather}` : "",
@@ -1499,30 +1497,45 @@ function llmHtml(m){
     + (!m.streaming && m.q ? rememberChips(m.q) + reportChip(m.q) : "");
 }
 const STOP = new Set("গাছ গাছের গাছে কী কি কেন কোন কোনো করব করবো করমু করতে যাচ্ছে হচ্ছে হয় হয়ে দিব দেব দিমু আমার আমি আমাদের জমি জমিতে ফসল ফসলের চাষ চাষে এর ও আর একটু ভাই এখন লাগছে লেগেছে দেখা জন্য সাথে থেকে এই ওই উপায় নিয়ম".split(" "));
-const words = (t, crop) => new Set(t.replace(/কখন/g, " সময় ").split(/[^\u0980-\u09FFA-Za-z]+/).map(w => w.toLowerCase()).filter(w => w.length > 2 && !STOP.has(w) && !crop.some(c => w.startsWith(c.toLowerCase()))).map(w => w.slice(0, 4)));
-const sharesWord = (q, kq, crop) => { const a = words(q, crop), b = words(kq, crop); return [...a].some(w => b.has(w)); };
+const words = (t, crop) => new Set(t.normalize("NFC").replace(/কখন/g, " সময় ").split(/[^\u0980-\u09FFA-Za-z]+/).map(w => w.toLowerCase()).filter(w => w.length > 2 && !STOP.has(w) && !crop.some(c => w.startsWith(c.toLowerCase()))));
 // The crop and pest words in the question narrow the search to answers about them; without any, only a close match counts.
 async function kbSearch(q){
   const p = pestIn(q), terms = [...cropsIn(q).flatMap(c => [c.bn, c.en, ...(c.kw || [])]), ...(p ? [p.bn, p.en, ...p.kw] : [])];
-  const min = terms.length ? 0.2 : 0.45; // similarity cut-offs, checked on the live search
   try {
-    const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/search", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({q, terms}), signal: AbortSignal.timeout(6000)});
-    return r.ok ? ((await r.json()).results || []).filter(x => x.score >= min && sharesWord(q, x.q, terms)) : [];
+    const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/search", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({q, terms, k: 12}), signal: AbortSignal.timeout(6000)});
+    if (!r.ok) return [];
+    const mine = [...words(q, terms)];
+    const shares = (a, b) => a.startsWith(b) || b.startsWith(a); // word stems: "রোপণ" and "রোপণের"
+    return ((await r.json()).results || []).map(x => {
+      const theirs = [...words(x.q + " " + x.a, terms)], text = (x.q + " " + x.a).toLowerCase();
+      const problem = mine.filter(w => theirs.some(t => shares(w, t))).length;   // the farmer's problem words found in it
+      const named = terms.filter(t => t && text.includes(t.toLowerCase())).length; // their crop and pest names found in it
+      return {...x, problem, rank: problem + named};
+    }).filter(x => x.problem >= 1 && x.score >= (terms.length ? 0.15 : 0.4)) // the crop alone is not enough: the problem must match too
+      .sort((a, b) => b.rank - a.rank || b.score - a.score).slice(0, 1);
   } catch (e) { return []; }
 }
-const MONTHS = /(জানুয়ারি|ফেব্রুয়ারি|মার্চ|এপ্রিল|মে|জুন|জুলাই|আগস্ট|সেপ্টেম্বর|অক্টোবর|নভেম্বর|ডিসেম্বর|বৈশাখ|জ্যৈষ্ঠ|আষাঢ়|শ্রাবণ|ভাদ্র|আশ্বিন|কার্তিক|অগ্রহায়ণ|পৌষ|মাঘ|ফাল্গুন|চৈত্র)/g;
-function monthGuard(text, evidence){ // drop sentences naming a month that the verified answers do not name
-  const ok = new Set(evidence.match(MONTHS) || []);
-  let dropped = 0;
-  const out = text.split(/(?<=[।!?\n])/).filter(sn => { const bad = (sn.match(MONTHS) || []).some(m => !ok.has(m)); if (bad) dropped++; return !bad; }).join("");
-  return {text: out, dropped};
-}
+const FARM_WORDS = /চাষ|ফসল|বীজ|চারা|সার\b|সেচ|রোগ|পোকা|পাতা|ফলন|মাটি|রোপণ|বপন|ধসা|মড়ক|গাছ|মুকুল|জাত|crop|seed|fertili[sz]er|pest|disease|plant|soil|harvest|sow/i;
+const SYMPTOM_Q = /লক্ষণ|কেন|কারণ|চেনা|চিনব|symptom|why|cause/i;
+const kbHtml = (kb) => kb.map(r => `<p>${esc(r.a).replace(/\n/g, "<br>")}</p>`).join("")
+  + `<p class="muted small">${L("সরকারি কৃষি প্রকাশনা থেকে, এই প্রশ্নের উত্তর হিসেবে লেখা", "From government farming publications, written to answer")}: “${esc(kb[0].q)}”<br>${L("সূত্র", "Source")}: ${[...new Set(kb.map(r => r.src))].map(esc).join("; ")}</p>`;
+const noVerified = () => `<p>${L("এ প্রশ্নের যাচাই করা উত্তর আমার কাছে নেই, তাই আন্দাজে বলব না।", "I don't have a verified answer to this, so I won't guess.")}</p><ul>`
+  + `<li>${L("গাছ বা পাতার ছবি পাঠান, দেখে রোগ বা পোকা চেনার চেষ্টা করব।", "Send a photo of the plant or leaf and I'll try to identify the problem.")}</li>`
+  + `<li>${L("রোগ বা পোকার নাম জানলে লিখুন, নিবন্ধিত ওষুধ ও মাত্রা দেখাব।", "If you know the disease or pest, name it and I'll show registered pesticides and doses.")}</li>`
+  + `<li>${L("উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ ফোন করুন (বিনা খরচে)।", "Call your upazila agriculture office or the agriculture call centre at 16123 (free).")}</li></ul>`;
 const dropRepeats = (t) => { const seen = new Set(); return t.split(/(?<=[।!?\n])/).filter(sn => { const k = sn.replace(/\s+/g, " ").trim(); if (!k || k.length < 12) return true; if (seen.has(k)) return false; seen.add(k); return true; }).join(""); };
 async function askModel(text){
   let tool = toolPart(text);
   if (!tool.html){ const r = rotation(text); if (r && r.text) tool = r; }
-  // these cards are already the exact answer; a small model retelling them added mistakes, so they are shown as they are
-  if (tool.html){ history.push({role:"bot", q:text, html:tool.html}); renderChat(); return; }
+  // these cards are already the exact answer; a small model retelling them added mistakes, so they are shown as they are.
+  // Farming questions get the closest verified answers from government publications, word for word, or an honest "not known".
+  const farming = cropsIn(text).length || pestIn(text) || FARM_WORDS.test(text);
+  if (tool.html && !SYMPTOM_Q.test(text)){ history.push({role:"bot", q:text, html:tool.html}); renderChat(); return; }
+  if (farming){
+    const slot = {role:"bot", q:text, html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat();
+    const kb = await kbSearch(text);
+    slot.html = (kb.length ? kbHtml(kb) : noVerified()) + (tool.html || ""); slot.streaming = false; renderChat(); return;
+  }
   const weather = WEATHER_Q.test(text) && WX ? $("#wAdvice").innerText.replace(/\s+/g, " ") : "";
   const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
