@@ -579,6 +579,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 // The KrishiGuard model (llama.cpp server with Gemma 4 E2B) on a Hugging Face Space. Empty means DAE-tool answers only.
 const ENDPOINT = "https://mahmudnadim479-krishiguard.hf.space";
 // The claude.ai preview cannot reach other servers, so the model is only used on the published site.
+// LoRA strength for chat. At full strength (1.0) the Q4_0 base plus the q8_0 LoRA writes broken Bangla on the Space
+// ("এহি", "দোয়া দোয়া"); 0.7 keeps fluent Bangla and still answers from the DAE facts. Photos use the base model (0).
+const LORA_SCALE = 0.7;
+let VOICE = false; // true while voice mode is on: the reply is written to be heard
+const VOICE_RULE = `এই উত্তর কৃষককে মুখে পড়ে শোনানো হবে। দুই-তিনটি ছোট বাক্যে সহজ কথ্য বাংলায় বলবে। তালিকা, তারকা চিহ্ন, বন্ধনী বা নিবন্ধন নম্বর লিখবে না। শুধু সবচেয়ে দরকারি একটি পণ্য আর তার মাত্রা বলবে, একক বাংলায় লিখবে, যেমন "হেক্টরে ১০০ গ্রাম" বা "১৬ লিটারের ট্যাংকে ৮ মিলি"।`;
 const LIVE_MODEL = !!ENDPOINT && !/claude|anthropic/i.test(location.hostname);
 
 const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
@@ -955,10 +960,24 @@ addEventListener("online", () => { renderStatus(); checkModel(); }); addEventLis
 /* ---------- listen and copy under each reply ---------- */
 const TTS = "speechSynthesis" in window;
 const acts = (i) => `<div class="acts">${TTS ? `<button class="act" data-speak="${i}"><svg width="16" height="16"><use href="#i-speak"/></svg>${L("শুনুন","Listen")}</button>` : ""}<button class="act" data-copy="${i}"><svg width="16" height="16"><use href="#i-copy"/></svg>${L("কপি","Copy")}</button></div>`;
+let VOICES = [];
+if (TTS){ const load = () => VOICES = speechSynthesis.getVoices(); load(); speechSynthesis.addEventListener?.("voiceschanged", load); }
+// text as a person would say it: no symbols, codes or registration numbers; units and digits in Bangla
+function sayable(t){
+  t = String(t).replace(/[*#_`>|•]/g, " ").replace(/^\s*[-–]\s+/gm, "")
+    .replace(/(নিবন্ধন নম্বর[:ঃ]?\s*)?\[?DAE\s*AP-?\d+\]?[,।]?/gi, "").replace(/\((?:[^()]*%[^()]*)\)/g, "").replace(/\([^()]*\)/g, "")
+    .replace(/(\d)\.0+(?!\d)/g, "$1").replace(/(\d\.\d*?[1-9])0+(?!\d)/g, "$1"); // 1.00 -> 1, 0.50 -> 0.5
+  if (lang !== "bn") return t.replace(/\s+/g, " ").trim();
+  const U = {g:"গ্রাম", gm:"গ্রাম", kg:"কেজি", ml:"মিলি", l:"লিটার"};
+  t = t.replace(/(\d[\d.]*)\s*(kg|gm|g|ml|l)\s*\/\s*(ha|l)(\s+of water)?(\s*প্রতি (হেক্টরে|লিটার পানিতে))?/gi,
+    (m, n, u, per) => `${per.toLowerCase() === "ha" ? "প্রতি হেক্টরে" : "প্রতি লিটার পানিতে"} ${n} ${U[u.toLowerCase()]}`);
+  return num(t).replace(/\s+/g, " ").replace(/\s+([,।?:])/g, "$1").trim();
+}
+console.assert(sayable("নিবন্ধিত মাত্রা 100 g/ha প্রতি হেক্টরে। নিবন্ধন নম্বর DAE AP-4578।") === "নিবন্ধিত মাত্রা প্রতি হেক্টরে ১০০ গ্রাম।", "sayable");
 function speak(text, done){
-  const u = new SpeechSynthesisUtterance(text); u.lang = lang === "bn" ? "bn-BD" : "en-GB";
-  const v = speechSynthesis.getVoices().find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en")); if (v) u.voice = v;
-  if (lang === "bn" && !v) toast(L("এই ফোনে বাংলা কণ্ঠ নেই। ফোনের সেটিংসে Google Text-to-speech-এ বাংলা যোগ করুন।","No Bangla voice on this phone. Add Bangla in the phone's text-to-speech settings."));
+  const u = new SpeechSynthesisUtterance(sayable(text)); u.lang = lang === "bn" ? "bn-BD" : "en-GB"; u.rate = 0.95;
+  const v = VOICES.find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en")); if (v) u.voice = v;
+  if (lang === "bn" && VOICES.length && !v) toast(L("এই ফোনে বাংলা কণ্ঠ নেই। ফোনের সেটিংসে Google Text-to-speech-এ বাংলা যোগ করুন।","No Bangla voice on this phone. Add Bangla in the phone's text-to-speech settings."));
   u.onend = u.onerror = () => done && done(); speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 const replyText = (i) => (document.getElementById("m" + i)?.innerText || "").replace(/\n{2,}/g, "\n").trim();
@@ -1033,10 +1052,11 @@ function systemPrompt(evidence, weather){
 ৮. মাত্রার প্রশ্নে উত্তর হবে এভাবে: কোন পণ্য, তার নিবন্ধিত মাত্রা, আর কৃষকের জমির মোট পরিমাণ দেওয়া থাকলে সেটা। নিজে কোনো হিসাব করবে না।`,
 `আজ ${b.d} ${BN_MONTHS[b.m]} ${b.y} বঙ্গাব্দ, ${s.bn}।`,
 prof ? `এই কৃষক নিজে জানিয়েছেন: ${prof}। এগুলো মাথায় রেখে উত্তর দেবে।` : "এই কৃষকের খামারের তথ্য জানা নেই।",
-evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে):\n${evidence}`
+evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে; পুরো তালিকাটি কৃষককে আলাদা কার্ডে দেখানো হবে, তাই তুমি তালিকা আবার লিখবে না, এক-দুটি পণ্য নিজের কথায় বলবে):\n${evidence}`
   : "এই প্রশ্নের জন্য DAE তালিকা থেকে কোনো তথ্য দেওয়া হয়নি, তাই কোনো বালাইনাশকের নাম বা মাত্রা বলবে না।",
 weather ? `কৃষকের জেলার আবহাওয়া:\n${weather}` : "",
-lang === "en" ? "The farmer is using the English version: reply in English." : ""].filter(Boolean).join("\n\n");
+lang === "en" ? "The farmer is using the English version: reply in English." : "",
+VOICE && lang === "bn" ? VOICE_RULE : ""].filter(Boolean).join("\n\n");
 }
 function toolPart(q){ // the deterministic DAE card for this message, and the same facts as plain lines for the prompt
   const html = answer(q);
@@ -1088,7 +1108,7 @@ async function askModel(text){
   const el = () => document.getElementById("m" + history.indexOf(slot));
   try {
     const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({messages:[{role:"system", content:systemPrompt(tool.text, weather)}, ...past, {role:"user", content:text}], stream:true, temperature:0.5, max_tokens:450, chat_template_kwargs:{enable_thinking:false}})});
+      body: JSON.stringify({messages:[{role:"system", content:systemPrompt(tool.text, weather)}, ...past, {role:"user", content:text}], stream:true, temperature:0.4, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale:LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
     if (!r.ok || !r.body) throw new Error(r.status);
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;){
@@ -1220,7 +1240,12 @@ if (SR && TTS){
     ov.dataset.state = k; $("#vmState").textContent = L(...T); $("#vmHeard").textContent = heard;
   };
   // what to read aloud: the model's own words, else the start of the DAE answer
-  const spoken = () => { const i = history.length - 1, m = history[i]; return (m?.text || replyText(i)).replace(/[*#_`]/g, "").slice(0, 700); };
+  const spoken = () => { // the model's own words; without them, the first line and first dose of the DAE answer
+    const i = history.length - 1, m = history[i]; if (m?.text) return m.text;
+    const el = document.getElementById("m" + i); if (!el) return "";
+    const first = el.querySelector("p, .verdict")?.innerText || "", d = el.querySelector(".dose");
+    return [first, d && `${d.querySelector(".nm")?.innerText}, ${d.querySelector(".amt")?.innerText.replace(/\n/g, " ")}`, d?.querySelector(".mine")?.innerText].filter(Boolean).join("। ");
+  };
   function listen(){
     if (!on) return;
     speechSynthesis.cancel(); state("listen");
@@ -1236,8 +1261,8 @@ if (SR && TTS){
     };
     rec.start();
   }
-  function stop(){ on = false; ov.hidden = true; rec?.abort(); speechSynthesis.cancel(); }
-  vb.onclick = () => { on = true; ov.hidden = false; listen(); };
+  function stop(){ on = VOICE = false; ov.hidden = true; rec?.abort(); speechSynthesis.cancel(); }
+  vb.onclick = () => { on = VOICE = true; ov.hidden = false; listen(); };
   $("#vmStop").onclick = stop;
   $("#vmOrb").onclick = () => ov.dataset.state === "listen" ? rec?.stop() : listen(); // talking or idle: start listening; listening: send now
   addEventListener("keydown", e => { if (e.key === "Escape" && on) stop(); });
@@ -1258,7 +1283,7 @@ function photoURL(file, max = 768){
 async function lookAt(dataURL, prompt){
   const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
     body: JSON.stringify({messages:[{role:"user", content:[{type:"image_url", image_url:{url:dataURL}}, {type:"text", text:prompt}]}],
-      temperature:0.1, max_tokens:200, chat_template_kwargs:{enable_thinking:false}})});
+      temperature:0.1, max_tokens:200, lora:[{id:0, scale:0}], chat_template_kwargs:{enable_thinking:false}})});
   if (!r.ok) throw new Error(r.status);
   const t = (await r.json()).choices?.[0]?.message?.content || "";
   const m = t.match(/\{[\s\S]*\}/);
