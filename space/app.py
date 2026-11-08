@@ -203,7 +203,7 @@ async def search(request: Request):
         q, terms = str(body.get("q", ""))[:300], [str(t)[:40] for t in body.get("terms", [])][:20]
     except Exception:
         return JSONResponse({"error": "send JSON {\"q\": ...}"}, status_code=400, headers=CORS)
-    if "X" not in KB:
+    if "cX" not in KB:
         return JSONResponse({"error": "knowledge base is still loading"}, status_code=503, headers=CORS)
     return JSONResponse({"results": await asyncio.to_thread(kb_search, q, terms) if q.strip() else []}, headers=CORS)
 
