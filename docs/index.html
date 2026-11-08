@@ -971,7 +971,7 @@ function sayable(t){
   const U = {g:"গ্রাম", gm:"গ্রাম", kg:"কেজি", ml:"মিলি", l:"লিটার"};
   t = t.replace(/(\d[\d.]*)\s*(kg|gm|g|ml|l)\s*\/\s*(ha|l)(\s+of water)?(\s*প্রতি (হেক্টরে|লিটার পানিতে))?/gi,
     (m, n, u, per) => `${per.toLowerCase() === "ha" ? "প্রতি হেক্টরে" : "প্রতি লিটার পানিতে"} ${n} ${U[u.toLowerCase()]}`);
-  return num(t).replace(/\s+/g, " ").replace(/\s+([,।?:])/g, "$1").trim();
+  return num(t).replace(/\s+/g, " ").replace(/[:।]\s*।/g, "।").replace(/\s+([,।?:])/g, "$1").trim();
 }
 console.assert(sayable("নিবন্ধিত মাত্রা 100 g/ha প্রতি হেক্টরে। নিবন্ধন নম্বর DAE AP-4578।") === "নিবন্ধিত মাত্রা প্রতি হেক্টরে ১০০ গ্রাম।", "sayable");
 function speak(text, done){
@@ -1240,11 +1240,13 @@ if (SR && TTS){
     ov.dataset.state = k; $("#vmState").textContent = L(...T); $("#vmHeard").textContent = heard;
   };
   // what to read aloud: the model's own words, else the start of the DAE answer
-  const spoken = () => { // the model's own words; without them, the first line and first dose of the DAE answer
-    const i = history.length - 1, m = history[i]; if (m?.text) return m.text;
-    const el = document.getElementById("m" + i); if (!el) return "";
+  const spoken = () => { // the first line and first dose of the DAE answer when there is one, else the model's own words
+    // a pesticide answer is read from the DAE card, so the spoken dose is always the registered one, said the same way every time
+    const i = history.length - 1, m = history[i], box = document.getElementById("m" + i);
+    const el = box?.querySelector(".toolbox") || (m?.text ? null : box); if (!el) return m?.text || "";
     const first = el.querySelector("p, .verdict")?.innerText || "", d = el.querySelector(".dose");
-    return [first, d && `${d.querySelector(".nm")?.innerText}, ${d.querySelector(".amt")?.innerText.replace(/\n/g, " ")}`, d?.querySelector(".mine")?.innerText].filter(Boolean).join("। ");
+    return [first, d && `${d.querySelector(".nm")?.innerText}, ${d.querySelector(".amt")?.innerText.replace(/\n/g, " ")}`, d?.querySelector(".mine")?.innerText,
+      el.querySelectorAll(".dose").length > 1 && L("বাকি পণ্যগুলো স্ক্রিনে দেখুন", "The other products are on the screen")].filter(Boolean).join("। ");
   };
   function listen(){
     if (!on) return;
