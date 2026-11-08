@@ -22,6 +22,8 @@ Built on Kaggle (free T4 GPUs) with Gemma 4 E2B, fine-tuned with QLoRA, served w
 - Spray timing from the Open-Meteo forecast for the farmer's district
 - Answers read aloud in Bangla (Meta MMS-TTS)
 - Accounts, chats on every phone, and a district pest radar where farmers warn each other (Supabase)
+- General farming questions (sowing times, care, symptoms) are answered from the closest verified KrishokChat answers, which come from BARC, BRRI, BARI and DAE publications; the source is shown under the answer. Months and amounts the model writes must appear in those answers, otherwise the sentence is removed, and when nothing verified is left the assistant says so and points to the upazila agriculture office or the 16123 call centre
+- Pesticide, fertilizer, weather and rotation questions are answered by the cards alone, straight from the DAE list, the BARC guide and the forecast, without the model retelling them
 
 ## Repository layout
 
