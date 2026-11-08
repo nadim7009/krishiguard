@@ -78,6 +78,7 @@ The Kaggle runs use the .ipynb files at the repo root; src/ holds the same code 
 | 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 and v5 | T4 | done |
 | 09_export_lora | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
 | 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | running |
+| 11_deployed | The deployed setup: llama.cpp Q4_0 + GGUF LoRA at strength 0, 0.7 and 1.0 on KrishiTools-Messy; ask-back set; scorer fix | T4 | running |
 
 ## Metric note
 
