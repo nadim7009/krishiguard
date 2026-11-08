@@ -1,4 +1,4 @@
-"""src/NN_name.py (# %% cells) -> NN_name.ipynb at the repo root, for Kaggle's import-by-link."""
+"""src/NN_name.py (# %% cells) -> NN_name.ipynb in notebooks/, for Kaggle's import-by-link."""
 import json, re, sys
 src = open(sys.argv[1], encoding="utf-8").read()
 cells = []

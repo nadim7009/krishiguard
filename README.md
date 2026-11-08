@@ -1,8 +1,41 @@
 # KrishiGuard
 
-An offline Bangla agent for farmers that handles crops, water, weather and emissions in one place. The key design rule: the language model never makes up a number. Every dose, rate, date or emission figure comes from a tool that reads an official source or runs a fixed formula, and the answer shows which tool it came from.
+A Bangla AI assistant for farmers in Bangladesh. Farmers type, speak or send a leaf or pesticide-bottle photo in their own words and dialect, and get an answer in Bangla. The design rule: the language model never makes up a number. Every pesticide dose comes from the government DAE list of registered pesticides, every fertilizer amount from the BARC 2024 guide, and the answer shows the source and registration number.
 
-Built on Kaggle (free T4 GPUs) with Gemma 4 E2B, deployed on Hugging Face Spaces (free CPU tier).
+**Try it:** [nadim7009.github.io/krishiguard](https://nadim7009.github.io/krishiguard/) · Model server: [Hugging Face Space](https://huggingface.co/spaces/mahmudnadim479/krishiguard) · LoRA: [Kaggle dataset](https://www.kaggle.com/datasets/mahmudnadim/krishiguard-lora)
+
+![KrishiGuard on a phone: sign-in, home screen and a checked pesticide answer](docs/img/phones.jpg)
+
+Built on Kaggle (free T4 GPUs) with Gemma 4 E2B, fine-tuned with QLoRA, served with llama.cpp on a free Hugging Face CPU Space.
+
+| On 297 farmer-style questions (typos, dialect, loanwords) | Result |
+|---|---|
+| Correct, deployed setup (LoRA strength 0.7) | 99.7% |
+| Made-up numbers | 0% |
+| Fine-tuned model alone, no DAE lookup | made-up numbers in 55% of pesticide answers |
+
+## What the assistant does
+
+- Registered pesticide doses from the DAE list (4,706 products), worked out for the farmer's own land and sprayer tank
+- Leaf and pesticide-bottle photos in the same chat
+- Fertilizer amounts for 85 crops from the BARC Fertilizer Recommendation Guide 2024
+- Spray timing from the Open-Meteo forecast for the farmer's district
+- Answers read aloud in Bangla (Meta MMS-TTS)
+- Accounts, chats on every phone, and a district pest radar where farmers warn each other (Supabase)
+
+## Repository layout
+
+| Folder | What is in it |
+|---|---|
+| `notebooks/` | The Kaggle notebooks, 01 to 11, in run order |
+| `src/` | The same code as plain Python scripts, plus `dae/` (DAE list name fix) and `frg/` (BARC 2024 table parser) |
+| `results/` | Every result table the README quotes |
+| `docs/` | The website (GitHub Pages): one `index.html`, `dae.json`, `frg.json`, screenshots in `img/` |
+| `space/` | The Hugging Face Space: llama.cpp server, LoRA loading, Bangla speech |
+| `supabase/` | Database schema: profiles, chats, pest reports, row level security |
+| `eval/farmer/` | Kit for testing with real farmers: collection sheet, rating sheet, protocol, scorer |
+| `data/`, `web/` | The parsed DAE list and the script that builds `docs/dae.json` |
+| `tests/` | Website checks |
 
 ## Why this is different from a farm chatbot
 
@@ -64,21 +97,22 @@ New benchmark built for this project (released with the paper):
 
 ## Notebooks
 
-The Kaggle runs use the .ipynb files at the repo root; src/ holds the same code as plain scripts.
+Each notebook is in `notebooks/`; `src/` has the same code as plain scripts (`python src/to_ipynb.py src/X.py notebooks/X.ipynb` rebuilds a notebook). Notebooks with a Kaggle link can be opened there with their full outputs.
 
 | Notebook | What it does | Hardware | Status |
 |----------|--------------|----------|--------|
-| 01_data_and_retrieval | KrishokChat loading, BM25 / dense / hybrid search, Recall@k by dialect | CPU or T4 | done |
-| 02_baselines | Systems A and B | T4 | superseded by 04 |
-| 03_tools | DAE pesticide checker, safety gate, FRG formula, safety metric | CPU | done (FRG crop tables later added in src/frg/) |
-| 04_agent | Systems A, B, C; router, DAE lookup first, number guard (v3) | T4 | done |
-| 05_krishitools | KrishiTools-300 benchmark from the DAE list | CPU | done |
-| 06_finetune | QLoRA on Gemma 4 E2B: DAE answers, KrishokChat, safety, personal talk | T4 | done |
-| 07_eval_finetuned | Systems D (fine-tuned alone) and E (fine-tuned + agent) | T4 | done |
-| 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 and v5 | T4 | done |
-| 09_export_lora | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
-| 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | done |
-| 11_deployed | The deployed setup: llama.cpp Q4_0 + GGUF LoRA at strength 0, 0.7 and 1.0 on KrishiTools-Messy; ask-back set; scorer fix | T4 (ran on CPU) | done |
+| [01_data_and_retrieval](notebooks/01_data_and_retrieval.ipynb) | KrishokChat loading, BM25 / dense / hybrid search, Recall@k by dialect | CPU or T4 | done |
+| [01b_better_retrieval](notebooks/01b_better_retrieval.ipynb) | Second part of 01, run in the same session: coverage check and the bge-m3 encoder | T4 | done |
+| [02_baselines](notebooks/02_baselines.ipynb) | Systems A and B | T4 | superseded by 04 |
+| [03_tools](notebooks/03_tools.ipynb) | DAE pesticide checker, safety gate, FRG formula, safety metric | CPU | done (FRG crop tables later added in src/frg/) |
+| [04_agent](notebooks/04_agent.ipynb) | Systems A, B, C; router, DAE lookup first, number guard (v3) | T4 | done |
+| [05_krishitools](notebooks/05_krishitools.ipynb) | KrishiTools-300 benchmark from the DAE list | CPU | done |
+| [06_finetune](notebooks/06_finetune.ipynb) | QLoRA on Gemma 4 E2B: DAE answers, KrishokChat, safety, personal talk | T4 | done |
+| [07_eval_finetuned](notebooks/07_eval_finetuned.ipynb) ([Kaggle run](https://www.kaggle.com/code/mahmudnadim/krishiguard-07-eval-finetuned)) | Systems D (fine-tuned alone) and E (fine-tuned + agent) | T4 | done |
+| [08_messy](notebooks/08_messy.ipynb) ([Kaggle run](https://www.kaggle.com/code/mahmudnadim/krishiguard-08-messy)) | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 and v5 | T4 | done |
+| [09_export_lora](notebooks/09_export_lora.ipynb) ([Kaggle run](https://www.kaggle.com/code/mahmudnadim/krishiguard-09-export-lora)) | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
+| [10_qwen_baseline](notebooks/10_qwen_baseline.ipynb) ([Kaggle run](https://www.kaggle.com/code/mahmudnadim/krishiguard-10-qwen-baseline)) | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | done |
+| [11_deployed](notebooks/11_deployed.ipynb) ([Kaggle run](https://www.kaggle.com/code/mahmudnadim/krishiguard-11-deployed)) | The deployed setup: llama.cpp Q4_0 + GGUF LoRA at strength 0, 0.7 and 1.0 on KrishiTools-Messy; ask-back set; scorer fix | T4 (ran on CPU) | done |
 
 ## Metric note
 
@@ -95,7 +129,7 @@ Notebook 02 counted list markers ("১.", "২.") as numbers, which inflated its
 
 ## Kaggle setup
 
-1. New notebook, Settings: Accelerator GPU T4 x2, Internet on.
+1. File > Import Notebook > Link, with the raw GitHub URL of a file in `notebooks/`. Settings: Accelerator GPU T4 x2, Internet on.
 2. Add a Kaggle secret `HF_TOKEN` (read access is enough).
 3. Run notebook 01, then save the output as a Kaggle dataset `krishiguard-index` so later notebooks can attach it.
 
