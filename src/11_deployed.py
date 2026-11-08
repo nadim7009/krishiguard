@@ -10,7 +10,7 @@
 # - an ask-back set: products registered for the same pest on several crops, asked about without a crop, so the "which crop?" path of lookup v5 is tested;
 # - a scorer fix: a joined lower-case formulation code ("runfuran5g") was not masked, which cost E_v5 two correct dose answers.
 #
-# Kaggle settings: GPU T4 x2 (llama.cpp is built with CUDA here; it falls back to the CPU release build), Internet on, inputs: KrishiGuard 01, 03, 05.
+# Kaggle settings: GPU T4 x2 (llama.cpp is built with CUDA here; it falls back to the CPU release build), Internet on, inputs: KrishiGuard 01, 03, 05 and the KrishiGuard LoRA dataset.
 
 # %%
 import os, re, json, time, glob, subprocess, io, zipfile, tarfile, stat
@@ -130,8 +130,10 @@ def retrieve(questions, k=3):
 # The LoRA comes from the public Kaggle dataset the Space also uses. The strength is set per request, so one server covers all three settings.
 
 # %%
-import kagglehub
-LORA = kagglehub.dataset_download("mahmudnadim/krishiguard-lora", path="krishiguard/krishiguard_lora_06_q8_0.gguf")
+# a committed (non-interactive) run cannot attach a dataset through kagglehub, so the LoRA dataset is added as an input
+hits = glob.glob("/kaggle/input/**/krishiguard_lora_06_q8_0.gguf", recursive=True)
+assert hits, "attach the KrishiGuard LoRA dataset (or the KrishiGuard 09 output) as an input"
+LORA = hits[0]
 print("LoRA:", LORA, round(os.path.getsize(LORA) / 1e6, 1), "MB")
 
 def build_cuda():
