@@ -154,4 +154,4 @@ Deployment:
 
 Next:
 1. Real farmer questions (even 50) and a small human rating of answers. The collection sheet, rating sheet, protocol and scorer are in `eval/farmer/`.
-2. FRG fertilizer tables (needs the BARC guide PDF).
+2. Fertilizer: done for 85 crops from the BARC Fertilizer Recommendation Guide 2024 (src/frg/). Still missing: fruit trees and the AEZ cropping-pattern tables.

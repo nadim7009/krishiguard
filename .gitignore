@@ -1,3 +1,5 @@
 .impeccable/
 __pycache__/
 *.zip
+src/frg/frg.txt
+src/frg/tables.json

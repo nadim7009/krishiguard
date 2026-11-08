@@ -681,6 +681,7 @@ function answer(q){
   const feelings = () => `<p>${hello()}${L("শুনে খারাপ লাগছে। ফসলের ক্ষতি আর টাকার চাপ অনেক ভারী জিনিস, আর এটা নিয়ে কথা বলা ঠিক কাজ।","I'm sorry to hear that. Crop losses and money worries are heavy, and it's good that you're talking about it.")}</p>
       <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। জমির কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;
   const rot = rotation(q); if (rot) return rot.html;
+  const fert = fertAnswer(q); if (fert) return fert;
   assumed = null;
   const body = farmAnswer(q);
   if (body === null){
@@ -724,6 +725,50 @@ function rotation(q){
     <p class="muted small">${L("সূত্র: ব্রি-র জাতীয় ফসল ক্রম জরিপ (নাসিম ও অন্যান্য, ২০১৭)। আপনার জমির পানি, মাটি আর বাজার দেখে উপজেলা কৃষি অফিসের সাথে ঠিক করুন।","Source: BRRI national cropping-pattern survey (Nasim et al., 2017). Decide with your upazila agriculture office, given your land's water, soil and market.")}</p></div></div>`;
   const text = `ফসল চক্র (ব্রি জরিপ, নাসিম ও অন্যান্য ২০১৭): ${name(prev)} এর পরে দেশে সাধারণত চাষ হয়: ` + top.map(([k, v]) => `${ROT_CROPS[k][0]} (${v.toFixed(1)}% জমি)`).join(", ") + (pulses ? "। ডাল ফসল মাটিতে নাইট্রোজেন যোগ করে।" : "");
   return {html, text};
+}
+
+/* ---------- fertilizer: BARC Fertilizer Recommendation Guide 2024, chapter 7 (docs/frg.json, made by src/frg/) ---------- */
+let FRG = null;
+const loadFRG = () => FRG ? Promise.resolve(FRG) : fetch("frg.json").then(r => r.json()).then(d => FRG = d);
+const FERT_Q = /সার|ইউরিয়া|ইউরিয়া|টিএসপি|টি এস পি|এমওপি|এম ও পি|পটাশ|জিপসাম|দস্তা|জিংক|বোরন|বোরিক|fertili[sz]er|\burea\b|\btsp\b|\bmop\b|potash|gypsum/i;
+// nutrient -> fertilizer, FRG 2024 appendix 10
+const FERTS = [["N", "ইউরিয়া", "Urea", 2.17], ["P", "টিএসপি", "TSP", 5.0], ["K", "এমওপি (পটাশ)", "MoP (potash)", 2.0], ["S", "জিপসাম", "Gypsum", 5.6],
+  ["Mg", "ম্যাগনেসিয়াম সালফেট", "Magnesium sulphate", 10.5], ["Zn", "জিংক সালফেট (মনোহাইড্রেট)", "Zinc sulphate (monohydrate)", 2.78], ["B", "বরিক এসিড", "Boric acid", 5.88]];
+const SOIL = [["উর্বরতা বেশি (অপটিমাম)", "Optimum fertility"], ["মাঝারি উর্বরতা", "Medium fertility"], ["কম উর্বরতা", "Low fertility"], ["খুব কম উর্বরতা", "Very low fertility"]];
+function fertAnswer(q){
+  if (!FRG || !FERT_Q.test(q)) return null;
+  const ql = q.toLowerCase(); let crop = null, len = 0;
+  for (const t of FRG.tables) for (const k of [...t.kw, t.c.toLowerCase()]) if (ql.includes(k.toLowerCase()) && k.length > len){ crop = t.c; len = k.length; }
+  if (!crop) return `<p>${L("কোন ফসলে সার দেবেন? ফসলের নাম লিখুন, তাহলে সরকারি সার সুপারিশ নির্দেশিকা (BARC ২০২৪) থেকে কোন সার কতটুকু লাগবে বলব।","Which crop is the fertilizer for? Name the crop and I'll give the amounts from the government Fertilizer Recommendation Guide (BARC 2024).")}</p>`
+    + followups(lang === "bn" ? ["বোরো ধানে কতটুকু সার দিব?", "আলুতে কোন সার কতটুকু দিব?", "সরিষায় সার কত দিব?"] : ["Fertilizer for Boro rice?", "Fertilizer for potato?", "Fertilizer for mustard?"]);
+  let tabs = FRG.tables.filter(t => t.c === crop);
+  const name = L(tabs[0].bn, tabs[0].c.charAt(0) + tabs[0].c.slice(1).toLowerCase());
+  if (crop === "RICE"){
+    const season = /বোনা আমন|b\.? ?aman/i.test(q) ? "বোনা আমন" : /আমন|aman/i.test(q) ? "রোপা আমন" : /বোরো|boro/i.test(q) ? "বোরো" : /আউশ|aus/i.test(q) ? "আউশ" : null;
+    if (!season) return `<p>${L("কোন মৌসুমের ধান? বোরো, আমন আর আউশে সারের মাত্রা আলাদা।","Which season's rice? Boro, Aman and Aus need different amounts.")}</p>`
+      + followups(lang === "bn" ? ["বোরো ধানে সার কত দিব?", "আমন ধানে সার কত দিব?", "আউশ ধানে সার কত দিব?"] : ["Fertilizer for Boro rice?", "Fertilizer for Aman rice?", "Fertilizer for Aus rice?"]);
+    tabs = tabs.filter(t => t.s === season);
+  } else if (tabs.some(t => t.s)) { const sub = tabs.filter(t => t.s && q.includes(t.s)); if (sub.length) tabs = sub; }
+  // a variety named in the question (ব্রি ধান২৮, BARI Sharisa-14) picks its own table
+  const vn = [...enNum(q).matchAll(/(?:ধান|dhan|জাত|বারি|bari|বিনা|bina|ব্রি|brri|সরিষা|sharisa|টমেটো|tomato|আলু|alu)\s*-?\s*(\d{1,3})/gi)].map(m => m[1]);
+  const byVar = tabs.filter(t => vn.some(n => new RegExp(`(dhan|-|\\s)${n}(?!\\d)`, "i").test(t.v)));
+  const t = byVar[0] || tabs[0];
+  const k = /খুব কম উর্বর|very low/i.test(q) ? 3 : /কম উর্বর|উর্বরতা কম|দুর্বল মাটি|low fertility/i.test(q) ? 2 : /বেশি উর্বর|উর্বরতা বেশি|optimum/i.test(q) ? 0 : 1;
+  const land = factsIn(q).find(f => f.type === "land")?.land || PROFILE.land;
+  const ha = land && unitOf(land.unit) ? land.n * unitOf(land.unit).ha : unitOf("bigha").ha;
+  const areaLabel = land ? L(`আপনার ${landText(land)} জমিতে`, `For your ${landText(land)}`) : L("প্রতি বিঘায় (৩৩ শতাংশ)", "Per bigha (33 decimals)");
+  const rows = FERTS.filter(([n]) => t.n[n]).map(([n, bn, en, f]) => { const [lo, hi] = t.n[n][k]; return {n, name: L(bn, en), lo: lo * f, hi: hi * f, mid: (lo + hi) / 2 * f}; }).filter(r => r.hi > 0);
+  const other = tabs.length > 1 ? tabs.filter(x => x !== t) : [];
+  return `<p>${L(`<b>${esc(name)}${t.s ? ` (${esc(t.s)})` : ""}</b>: ${SOIL[k][0]}র মাটিতে সরকারি সুপারিশ (ফলন লক্ষ্য ${esc(num(t.y.replace(/\s*t\/ha/, " টন/হেক্টর")))}):`, `<b>${esc(name)}${t.s ? ` (${esc(t.s)})` : ""}</b>: government recommendation for ${SOIL[k][1].toLowerCase()} soil (yield goal ${esc(t.y)}):`)}</p>`
+    + `<div class="doses frg" data-method="${esc(t.m)}">${rows.map(r => `<div class="dose"><div class="nm">${r.name}</div>
+        <div class="meta">${L("প্রতি হেক্টরে", "Per hectare")} ${num(Math.round(r.lo))}–${num(Math.round(r.hi))} ${L("কেজি", "kg")}</div>
+        <div class="amt">${amountText(r.mid * ha * 1000, "g")}<small>${areaLabel}</small></div></div>`).join("")}</div>`
+    + (t.of ? `<p class="small">${L(`সাথে জৈব সার (গোবর বা কম্পোস্ট) হেক্টরে ${num(t.of)} টন, ${areaLabel} প্রায় ${amountText(+t.of * ha * 1e6, "g")}।`, `Also organic manure (cowdung or compost) ${t.of} t/ha, about ${amountText(+t.of * ha * 1e6, "g")} ${areaLabel.toLowerCase()}.`)}</p>` : "")
+    + (t.v ? `<p class="muted small">${L("জাত:", "Varieties:")} ${esc(t.v)}</p>` : "")
+    + `<p class="muted small">${L(`মাটি পরীক্ষা ছাড়া মাঝারি উর্বরতা ধরে প্রতিটি সারের মাঝামাঝি মাত্রা দেখানো হয়েছে। উপজেলা মাটি পরীক্ষাগার বা SRDI-তে মাটি পরীক্ষা করালে আরও ঠিক মাত্রা পাবেন। TSP-এর বদলে DAP দিলে একই পরিমাণ দিন, তবে প্রতি কেজি DAP-এর জন্য ইউরিয়া প্রায় ৪০০ গ্রাম কম দিন।`, `Without a soil test, medium fertility is assumed and the middle of each range is shown. A soil test at the upazila soil lab or SRDI gives a closer dose. If you use DAP instead of TSP, use the same amount, and cut urea by about 400 g for every kg of DAP.`)}</p>`
+    + `<div class="sources">${L("সূত্র:", "Source:")} BARC, ${L("সার সুপারিশ নির্দেশিকা ২০২৪", "Fertilizer Recommendation Guide 2024")} (${esc(t.sec)})</div>`
+    + followups([...(k === 1 ? [L(`${tabs[0].bn}${t.s ? ` (${t.s})` : ""}: মাটি কম উর্বর হলে সার কত?`, `${name}: fertilizer on low fertility soil?`)] : []),
+      ...other.slice(0, 2).map(x => L(`${x.bn}${x.s ? ` ${x.s}` : ""} (${x.v.split(",")[0]}) জাতে সার কত?`, `Fertilizer for ${name} ${x.v.split(",")[0]}?`))]);
 }
 
 /* ---------- answers ---------- */
@@ -985,6 +1030,11 @@ VOICE && lang === "bn" ? VOICE_RULE : ""].filter(Boolean).join("\n\n");
 function toolPart(q){ // the deterministic DAE card for this message, and the same facts as plain lines for the prompt
   const html = answer(q);
   if (html && html.includes('class="wcard"')) return {html, text: $("#wAdvice").innerText.replace(/\s+/g, " ")};
+  if (html && html.includes('class="doses frg"')){ // fertilizer: the card as plain lines, plus the guide's application method (English) for the model to explain
+    const box = document.createElement("div"); box.innerHTML = html; const d = box.querySelector(".frg");
+    const lines = [box.querySelector("p")?.textContent, ...[...d.querySelectorAll(".dose")].map(x => `${x.querySelector(".nm").textContent}: ${x.querySelector(".amt").firstChild.textContent} (${x.querySelector(".amt small").textContent}; ${x.querySelector(".meta").textContent})`)];
+    return {html, text: "সার সুপারিশ নির্দেশিকা ২০২৪ (BARC) থেকে:\n" + lines.join("\n") + `\nপ্রয়োগের নিয়ম (নির্দেশিকা থেকে, ইংরেজিতে; কৃষককে সহজ বাংলায় বলবে): ${d.dataset.method}`};
+  }
   if (!html || !/class="(dose|verdict)/.test(html)) return {html: "", text: ""};
   const box = document.createElement("div"); box.innerHTML = html;
   const t = (el, sel) => el.querySelector(sel)?.innerText.replace(/\s+/g, " ").trim() || "";
@@ -1019,7 +1069,7 @@ function mdLite(t){ // paragraphs, simple bullet lists, **bold**
 function llmHtml(m){
   return (m.text ? mdLite(m.text) : `<span class="typing" aria-label="${L("লিখছি","Writing")}"><i></i><i></i><i></i></span>`)
     + (m.dropped ? `<p class="muted small">${L("একটি পরিমাণ সরিয়ে দেওয়া হয়েছে, কারণ সেটি DAE তালিকায় নেই।","An amount was removed because it is not in the DAE list.")}</p>` : "")
-    + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker"><svg width="17" height="17"><use href="#${m.tool.includes('class="wcard"') ? "i-sky" : "i-shield"}"/></svg>${m.tool.includes('class="wcard"') ? L("আপনার জেলার আবহাওয়া পূর্বাভাস","Forecast for your district") : L("সরকারি DAE তালিকা থেকে যাচাই করা","Checked against the government DAE list")}</div>${m.tool}</div>` : "")
+    + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker"><svg width="17" height="17"><use href="#${m.tool.includes('class="wcard"') ? "i-sky" : "i-shield"}"/></svg>${m.tool.includes('class="wcard"') ? L("আপনার জেলার আবহাওয়া পূর্বাভাস","Forecast for your district") : m.tool.includes('class="doses frg"') ? L("সরকারি সার সুপারিশ নির্দেশিকা (BARC ২০২৪) থেকে","From the government Fertilizer Recommendation Guide (BARC 2024)") : L("সরকারি DAE তালিকা থেকে যাচাই করা","Checked against the government DAE list")}</div>${m.tool}</div>` : "")
     + (m.error ? `<p class="muted small">${m.error}</p>` : "")
     + (!m.streaming && m.q ? rememberChips(m.q) : "");
 }
@@ -1053,7 +1103,7 @@ async function askModel(text){
   } catch (e) {
     const local = answer(text);
     slot.text = ""; slot.tool = "";
-    slot.html = (local ?? noModel()) + `<p class="muted small">${navigator.onLine === false ? L("ইন্টারনেট নেই, তাই এই উত্তর ফোনে রাখা DAE তালিকা থেকে।","No internet, so this answer comes from the DAE list saved on the phone.") : L("মডেলের সার্ভার এখন ঘুমিয়ে আছে বা ব্যস্ত, তাই এই উত্তর সরাসরি DAE তালিকা থেকে। এক-দুই মিনিট পরে আবার চেষ্টা করুন।","The model server is asleep or busy, so this answer comes straight from the DAE list. Try again in a minute or two.")}</p>`;
+    slot.html = (local ?? noModel()) + `<p class="muted small">${navigator.onLine === false ? L("ইন্টারনেট নেই, তাই এই উত্তর ফোনে রাখা DAE তালিকা থেকে।","No internet, so this answer comes from the DAE list saved on the phone.") : L("মডেলের সার্ভার এখন ঘুমিয়ে আছে বা ব্যস্ত, তাই এই উত্তর সরাসরি সরকারি তালিকা থেকে। এক-দুই মিনিট পরে আবার চেষ্টা করুন।","The model server is asleep or busy, so this answer comes straight from the government lists. Try again in a minute or two.")}</p>`;
     delete slot.llm;
   }
   slot.streaming = false; renderChat();
@@ -1108,6 +1158,7 @@ if (SR && TTS){
     // a pesticide answer is read from the DAE card, so the spoken dose is always the registered one, said the same way every time
     const i = history.length - 1, m = history[i], box = document.getElementById("m" + i);
     const el = box?.querySelector(".toolbox") || (m?.text ? null : box); if (!el) return m?.text || "";
+    const fr = el.querySelector(".frg"); if (fr) return [el.querySelector("p")?.innerText, ...[...fr.querySelectorAll(".dose")].map(d => `${d.querySelector(".nm").innerText} ${d.querySelector(".amt").firstChild.textContent}`), fr.querySelector(".amt small")?.innerText].filter(Boolean).join("। ");
     const adv = el.querySelector(".wcard .advice"); if (adv) return [...adv.querySelectorAll(".adv")].map(a => a.innerText).join(" "); // weather: the spray advice
     const first = el.querySelector("p, .verdict")?.innerText || "", d = el.querySelector(".dose");
     return [first, d && `${d.querySelector(".nm")?.innerText}, ${d.querySelector(".amt")?.innerText.replace(/\n/g, " ")}`, d?.querySelector(".mine")?.innerText,
@@ -1439,6 +1490,7 @@ document.addEventListener("click", e => {
   applyLang();
   route();
   try { await loadDAE(); } catch (e) { /* answer() and the checker show a reload message */ }
+  loadFRG().catch(() => {});
   renderChat(); checkModel();
 })();
 </script>
