@@ -1509,9 +1509,10 @@ function monthGuard(text, evidence){ // drop sentences naming a month that the v
 // What the question asks about must be in the answer itself: a "when" question needs a month or date in the answer,
 // a variety question a variety, an irrigation question irrigation. Stops a fertilizer answer for an onion sowing question.
 const TOPICS = [[/কখন|কোন সময়|কোন মাসে|when/i, new RegExp(MONTHS.source + "|\\d+\\s*(দিন|সপ্তাহ)|[০-৯]+\\s*(দিন|সপ্তাহ)")],
-  [/জাত|variety/i, /জাত|ব্রি|বারি|বিনা|BRRI|BARI|BINA|variety/i], [/সেচ|irrigat/i, /সেচ|irrigat/i], [/সার\b|fertili[sz]/i, /সার|Urea|TSP|MP|ইউরিয়া|fertili[sz]/i],
+  [/জাত|variety/i, /জাত|ব্রি|বারি|বিনা|BRRI|BARI|BINA|variety/i], [/সেচ|irrigat/i, /সেচ|irrigat/i], [/সার(?![\u0980-\u09FF])|fertili[sz]/i, /সার|Urea|TSP|MP|ইউরিয়া|fertili[sz]/i],
   [/মাটি|soil/i, /মাটি|soil|দোআঁশ|বেলে|এঁটেল/i]];
-const fitsTopic = (q, a) => TOPICS.every(([ask, need]) => !ask.test(q) || need.test(a));
+// the answer must hold what was asked, and its own question must not be about a different topic (fertilizer, variety...)
+const fitsTopic = (q, a, kq = "") => TOPICS.every(([ask, need], i) => (!ask.test(q) || need.test(a)) && (i === 0 || !ask.test(kq) || ask.test(q)));
 async function kbSearch(q){
   const p = pestIn(q), terms = [...cropsIn(q).flatMap(c => [c.bn, c.en, ...(c.kw || [])]), ...(p ? [p.bn, p.en, ...p.kw] : [])];
   try {
@@ -1523,12 +1524,12 @@ async function kbSearch(q){
       const theirs = [...words(x.q + " " + x.a, terms)], text = (x.q + " " + x.a).toLowerCase();
       const problem = mine.filter(w => theirs.some(t => shares(w, t))).length;   // the farmer's problem words found in it
       const named = terms.filter(t => t && text.includes(t.toLowerCase())).length; // their crop and pest names found in it
-      return {...x, problem, rank: problem + named, fits: fitsTopic(q, x.a)};
+      return {...x, problem, rank: problem + named, fits: fitsTopic(q, x.a, x.q)};
     }).filter(x => x.problem >= 1 && x.fits && x.score >= (terms.length ? 0.15 : 0.4)) // the crop alone is not enough: the problem must match too
       .sort((a, b) => b.rank - a.rank || b.score - a.score).slice(0, 1);
   } catch (e) { return []; }
 }
-const FARM_WORDS = /চাষ|ফসল|বীজ|চারা|সার\b|সেচ|রোগ|পোকা|পাতা|ফলন|মাটি|রোপণ|বপন|ধসা|মড়ক|গাছ|মুকুল|জাত|crop|seed|fertili[sz]er|pest|disease|plant|soil|harvest|sow/i;
+const FARM_WORDS = /চাষ|ফসল|বীজ|চারা|সার(?![\u0980-\u09FF])|সেচ|রোগ|পোকা|পাতা|ফলন|মাটি|রোপণ|বপন|ধসা|মড়ক|গাছ|মুকুল|জাত|crop|seed|fertili[sz]er|pest|disease|plant|soil|harvest|sow/i;
 const SYMPTOM_Q = /লক্ষণ|কেন|কারণ|চেনা|চিনব|symptom|why|cause/i;
 const kbHtml = (kb) => kb.map(r => `<p>${esc(r.a).replace(/\n/g, "<br>")}</p>`).join("")
   + `<p class="muted small">${L("সরকারি কৃষি প্রকাশনা থেকে, এই প্রশ্নের উত্তর হিসেবে লেখা", "From government farming publications, written to answer")}: “${esc(kb[0].q)}”<br>${L("সূত্র", "Source")}: ${[...new Set(kb.map(r => r.src))].map(esc).join("; ")}</p>`;
