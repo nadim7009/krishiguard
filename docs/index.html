@@ -342,6 +342,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .now{background:linear-gradient(165deg,var(--sky),var(--surface) 70%)}
 .adv:first-of-type{font-weight:600;font-size:1.04rem}
 .wpick select{font-size:1rem}
+.vmode{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));text-align:center}
+.vm-orb{width:168px;height:168px;border-radius:50%;border:0;display:grid;place-items:center;color:var(--forest-ink);background:radial-gradient(circle at 35% 30%,var(--leaf),var(--forest) 70%);box-shadow:0 0 0 0 color-mix(in srgb,var(--forest) 40%,transparent);transition:transform .3s}
+.vmode[data-state="listen"] .vm-orb{animation:vmPulse 1.4s ease-out infinite}
+.vmode[data-state="think"] .vm-orb{animation:vmBreathe 1.2s ease-in-out infinite;opacity:.85}
+.vmode[data-state="talk"] .vm-orb{animation:vmTalk .5s ease-in-out infinite alternate;background:radial-gradient(circle at 35% 30%,var(--mustard),var(--forest) 75%)}
+@keyframes vmPulse{to{box-shadow:0 0 0 34px transparent}}
+@keyframes vmBreathe{50%{transform:scale(.92)}}
+@keyframes vmTalk{to{transform:scale(1.07)}}
+.vm-state{margin:0;font-family:var(--display);font-size:1.35rem;font-weight:600}
+.vm-heard{margin:0;color:var(--muted);max-width:40ch;min-height:1.6em}
+.vm-stop{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:10px 20px;font-weight:600;margin-top:12px}
 @media (max-width:900px){
   .pgrid{grid-template-columns:minmax(0,1fr)}
   .sbar-cam span{display:none}
@@ -374,6 +386,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
     <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c-1-3.5-3.6-5.4-7.5-5.5.1 3.9 3.3 6 7.5 5.5zM12 14c.8-3.4 3.3-5.3 7.5-5.5-.1 4-3.2 6-7.5 5.5zM6 20h12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l1.8-2.5h6.4L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
     <symbol id="logo" viewBox="0 0 40 40"><path d="M20 3l14 5v11c0 9-6 15.5-14 18C12 34.5 6 28 6 19V8z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M20 31V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20 21c-4-.3-6.3-2.8-6.5-6.5 4 .2 6.3 2.6 6.5 6.5zM20 17.5c4-.3 6.3-2.8 6.5-6.5-4 .2-6.3 2.6-6.5 6.5zM20 26c-3.4-.3-5.4-2.3-5.6-5.5 3.4.2 5.4 2.2 5.6 5.5z" fill="var(--mustard)"/></symbol>
   </defs>
@@ -554,6 +567,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
   </form>
 </dialog>
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="vmode" id="vmode" hidden role="dialog" aria-label="Voice mode">
+  <button class="vm-orb" id="vmOrb" aria-label="Talk"><svg width="54" height="54"><use href="#logo"/></svg></button>
+  <p class="vm-state" id="vmState" aria-live="polite"></p>
+  <p class="vm-heard" id="vmHeard"></p>
+  <button class="vm-stop" id="vmStop"><svg width="20" height="20"><use href="#i-x"/></svg><span data-bn="ভয়েস মোড বন্ধ" data-en="End voice mode">ভয়েস মোড বন্ধ</span></button>
+</div>
 
 <script>
 /* ---------- settings ---------- */
@@ -936,16 +955,19 @@ addEventListener("online", () => { renderStatus(); checkModel(); }); addEventLis
 /* ---------- listen and copy under each reply ---------- */
 const TTS = "speechSynthesis" in window;
 const acts = (i) => `<div class="acts">${TTS ? `<button class="act" data-speak="${i}"><svg width="16" height="16"><use href="#i-speak"/></svg>${L("শুনুন","Listen")}</button>` : ""}<button class="act" data-copy="${i}"><svg width="16" height="16"><use href="#i-copy"/></svg>${L("কপি","Copy")}</button></div>`;
+function speak(text, done){
+  const u = new SpeechSynthesisUtterance(text); u.lang = lang === "bn" ? "bn-BD" : "en-GB";
+  const v = speechSynthesis.getVoices().find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en")); if (v) u.voice = v;
+  if (lang === "bn" && !v) toast(L("এই ফোনে বাংলা কণ্ঠ নেই। ফোনের সেটিংসে Google Text-to-speech-এ বাংলা যোগ করুন।","No Bangla voice on this phone. Add Bangla in the phone's text-to-speech settings."));
+  u.onend = u.onerror = () => done && done(); speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
 const replyText = (i) => (document.getElementById("m" + i)?.innerText || "").replace(/\n{2,}/g, "\n").trim();
 document.addEventListener("click", e => {
   const sp = e.target.closest("[data-speak]"), cp = e.target.closest("[data-copy]");
   if (sp){
     if (speechSynthesis.speaking){ speechSynthesis.cancel(); if (sp.classList.contains("on")){ sp.classList.remove("on"); return; } }
     document.querySelectorAll(".act.on").forEach(b => b.classList.remove("on"));
-    const u = new SpeechSynthesisUtterance(replyText(sp.dataset.speak)); u.lang = lang === "bn" ? "bn-BD" : "en-GB";
-    const v = speechSynthesis.getVoices().find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en")); if (v) u.voice = v;
-    u.onend = u.onerror = () => sp.classList.remove("on"); sp.classList.add("on"); speechSynthesis.speak(u);
-    if (lang === "bn" && !v) toast(L("এই ফোনে বাংলা কণ্ঠ নেই। ফোনের সেটিংসে Google Text-to-speech-এ বাংলা যোগ করুন।","No Bangla voice on this phone. Add Bangla in the phone's text-to-speech settings."));
+    sp.classList.add("on"); speak(replyText(sp.dataset.speak), () => sp.classList.remove("on"));
   }
   if (cp){ navigator.clipboard?.writeText(replyText(cp.dataset.copy)).then(() => toast(L("কপি হয়েছে","Copied")), () => toast(L("কপি করা গেল না","Could not copy"))); }
 });
@@ -1183,6 +1205,42 @@ if (SR){
     rec.onend = () => { rec = null; mic.classList.remove("on"); q.focus(); };
     mic.classList.add("on"); rec.start();
   });
+}
+
+/* ---------- voice mode: talk and hear the answer, hands-free ---------- */
+if (SR && TTS){
+  const vb = document.createElement("button");
+  vb.type = "button"; vb.className = "icon-btn"; vb.id = "voiceBtn";
+  vb.dataset.titleBn = "ভয়েস মোড: কথা বলুন, উত্তর শুনুন"; vb.dataset.titleEn = "Voice mode: talk and hear the answer"; vb.title = vb.dataset.titleBn; vb.setAttribute("aria-label", "Voice mode");
+  vb.innerHTML = '<svg width="22" height="22"><use href="#i-wave"/></svg>';
+  $("#askForm .send").before(vb);
+  const ov = $("#vmode"); let on = false, rec = null;
+  const state = (k, heard = "") => {
+    const T = {listen:["শুনছি… বলুন","Listening… go ahead"], think:["ভাবছি…","Thinking…"], talk:["বলছি… থামাতে বৃত্তে চাপ দিন","Speaking… tap the circle to stop"], idle:["কথা বলতে বৃত্তে চাপ দিন","Tap the circle to talk"]}[k];
+    ov.dataset.state = k; $("#vmState").textContent = L(...T); $("#vmHeard").textContent = heard;
+  };
+  // what to read aloud: the model's own words, else the start of the DAE answer
+  const spoken = () => { const i = history.length - 1, m = history[i]; return (m?.text || replyText(i)).replace(/[*#_`]/g, "").slice(0, 700); };
+  function listen(){
+    if (!on) return;
+    speechSynthesis.cancel(); state("listen");
+    rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
+    let said = "";
+    rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); $("#vmHeard").textContent = said; };
+    rec.onerror = e => { if (e.error === "not-allowed") { toast(L("মাইক ব্যবহারের অনুমতি দিন","Allow the microphone")); stop(); } };
+    rec.onend = async () => {
+      rec = null; if (!on) return;
+      if (!said.trim()) return state("idle");
+      state("think", said); go("chat"); await ask(said); if (!on) return;
+      state("talk", said); speak(spoken(), () => on && listen());
+    };
+    rec.start();
+  }
+  function stop(){ on = false; ov.hidden = true; rec?.abort(); speechSynthesis.cancel(); }
+  vb.onclick = () => { on = true; ov.hidden = false; listen(); };
+  $("#vmStop").onclick = stop;
+  $("#vmOrb").onclick = () => ov.dataset.state === "listen" ? rec?.stop() : listen(); // talking or idle: start listening; listening: send now
+  addEventListener("keydown", e => { if (e.key === "Escape" && on) stop(); });
 }
 
 /* ---------- photos: leaf doctor and bottle check, read by Gemma 4 on the model server ---------- */
