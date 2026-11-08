@@ -1,0 +1,7 @@
+change,llama_lora0.0,llama_lora0.7,llama_lora1.0
+crop_word,1.0,0.982,1.000
+drop_code,1.0,1.000,0.956
+lower_join,1.0,1.000,0.943
+no_crop,1.0,1.000,1.000
+pest_word,1.0,1.000,0.983
+typo,1.0,1.000,0.947

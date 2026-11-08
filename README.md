@@ -78,7 +78,7 @@ The Kaggle runs use the .ipynb files at the repo root; src/ holds the same code 
 | 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 and v5 | T4 | done |
 | 09_export_lora | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
 | 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | done |
-| 11_deployed | The deployed setup: llama.cpp Q4_0 + GGUF LoRA at strength 0, 0.7 and 1.0 on KrishiTools-Messy; ask-back set; scorer fix | T4 | running |
+| 11_deployed | The deployed setup: llama.cpp Q4_0 + GGUF LoRA at strength 0, 0.7 and 1.0 on KrishiTools-Messy; ask-back set; scorer fix | T4 (ran on CPU) | done |
 
 ## Metric note
 
@@ -147,6 +147,20 @@ End to end on KrishiTools-Messy (held-out seed 7, 297 scored questions; notebook
 - The agent carries a weaker model too: Qwen alone gets 1%, Qwen in the agent 96%. Qwen's own Bangla is poor, though (it repeats phrases and garbles pest names), so the answer text still depends on the model.
 - Crop missing: lookup v5 asks which crop when the product is registered for that pest on several crops, and names the crop with the dose when there is only one. All 9 such questions in this set turned out to be single-crop products, and E v5 answers all of them correctly (E v4: 0 of 9). The set has no multi-crop case, so the ask-back path itself is only covered by the unit checks in notebook 08.
 - The two remaining E v5 misses (lower_join, dose) are scorer artifacts: the answers give the right product and dose, but the scorer does not mask a lower-case "5g" formulation code.
+
+The deployed setup itself (notebook 11): the same 297 KrishiTools-Messy questions through llama.cpp with the Q4_0 GGUF base and the q8_0 GGUF LoRA, lookup v5 in front, at three LoRA strengths. The CUDA build failed on Kaggle (CMake could not find CUDA::cuda_driver), so this ran on the CPU release build, close to the Space's setup. results/deployed_*.csv:
+
+| LoRA strength | 0 (base) | 0.7 (website) | 1.0 |
+|---|---|---|---|
+| correct overall | 1.000 | 0.997 | 0.973 |
+| made-up numbers | 0% | 0% | 0% |
+| broken Bangla (repeating loops, garbled words) | 6.7% | 0% | 1.7% |
+| ask-back on multi-crop products (40) | 1.00 | 1.00 | 1.00 |
+| seconds per answer, CPU | 11.9 | 16.7 | 15.3 |
+
+- 0.7 is the only strength with no broken Bangla, which backs the website's choice. At 1.0 the answers drift into loops ("৫ লিটার পানিতে মিশিয়ে" again and again) and miss more doses and registrations.
+- Correctness is scored on the lookup's lead sentence plus the model text, so the base model's 1.000 says the lookup carries the facts; the LoRA is there for the Bangla and the tone, not the numbers.
+- The one 0.7 miss: asked which product to use on maize cutworm, the model added a second product of its own ("Dithane 2.5EC (Cypermethrin)") after the real one, with the real one's dose and registration number. The made-up-number check does not catch this, because every number in it is in the rows. The website shows the DAE card next to the model text, but a check that every product name in the text is in the rows is still needed.
 
 Deployment:
 - Website: nadim7009.github.io/krishiguard (docs/).

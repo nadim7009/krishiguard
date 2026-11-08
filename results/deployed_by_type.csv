@@ -1,0 +1,5 @@
+expect,llama_lora0.0,llama_lora0.7,llama_lora1.0
+ask,1.0,1.00,1.000
+dose,1.0,1.00,0.967
+product,1.0,0.99,1.000
+registration,1.0,1.00,0.948

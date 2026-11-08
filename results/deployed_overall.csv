@@ -1,0 +1,4 @@
+system,correct,num_halluc,broken_bangla,unseen_words,sec,ask_back_multi_crop
+llama_lora0.0,1.000,0.0,0.067,0.005,11.911,1.0
+llama_lora0.7,0.997,0.0,0.000,0.007,16.695,1.0
+llama_lora1.0,0.973,0.0,0.017,0.010,15.315,1.0
