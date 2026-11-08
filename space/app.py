@@ -121,8 +121,8 @@ def load_kb():
         text = df["question"]
         cv = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True, min_df=2)
         wv = TfidfVectorizer(analyzer="word", ngram_range=(1, 2), sublinear_tf=True, min_df=1, token_pattern=r"[\w\u0980-\u09FF]+")
-        KB.update(df=df, cv=cv, cX=cv.fit_transform(text), wv=wv, wX=wv.fit_transform(text),
-                  hay=(df["question"] + " " + df["answer"]).str.lower())
+        hay = (df["question"] + " " + df["answer"]).str.lower()
+        KB.update(df=df, cv=cv, cX=cv.fit_transform(text), wv=wv, wX=wv.fit_transform(hay), hay=hay)  # words: question and answer
         print("knowledge base:", len(df), "verified answers", flush=True)
     except Exception as e:
         print("knowledge base failed:", e, flush=True)
@@ -134,7 +134,9 @@ def kb_search(q, terms=(), k=3):
     s = 0.5 * (KB["cX"] @ KB["cv"].transform([q]).T).toarray().ravel() + 0.5 * (KB["wX"] @ KB["wv"].transform([q]).T).toarray().ravel()
     terms = [t.lower() for t in terms if t and len(t) > 1][:20]
     if terms:
-        keep = KB["hay"].str.contains("|".join(map(re.escape, terms)), regex=True).to_numpy()
+        # a Bangla term must be a whole word, with or without a case ending: "আম" finds "আমের", not "আমার"
+        word = lambda t: rf"(?<![\u0980-\u09FF]){re.escape(t)}(?:ের|ে|র|য়ের)?(?![\u0980-\u09FF])" if re.search(r"[\u0980-\u09FF]", t) else re.escape(t)
+        keep = KB["hay"].str.contains("|".join(map(word, terms)), regex=True).to_numpy()
         s = s * keep
     out, seen = [], set()
     for i in s.argsort()[::-1][:60]:
