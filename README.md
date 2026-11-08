@@ -75,7 +75,7 @@ The Kaggle runs use the .ipynb files at the repo root; src/ holds the same code 
 | 05_krishitools | KrishiTools-300 benchmark from the DAE list | CPU | done |
 | 06_finetune | QLoRA on Gemma 4 E2B: DAE answers, KrishokChat, safety, personal talk | T4 | done |
 | 07_eval_finetuned | Systems D (fine-tuned alone) and E (fine-tuned + agent) | T4 | done |
-| 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 | T4 | running |
+| 08_messy | KrishiTools-Messy: farmer-style typos and spellings; lookup v4 and v5 | T4 | done |
 | 09_export_lora | Adapter as a llama.cpp GGUF LoRA for the Space | CPU | done |
 | 10_qwen_baseline | Qwen3-4B-Instruct in the same pipeline, for comparison | T4 | running |
 
@@ -131,27 +131,27 @@ Lookup only (no model), KrishiTools-Messy held-out seed 7, share of questions wh
 
 The pest and crop variants and the lexicon that reads them were both written by us, so those two rows are not independent; the product-name rows are.
 
-End to end on KrishiTools-Messy (held-out seed 7, 297 scored questions; notebooks 08 and 10). C = base Gemma 4 E2B, E = fine-tuned Gemma, Q = Qwen3-4B-Instruct; v3 = exact-name lookup, v4 = lookup that reads messy names:
+End to end on KrishiTools-Messy (held-out seed 7, 297 scored questions; notebooks 08 and 10). C = base Gemma 4 E2B, E = fine-tuned Gemma, Q = Qwen3-4B-Instruct; v3 = exact-name lookup, v4 = lookup that reads messy names, v5 = v4 plus asking for the crop when the product is registered on several crops:
 
-| | C v3 | C v4 | E v4 | Q alone | Q v4 |
-|---|---|---|---|---|---|
-| dose | 0.43 | 1.00 | 0.98 | 0.01 | 1.00 |
-| product | 0.46 | 1.00 | 1.00 | 0.00 | 0.98 |
-| registration | 0.27 | 1.00 | 1.00 | 0.00 | 1.00 |
-| crop missing, should ask (9) | 0.44 | 0.44 | 0.00 | 0.22 | 0.00 |
-| overall | 0.39 | 0.98 | 0.96 | 0.01 | 0.96 |
-| made-up numbers | 0% | 0.3% | 0% | 1.7% | 0% |
+| | C v3 | C v4 | E v4 | E v5 | Q alone | Q v4 |
+|---|---|---|---|---|---|---|
+| dose | 0.43 | 1.00 | 0.98 | 0.98 | 0.01 | 1.00 |
+| product | 0.46 | 1.00 | 1.00 | 1.00 | 0.00 | 0.98 |
+| registration | 0.27 | 1.00 | 1.00 | 1.00 | 0.00 | 1.00 |
+| crop missing (9) | 0.44 | 0.44 | 0.00 | 1.00 | 0.22 | 0.00 |
+| overall | 0.39 | 0.98 | 0.96 | 0.99 | 0.01 | 0.96 |
+| made-up numbers | 0% | 0.3% | 0% | 0% | 1.7% | 0% |
 
 - The exact-name lookup that scored 100% on clean questions gets 39% once farmers type the way they do; lookup v4 brings it back to 98%.
 - The agent carries a weaker model too: Qwen alone gets 1%, Qwen in the agent 96%. Qwen's own Bangla is poor, though (it repeats phrases and garbles pest names), so the answer text still depends on the model.
-- Open problem: when the crop is missing, the lookup still states the dose if the product is registered for that pest on one crop. The answer is then right for that crop, but the system should ask which crop. One E v4 lower-case miss is a scorer artifact (a lower-case "5g" formulation code was not masked).
+- Crop missing: lookup v5 asks which crop when the product is registered for that pest on several crops, and names the crop with the dose when there is only one. All 9 such questions in this set turned out to be single-crop products, and E v5 answers all of them correctly (E v4: 0 of 9). The set has no multi-crop case, so the ask-back path itself is only covered by the unit checks in notebook 08.
+- The two remaining E v5 misses (lower_join, dose) are scorer artifacts: the answers give the right product and dose, but the scorer does not mask a lower-case "5g" formulation code.
 
 Deployment:
 - Website: nadim7009.github.io/krishiguard (docs/).
-- Model server: Hugging Face Space mahmudnadim479/krishiguard, llama.cpp on CPU with Gemma 4 E2B Q4_0. space/app.py now loads the fine-tuned LoRA (notebook 09, 39 MB) from models/ when that file is in this repo, and falls back to the base model otherwise.
+- Model server: Hugging Face Space mahmudnadim479/krishiguard, llama.cpp on CPU with Gemma 4 E2B Q4_0. space/app.py loads the fine-tuned LoRA (notebook 09, 39 MB) from the public Kaggle dataset mahmudnadim/krishiguard-lora and falls back to the base model if that fails. The website applies it at strength 0.7: at 1.0 the Q4_0 base with the q8_0 LoRA writes broken Bangla on the Space, so the notebook 07/08 scores (full strength, 4-bit transformers on Kaggle) do not directly cover the live site.
+- Voice: the Space also serves Bangla speech (`/tts`, Meta MMS-TTS, CC BY-NC 4.0), because many phones and PCs have no Bangla voice of their own.
 
 Next:
-1. Lookup v5: ask for the crop when it is missing and the product's dose differs across crops.
-2. Put models/krishiguard_lora_06_q8_0.gguf in the repo and redeploy the Space.
-3. Real farmer questions (even 50) and a small human rating of answers. The collection sheet, rating sheet, protocol and scorer are in `eval/farmer/`.
-4. FRG fertilizer tables (needs the BARC guide PDF).
+1. Real farmer questions (even 50) and a small human rating of answers. The collection sheet, rating sheet, protocol and scorer are in `eval/farmer/`.
+2. FRG fertilizer tables (needs the BARC guide PDF).
