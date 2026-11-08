@@ -881,13 +881,20 @@ async function speak(text, done){
   stopSpeak(); const id = SPEAK_ID, fin = () => { if (id === SPEAK_ID && done) done(); };
   const t = sayable(text); if (!t) return fin();
   if (lang === "bn" && LIVE_MODEL){
-    try {
-      const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/tts", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({text: t})});
-      if (!r.ok) throw new Error(r.status);
-      const url = URL.createObjectURL(await r.blob()); if (id !== SPEAK_ID) return URL.revokeObjectURL(url);
-      AUDIO = new Audio(url); AUDIO.onended = AUDIO.onerror = () => { URL.revokeObjectURL(url); AUDIO = null; fin(); };
-      await AUDIO.play(); return;
-    } catch (e) { if (id !== SPEAK_ID) return; }
+    // one sentence at a time, the next one made while the current one plays, so the first words come after a second or two
+    const parts = t.split(/(?<=[।?!])\s*/).filter(x => x.trim()).slice(0, 8);
+    const get = (x) => fetch(ENDPOINT.replace(/\/$/, "") + "/tts", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({text: x})})
+      .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status)));
+    const play = (blob) => new Promise(ok => { const url = URL.createObjectURL(blob); AUDIO = new Audio(url);
+      AUDIO.onended = AUDIO.onerror = () => { URL.revokeObjectURL(url); AUDIO = null; ok(); }; AUDIO.play().catch(() => ok()); });
+    let next = get(parts[0]).catch(() => null), started = false;
+    for (let k = 0; k < parts.length; k++){
+      const blob = await next; if (id !== SPEAK_ID) return;
+      if (!blob){ if (started) return fin(); break; } // the server could not speak: fall back to the phone below
+      next = k + 1 < parts.length ? get(parts[k + 1]).catch(() => null) : null;
+      started = true; await play(blob); if (id !== SPEAK_ID) return;
+    }
+    if (started) return fin();
   }
   const v = VOICES.find(v => v.lang.replace("_", "-").startsWith(lang === "bn" ? "bn" : "en"));
   if (!HAS_SYS || (lang === "bn" && !v)){
