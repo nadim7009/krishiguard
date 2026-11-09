@@ -124,6 +124,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .wpick{margin-top:16px;max-width:280px}
 .convo{padding-block:28px 8px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));width:100%}
 .thread{display:flex;flex-direction:column;gap:22px}
+.msg.user .heard{display:block;margin-top:3px;font-size:.82em;opacity:.65}
 .msg.user{align-self:flex-end;max-width:min(560px,85%);background:var(--bubble);color:var(--ink);padding:10px 17px;border-radius:22px;white-space:pre-wrap}
 .msg.bot{display:flex;gap:12px;align-items:flex-start}
 .msg.bot .mark{width:30px;height:30px;flex:none;color:var(--forest);margin-top:2px;padding:4px;border:1px solid var(--line);border-radius:50%;background:var(--surface)}
@@ -771,6 +772,59 @@ const isSourceError = (r) => /\bbph\b/i.test(r.pest) && (/hexythiazox/i.test(r.i
 const ingT = (r) => r.ing || L("উপাদানের নাম উৎস তালিকায় পড়া যায়নি", "ingredient name unreadable in the source list");
 const doseUnit = (d) => /\/\s*l(itre)?\b|of water/i.test(d) ? L("প্রতি লিটার পানিতে","per litre of water") : /\/\s*ha/i.test(d) ? L("প্রতি হেক্টরে","per hectare") : "";
 
+/* ---------- Banglish (Bangla typed in English letters) -> Bangla, so every check below reads it ---------- */
+// word list first (spellings vary, so keys are normalised the same way as the farmer's words); "=" marks words that are also English and so are not proof of Banglish
+const BANGLISH_WORDS = `dhan:ধান aman:আমন aus,aush:আউশ alu,aloo:আলু pat:পাট am:আম= begun,bagun:বেগুন tomato,tometo:টমেটো= kola,kala:কলা peyaj,piyaj,piaj,peaj,payaj:পেঁয়াজ rosun,roshun:রসুন morich,morech:মরিচ gom:গম sorisa,sorisha,shorisha,sorse:সরিষা vutta,bhutta:ভুট্টা mosur:মসুর sim,shim:শিম lau:লাউ kumra,kumro,kumrha:কুমড়া sosa,shosha,sasa,shasha:শসা korola:করলা dheros,dherosh,deros:ঢেঁড়স potol:পটল palong:পালং lalsak,lalshak:লালশাক badhakopi,bandhakopi:বাঁধাকপি fulkopi,phulkopi:ফুলকপি kopi:কপি gajor:গাজর mula:মুলা akh:আখ cha:চা tula:তুলা pan:পান= kathal,kanthal:কাঁঠাল lebu:লেবু peyara,peara,payara:পেয়ারা pepe,pepey:পেঁপে narikel,narkel:নারিকেল lichu,litchu:লিচু tormuj:তরমুজ badam:বাদাম motor,motorshuti:মটর ada:আদা
+pata:পাতা gach,gas:গাছ kando,kanda:কাণ্ড sikor,shikor,sikod:শিকড় ful,phul:ফুল fol,phol:ফল mukul:মুকুল bij,beej,bichi:বীজ chara,cara:চারা mati:মাটি jomi:জমি khet:ক্ষেত sis,shish:শীষ dana:দানা
+holud:হলুদ lal:লাল kalo:কালো sada,shada:সাদা badami:বাদামি dag:দাগ fota,phota:ফোঁটা poka,pokha:পোকা rog,rogh:রোগ pocha:পচা poche,posa,pose:পচে sukiye,shukiye,sukay,shukay:শুকিয়ে mora:মরা more,mora:মরে morche,morse,mortese:মরছে jhore,jore:ঝরে jhorche,jhorse:ঝরছে kukre,kokre,kukra,kokra:কুঁকড়ে kukrano,kokrano:কোঁকড়ানো chidro,chidra,sidro:ছিদ্র gorto:গর্ত khay:খায় khacche,khasse,khaitese:খাচ্ছে dhorche,dhorse,dhortese:ধরছে dhore,dhor:ধরে fete,phete:ফেটে beke:বেঁকে nuye:নুয়ে dhole:ঢলে pore:পড়ে porche,porse:পড়ছে jacche,jasse,jaitese,jaitase:যাচ্ছে hoye,hoie:হয়ে hocche,hosse,hoitese,hoiche,hoise,hoyeche:হচ্ছে hoy,hoi:হয় hobe,hoibo:হবে
+dibo,dimu,dobo:দিব debo:দেব dite,dita:দিতে dile:দিলে korbo,kormu,korum,korbo:করব kori:করি korte,korta:করতে koren,koro,korun:করেন lagabo,lagamu:লাগাব lagate,lagaite:লাগাতে ropon,rupon:রোপণ bopon:বপন chas,chash,cas:চাষ sech,sec:সেচ pani:পানি sar,shar:সার uria,urea:ইউরিয়া= osud,osudh,oshud,oshudh,aushudh,ausud:ওষুধ spray,spre:স্প্রে= kitnasok,kitnashok:কীটনাশক balainasok,balainashok:বালাইনাশক matra:মাত্রা domon:দমন protikar:প্রতিকার upay,upai:উপায় lokkhon,lokhon,lokkon:লক্ষণ karon,karo:কারণ jat,jaat:জাত folon,falon:ফলন
+koto,kto:কত kotodin,kotdin:কতদিন din:দিন= mas,mash:মাস somoy,shomoy,somoi:সময় kokhon,kokhn,khn,kobe:কখন keno,kno,kn,kan:কেন ki,kee,kii:কী kivabe,kibhabe,kibabe,kmne,kemne,kemne:কীভাবে kon,kun,konta,kunta:কোন kothay,kothai,koi:কোথায় kemon,kmn,kamon:কেমন valo,bhalo,balo:ভালো kharap,kharp:খারাপ besi,beshi,bashi:বেশি kom:কম= onek,anek:অনেক boro:বড়
+ami,mui:আমি amar,amr,mor,amgo:আমার amader,amra:আমাদের apni:আপনি tumi:তুমি tomar,tmr:তোমার apnar:আপনার ei,ai,eita,eta,ata:এই oi,oita,ota:ওই ar,aar:আর na,nah:না nai,nei,nai:নেই ache,ase,ase,asey,ache:আছে acho,aso:আছ achen,asen:আছেন ekhon,akhon,ekhn:এখন aj,aaj:আজ kal,kalke:কাল ebong:এবং kintu,kintuk:কিন্তু jodi,jdi:যদি tahole,taile,tahle:তাহলে dorkar,dorkar:দরকার lagbe,lagbo:লাগবে bolen,bolo,bolun:বলুন janan,janao,jan:জানান jante:জানতে chai,cai:চাই vai,bhai:ভাই apa:আপা dhonnobad,dhonyobad,donnobad:ধন্যবাদ
+bristi,brishti:বৃষ্টি abohawa,abhawa,obohawa:আবহাওয়া rod,rood:রোদ thanda,tanda:ঠান্ডা gorom,garam:গরম kuasa,kuasha:কুয়াশা bonna,bonya:বন্যা bigha:বিঘা sotok,shotok,sotangso,shotangsho:শতক kezi,keji,kg:কেজি=
+majra,mojra:মাজরা karent,current:কারেন্ট= leda:লেদা jab:জাব machi,masi,mashi:মাছি ui,uipoka:উইপোকা idur,indur:ইঁদুর blast:ব্লাস্ট= dhosa,dhosha,dhasa:ধসা nabi:নাবি agam:আগাম morok,morak:মড়ক khol:খোল pora,pura:পোড়া tungro:টুংরো pamri:পামরি gandhi:গান্ধি makor,makorsa:মাকড় agacha,agasa,agaca:আগাছা ghas,ghash:ঘাস
+geche,gese,gelo,gece:গেছে lagse,lagche,legeche,lagce:লেগেছে lage:লাগে jonno,jonne,jnno:জন্য kita,kitha:কী bunbo,bunmu,bunum:বুনব por:পর manus,manush:মানুষ kaj:কাজ khub:খুব`;
+const bnNorm = (w) => w.toLowerCase().replace(/z/g,"j").replace(/ph/g,"f").replace(/bh/g,"v").replace(/sh/g,"s").replace(/ee/g,"i").replace(/oo/g,"u").replace(/(.)\1+/g,"$1");
+const BANGLISH = new Map(); // normalised word -> [Bangla, alsoEnglish]
+for (const pair of BANGLISH_WORDS.split(/\s+/)){ const [keys, val] = pair.split(":"); for (const k of keys.split(",")) if (!BANGLISH.has(bnNorm(k))) BANGLISH.set(bnNorm(k), [val.replace("=",""), val.endsWith("=")]); }
+const SUFFIX = [["gulo","গুলো"],["guli","গুলি"],["der","দের"],["ter","তের"],["er","ের"],["te","তে"],["ta","টা"],["ti","টি"],["ke","কে"],["e","ে"],["r","র"]];
+const ENGLISH = /^(the|is|are|am|my|what|how|why|when|which|do|does|to|of|in|on|for|and|with|it|this|that|leaves?|plants?|crops?|disease|pest|yellow|spots?|i|you|please|can|should|best|time|dose)$/i;
+// letter-by-letter fallback for words not in the list (rough, but close enough for the search to match)
+const PH = [["kh","খ"],["gh","ঘ"],["ng","ং"],["chh","ছ"],["ch","চ"],["jh","ঝ"],["th","থ"],["dh","ধ"],["ph","ফ"],["bh","ভ"],["sh","শ"],["k","ক"],["g","গ"],["c","চ"],["j","জ"],["z","জ"],["t","ত"],["d","দ"],["n","ন"],["p","প"],["f","ফ"],["b","ব"],["v","ভ"],["m","ম"],["y","য়"],["r","র"],["l","ল"],["s","স"],["h","হ"],["q","ক"],["w","ও"],["x","ক্স"]];
+const VOW = [["oi","ৈ","ঐ"],["ou","ৌ","ঔ"],["ee","ী","ঈ"],["oo","ূ","ঊ"],["a","া","আ"],["i","ি","ই"],["u","ু","উ"],["e","ে","এ"],["o","","ও"]];
+function phonetic(w){
+  let out = "", i = 0, prevCons = false;
+  while (i < w.length){
+    const v = VOW.find(([l]) => w.startsWith(l, i));
+    if (v){ out += prevCons ? v[1] : v[2]; i += v[0].length; prevCons = false; continue; }
+    const c = PH.find(([l]) => w.startsWith(l, i));
+    if (!c){ out += w[i++]; prevCons = false; continue; }
+    out += (prevCons ? "্" : "") + c[1]; i += c[0].length; prevCons = true;
+  }
+  return out;
+}
+function bnWord(raw){
+  const w = raw.toLowerCase(), n = bnNorm(w);
+  if (BANGLISH.has(n)) return BANGLISH.get(n);
+  for (const [s, bn] of SUFFIX) if (n.length > s.length + 1 && n.endsWith(s) && BANGLISH.has(n.slice(0, -s.length))){
+    const [stem, eng] = BANGLISH.get(n.slice(0, -s.length)); return [stem + bn, eng];
+  }
+  return null;
+}
+function fromBanglish(q){
+  if (/[ঀ-৿]/.test(q) || !/[a-z]/i.test(q)) return q;
+  const toks = q.split(/(\s+|[^A-Za-z0-9.\-]+)/).filter(Boolean);
+  const ws = toks.filter(t => /^[A-Za-z]+$/.test(t));
+  const hits = ws.map(bnWord), proof = hits.filter(h => h && !h[1]).length, eng = ws.filter(w => ENGLISH.test(w)).length;
+  if (!proof || eng >= proof) return q; // plain English, or a product name on its own
+  let j = 0;
+  return toks.map(t => {
+    if (!/^[A-Za-z]+$/.test(t)) return t;
+    const h = hits[j++]; if (h) return h[0];
+    const brand = DAE && DAE.base.has(t.toLowerCase()); // product names stay as typed, so the product check still finds them
+    return brand || /^[A-Z]/.test(t) && t.length > 3 ? t : phonetic(t.toLowerCase());
+  }).join("").replace(/বড় ধান/g, "বোরো ধান").replace(/([\u0980-\u09FF]) (এর|এ|তে|র)(?=[\s,?.!]|$)/g, (_, c, x) => c + (/[া-ৌ]/.test(c) ? {"এর":"র","এ":"য়"}[x] || x : {"এর":"ের","এ":"ে"}[x] || x)); // "begun e" -> বেগুনে, "alu te" -> আলুতে
+}
+
 /* ---------- reading the question ---------- */
 const SHORT_SUFFIX = ["","ে","ের","য়ের","গাছ","গাছে","গাছের","খেতে","ক্ষেতে","ক্ষেত","চাষে"];
 function cropsIn(q){
@@ -1084,7 +1138,7 @@ function renderChat(){
   if (!started && form.parentElement.id !== "heroSlot") $("#heroSlot").append(form);
   $("#ideas").innerHTML = IDEAS().map(([ic, t, q]) => `<button class="starter" data-ask="${esc(q)}" title="${esc(t)}"><svg width="18" height="18"><use href="#${ic}"/></svg><span><b>${t}</b><span>${esc(q)}</span></span></button>`).join("");
   thread.innerHTML = history.map((m, i) => m.role === "user"
-    ? `<div class="msg user">${m.img ? `<img class="uimg" src="${m.img}" alt="${L("আপনার দেওয়া ছবি","Your photo")}">` : ""}${esc(m.text)}</div>`
+    ? `<div class="msg user">${m.img ? `<img class="uimg" src="${m.img}" alt="${L("আপনার দেওয়া ছবি","Your photo")}">` : ""}${esc(m.text)}${m.heard ? `<small class="heard">${esc(m.heard)}</small>` : ""}</div>`
     : `<div class="msg bot"><svg class="mark"><use href="#logo"/></svg><div class="bub"><div class="who">${L("কৃষিগার্ড","KrishiGuard")}</div><div class="answer" id="m${i}">${m.llm ? llmHtml(m) : (m.html ?? (answer(m.q) ?? m.fallback())) + (m.q ? rememberChips(m.q) + reportChip(m.q) : "")}</div>${m.streaming ? "" : acts(i)}</div></div>`).join("");
   scroller.scrollTop = history.length ? scroller.scrollHeight : 0;
   saveChat();
@@ -1551,7 +1605,7 @@ async function askModel(text){
     slot.html = (kb.length ? kbHtml(kb) : noVerified()) + (tool.html || ""); slot.streaming = false; renderChat(); return;
   }
   const weather = WEATHER_Q.test(text) && WX ? $("#wAdvice").innerText.replace(/\s+/g, " ") : "";
-  const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.text : m.text}));
+  const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.heard || m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
   history.push(slot); renderChat();
   const kb = tool.text || weather ? [] : await kbSearch(text);
@@ -1592,14 +1646,16 @@ async function askModel(text){
 const RADAR_Q = /এলাকায়.*(পোকা|রোগ)|আশেপাশে.*(পোকা|রোগ)|(পোকা|রোগ).*(খবর|রিপোর্ট)|pest radar|pests? (reported|nearby)|in my area/i;
 async function ask(text){
   text = text.trim(); if (!text) return;
-  if (smallTalk(text)){ history.push({role:"user", text}, {role:"bot", html: answer(text)}); renderChat(); return; }
+  const said = text; text = fromBanglish(text);
+  const um = {role:"user", text: said, ...(text !== said && {heard: text})}; // show what we understood under a Banglish question
+  if (smallTalk(text)){ history.push(um, {role:"bot", html: answer(text)}); renderChat(); return; }
   if (cloud.guest){
-    if (!cloud.left()){ history.push({role:"user", text}); botSay(cloud.gateHTML(L(`আজকের ${num(GUEST_QUESTIONS)}টি অতিথি প্রশ্ন শেষ।`, `That's today's ${GUEST_QUESTIONS} guest questions.`))); return; }
+    if (!cloud.left()){ history.push(um); botSay(cloud.gateHTML(L(`আজকের ${num(GUEST_QUESTIONS)}টি অতিথি প্রশ্ন শেষ।`, `That's today's ${GUEST_QUESTIONS} guest questions.`))); return; }
     cloud.spend();
   }
-  if (RADAR_Q.test(text) && cloud.ok){ history.push({role:"user", text}); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); slot.html = await cloud.radarHTML().catch(() => `<p>${L("এখন এলাকার খবর আনা গেল না। ইন্টারনেট দেখে আবার জিজ্ঞেস করুন।","Could not load nearby reports now. Check the internet and ask again.")}</p>`); slot.streaming = false; renderChat(); return; }
-  if (WEATHER_Q.test(text) && !WX){ history.push({role:"user", text}); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); await loadWeather(); history.splice(-2); }
-  history.push({role:"user", text});
+  if (RADAR_Q.test(text) && cloud.ok){ history.push(um); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); slot.html = await cloud.radarHTML().catch(() => `<p>${L("এখন এলাকার খবর আনা গেল না। ইন্টারনেট দেখে আবার জিজ্ঞেস করুন।","Could not load nearby reports now. Check the internet and ask again.")}</p>`); slot.streaming = false; renderChat(); return; }
+  if (WEATHER_Q.test(text) && !WX){ history.push(um); const slot = {role:"bot", html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat(); await loadWeather(); history.splice(-2); }
+  history.push(um);
   if (!LIVE_MODEL || SELF_HARM.test(text) || HARM_OTHERS.test(text)){ history.push({role:"bot", q:text, fallback:noModel}); renderChat(); return; }
   await askModel(text);
 }
