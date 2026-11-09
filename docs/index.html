@@ -782,7 +782,7 @@ koto,kto:কত kotodin,kotdin:কতদিন din:দিন= mas,mash:মাস
 ami,mui:আমি amar,amr,mor,amgo:আমার amader,amra:আমাদের apni:আপনি tumi:তুমি tomar,tmr:তোমার apnar:আপনার ei,ai,eita,eta,ata:এই oi,oita,ota:ওই ar,aar:আর na,nah:না nai,nei,nai:নেই ache,ase,ase,asey,ache:আছে acho,aso:আছ achen,asen:আছেন ekhon,akhon,ekhn:এখন aj,aaj:আজ kal,kalke:কাল ebong:এবং kintu,kintuk:কিন্তু jodi,jdi:যদি tahole,taile,tahle:তাহলে dorkar,dorkar:দরকার lagbe,lagbo:লাগবে bolen,bolo,bolun:বলুন janan,janao,jan:জানান jante:জানতে chai,cai:চাই vai,bhai:ভাই apa:আপা dhonnobad,dhonyobad,donnobad:ধন্যবাদ
 bristi,brishti:বৃষ্টি abohawa,abhawa,obohawa:আবহাওয়া rod,rood:রোদ thanda,tanda:ঠান্ডা gorom,garam:গরম kuasa,kuasha:কুয়াশা bonna,bonya:বন্যা bigha:বিঘা sotok,shotok,sotangso,shotangsho:শতক kezi,keji,kg:কেজি=
 majra,mojra:মাজরা karent,current:কারেন্ট= leda:লেদা jab:জাব machi,masi,mashi:মাছি ui,uipoka:উইপোকা idur,indur:ইঁদুর blast:ব্লাস্ট= dhosa,dhosha,dhasa:ধসা nabi:নাবি agam:আগাম morok,morak:মড়ক khol:খোল pora,pura:পোড়া tungro:টুংরো pamri:পামরি gandhi:গান্ধি makor,makorsa:মাকড় agacha,agasa,agaca:আগাছা ghas,ghash:ঘাস
-hi,hii:হাই= hello,helo,hlw:হ্যালো= hey:হেই= salam,slm:সালাম assalamualaikum,assalamu,aslamualaikum,asalamualaikum:আসসালামু-আলাইকুম obostha,obosta,abostha,obsta:অবস্থা tor,tur:তোর tui:তুই tomake:তোমাকে khobor,khbr,khabar:খবর cholche,colse,cholse,choltese:চলছে nam,naam:নাম ke:কে paro,paren,parba,paros:পারো jano,janen,janis:জানো achi,asi:আছি thik:ঠিক acha,accha,acca:আচ্ছা hafej,hafez:হাফেজ allah:আল্লাহ khoda:খোদা bidai,biday:বিদায় pore:পরে kotha:কথা
+hi,hii:হাই= hello,helo,hlw:হ্যালো= hey:হেই= salam,slm:সালাম assalamualaikum,assalamu,aslamualaikum,asalamualaikum:আসসালামু-আলাইকুম obostha,obosta,abostha,obsta:অবস্থা tor,tur:তোর tui:তুই tomake:তোমাকে khobor,khbr,khabar:খবর cholche,colse,cholse,choltese:চলছে nam,naam:নাম ke:কে paro,paren,parba,paros:পারো jano,janen,janis:জানো achi,asi:আছি thik:ঠিক acha,accha,acca:আচ্ছা hafej,hafez:হাফেজ allah:আল্লাহ khoda:খোদা bidai,biday:বিদায় pore:পরে kotha:কথা banaise,banaiche,banaitese,banaice,banaichhe:বানিয়েছে banaichen,banaisen:বানিয়েছেন toke,tore:তোকে tomake:তোমাকে apnake:আপনাকে keu:কেউ manus,manush:মানুষ
 geche,gese,gelo,gece:গেছে lagse,lagche,legeche,lagce:লেগেছে lage:লাগে jonno,jonne,jnno:জন্য kita,kitha:কী bunbo,bunmu,bunum:বুনব por:পর manus,manush:মানুষ kaj:কাজ khub:খুব`;
 const bnNorm = (w) => w.toLowerCase().replace(/z/g,"j").replace(/ph/g,"f").replace(/bh/g,"v").replace(/sh/g,"s").replace(/ee/g,"i").replace(/oo/g,"u").replace(/(.)\1+/g,"$1");
 const BANGLISH = new Map(); // normalised word -> [Bangla, alsoEnglish]
@@ -922,6 +922,8 @@ const OFFER = () => L(" ফসল, পোকা, রোগ, ওষুধ বা 
 const CHAT = [
   [/কী অবস্থা|কি অবস্থা|কেমন আছ|কেমন আছো|কেমন চলছে|কী খবর|কি খবর|খবর কী|খবর কি|how are you|what'?s up|how'?s it going|how r u/i,
     () => L("আমি ভালো আছি, ধন্যবাদ। আপনি কেমন আছেন?", "I'm well, thank you. How are you?") + OFFER()],
+  [/কে বানা|কে তৈরি|কে বানিয়েছে|who (made|built|created) you|your (maker|creator)/i,
+    () => L("আমাকে বানিয়েছেন নাদিম মাহমুদ, ড্যাফোডিল ইন্টারন্যাশনাল ইউনিভার্সিটির সফটওয়্যার ইঞ্জিনিয়ারিংয়ের শিক্ষার্থী, বাংলাদেশের কৃষকদের কাজে লাগার জন্য। ভেতরে আছে Google-এর খোলা Gemma মডেল, যাকে কৃষি পরামর্শের জন্য আলাদা করে ট্রেন করা হয়েছে।", "I was built by Nadim Mahmud, a software engineering student at Daffodil International University, to help farmers in Bangladesh. Inside is Google's open Gemma model, fine-tuned for farm advice.")],
   [/তুমি কে|তুই কে|আপনি কে|তোমার নাম|তোর নাম|আপনার নাম|who are you|your name/i,
     () => L("আমি কৃষিগার্ড, বাংলাদেশের কৃষকদের জন্য বানানো একটি এআই সহকারী। ফসলের রোগ-পোকা চেনা, ওষুধের সরকারি নিবন্ধিত মাত্রা, সার আর আবহাওয়া নিয়ে সাহায্য করি।", "I'm KrishiGuard, an AI assistant for farmers in Bangladesh. I help with crop pests and diseases, registered pesticide doses, fertilizer and weather.")],
   [/কী করতে পার|কি করতে পার|কী কী পার|কি কি পার|কী জানো|কি জানো|what can you do|how can you help/i,
@@ -1484,6 +1486,21 @@ const noModel = () => `<p>${L("এই প্রশ্নের পুরো উ�
    The page builds the prompt: rules, the farmer's own profile, the DAE rows that match the message and the weather.
    The model writes the reply; registered doses are also shown as cards straight from the DAE list, and any
    amount in the model's text that is not in those rows is removed before it is shown. */
+// everyday talk outside farming: its own short prompt, a few example replies, and no farm LoRA (with it the model steers every chat back to crops)
+const CHAT_PROMPT = `তুমি কৃষিগার্ড, বাংলাদেশের কৃষকদের পাশে থাকা বন্ধুর মতো একজন সহকারী। এখন কৃষক চাষের বাইরে সাধারণ কথা বলছেন।
+- প্রশ্নের মানে বুঝে ঠিক সেই প্রশ্নেরই উত্তর দেবে, একজন বুদ্ধিমান মানুষ বন্ধু যেভাবে বলত। ২ থেকে ৪ বাক্যে, সহজ বাংলায়।
+- ফসল, খামার বা চাষের কথা নিজে থেকে তুলবে না, ফসলের নাম জিজ্ঞেস করবে না।
+- কৃষক তুমি বা তুই বললেও তুমি সবসময় "আপনি" বলবে। প্রশ্ন ইংরেজিতে হলে ইংরেজিতে উত্তর দেবে।
+- জানা না থাকলে সোজাসুজি বলবে জানা নেই। কিছু বানিয়ে বলবে না। চিকিৎসা, আইন বা বড় টাকার সিদ্ধান্তে বিশেষজ্ঞের কাছে যেতে বলবে।
+- মন খারাপ বা দুশ্চিন্তার কথা হলে আগে সহানুভূতি দেখাবে, তারপর ছোট একটা কাজের পরামর্শ দেবে। ইমোজি ব্যবহার করবে না।
+- উত্তরের শেষে "আর কিছু জানতে চাইলে বলুন" বা "সাহায্য করতে প্রস্তুত" জাতীয় কথা যোগ করবে না।
+- কৌতুক, গল্প বা ধাঁধা চাইলে ছোট একটা নির্দোষ কৌতুক বা গল্প বলবে।`;
+const CHAT_SHOTS = [["তুমি কি রোবট?","হ্যাঁ, আমি একটি এআই সহকারী, মানুষ নই। তবে আপনার কথা মন দিয়ে শুনি।"],
+  ["বৃষ্টিতে আজ বাইরে যেতে পারলাম না","বৃষ্টির দিনে ঘরে বসে থাকা একটু বিরক্তিকর লাগে। আজ একটু বিশ্রাম নিয়ে নিন, কাল হয়তো রোদ উঠবে।"],
+  ["Who made you?","Nadim Mahmud, a software engineering student in Bangladesh, built me to help farmers. I run on an open AI model fine-tuned for farm advice."]
+].flatMap(([u, a]) => [{role:"user", content:u}, {role:"assistant", content:a}]);
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu;
+
 function systemPrompt(evidence, weather, kb, q = ""){
   const now = new Date(), s = season(now), b = bnCalendar(now);
   const d = DISTRICTS.find(x => x.k === PROFILE.district);
@@ -1626,13 +1643,16 @@ async function askModel(text){
   const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.heard || m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
   history.push(slot); renderChat();
-  const kb = tool.text || weather ? [] : await kbSearch(text);
+  const chat = !tool.text && !weather;
+  const kb = chat ? [] : await kbSearch(text);
+  const said = [...history].reverse().find(m => m.role === "user")?.text || text;
+  const userMsg = said !== text ? `${text}\n(কৃষক ইংরেজি অক্ষরে লিখেছেন: ${said})` : text; // the rough Banglish conversion can miss a word
   slot.src = [...new Set(kb.map(r => r.src).filter(Boolean))].slice(0, 2);
   slot.unverified = !kb.length && !!(cropsIn(text).length || pestIn(text)); // a farming answer with nothing verified behind it says so
   const el = () => document.getElementById("m" + history.indexOf(slot));
   try {
     const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({messages:[{role:"system", content:systemPrompt(tool.text, weather, kb, text)}, ...past, {role:"user", content:text}], stream:true, temperature:0.3, repeat_penalty:1.15, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale:LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
+      body: JSON.stringify({messages:[{role:"system", content: chat ? CHAT_PROMPT : systemPrompt(tool.text, weather, kb, text)}, ...(chat ? CHAT_SHOTS : []), ...past, {role:"user", content:userMsg}], stream:true, temperature:0.3, repeat_penalty:1.15, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale: chat ? 0 : LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
     if (!r.ok || !r.body) throw new Error(r.status);
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;){
@@ -1647,7 +1667,8 @@ async function askModel(text){
       const node = el(); if (node){ node.innerHTML = llmHtml(slot); scroller.scrollTop = scroller.scrollHeight; }
     }
     const facts = kb.map(r => r.a).join("\n");
-    const g = numberGuard(dropRepeats(slot.text), facts), mg = monthGuard(g.text, facts);
+    // chat has no doses or dates to check (farming questions never reach this path), so only repeats and emoji go
+    const g = chat ? {text: dropRepeats(slot.text).replace(EMOJI, ""), dropped: 0} : numberGuard(dropRepeats(slot.text), facts), mg = chat ? {text: g.text, dropped: 0} : monthGuard(g.text, facts);
     slot.text = mg.text.trim(); slot.dropped = g.dropped + mg.dropped;
     if (!slot.text && slot.dropped){ slot.unverified = false; slot.text = L("এ বিষয়ে আমার কাছে যাচাই করা তথ্য নেই, তাই আন্দাজে বলব না। উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ ফোন করে জেনে নিন।", "I don't have verified information on this, so I won't guess. Please ask your upazila agriculture office or call the agriculture call centre at 16123."); slot.dropped = 0; slot.src = []; }
     if (!slot.text) throw new Error("empty");
