@@ -1636,7 +1636,6 @@ function mdLite(t){ // paragraphs, simple bullet lists, **bold**
 }
 function llmHtml(m){
   return (m.text ? mdLite(m.text) : `<span class="typing" aria-label="${L("লিখছি","Writing")}"><i></i><i></i><i></i></span>`)
-    + (m.dropped ? `<p class="muted small">${L("উত্তরের একটি অংশ সরিয়ে দেওয়া হয়েছে, কারণ সেই তথ্য যাচাই করা উৎসে নেই।","Part of the answer was removed because it is not in a verified source.")}</p>` : "")
     + (m.tool && !m.streaming ? `<div class="toolbox"><div class="kicker"><svg width="17" height="17"><use href="#${m.tool.includes('class="wcard"') ? "i-sky" : "i-shield"}"/></svg>${m.tool.includes('class="wcard"') ? L("আপনার জেলার আবহাওয়া পূর্বাভাস","Forecast for your district") : m.tool.includes('class="doses frg"') ? L("সরকারি সার সুপারিশ নির্দেশিকা (BARC ২০২৪) থেকে","From the government Fertilizer Recommendation Guide (BARC 2024)") : L("সরকারি DAE তালিকা থেকে যাচাই করা","Checked against the government DAE list")}</div>${m.tool}</div>` : "")
     + (m.src?.length && !m.streaming ? `<p class="muted small">${L("সূত্র", "Source")}: ${m.src.map(esc).join("; ")}</p>` : "")
     + (m.unverified && !m.streaming ? `<p class="muted small">${L("এই উত্তরের পেছনে যাচাই করা উৎস পাওয়া যায়নি। কাজে লাগানোর আগে উপজেলা কৃষি অফিস বা ১৬১২৩-এ মিলিয়ে নিন।", "No verified source was found for this answer. Check with your upazila agriculture office or 16123 before acting on it.")}</p>` : "")
@@ -1647,12 +1646,6 @@ const STOP = new Set("গাছ গাছের গাছে কী কি ক�
 const words = (t, crop) => new Set(t.normalize("NFC").replace(/কখন/g, " সময় ").split(/[^\u0980-\u09FFA-Za-z]+/).map(w => w.toLowerCase()).filter(w => w.length > 2 && !STOP.has(w) && !crop.some(c => w.startsWith(c.toLowerCase()))));
 // The crop and pest words in the question narrow the search to answers about them; without any, only a close match counts.
 const MONTHS = /(জানুয়ারি|ফেব্রুয়ারি|মার্চ|এপ্রিল|মে|জুন|জুলাই|আগস্ট|সেপ্টেম্বর|অক্টোবর|নভেম্বর|ডিসেম্বর|বৈশাখ|জ্যৈষ্ঠ|আষাঢ়|শ্রাবণ|ভাদ্র|আশ্বিন|কার্তিক|অগ্রহায়ণ|পৌষ|মাঘ|ফাল্গুন|চৈত্র)/g;
-function monthGuard(text, evidence){ // drop sentences naming a month that the verified answers do not name
-  const ok = new Set(evidence.match(MONTHS) || []);
-  let dropped = 0;
-  const out = text.split(/(?<=[।!?\n])/).filter(sn => { const bad = (sn.match(MONTHS) || []).some(m => !ok.has(m)); if (bad) dropped++; return !bad; }).join("");
-  return {text: out, dropped};
-}
 // What the question asks about must be in the answer itself: a "when" question needs a month or date in the answer,
 // a variety question a variety, an irrigation question irrigation. Stops a fertilizer answer for an onion sowing question.
 const TOPICS = [[/কখন|কোন সময়|কোন মাসে|when/i, new RegExp(MONTHS.source + "|\\d+\\s*(দিন|সপ্তাহ)|[০-৯]+\\s*(দিন|সপ্তাহ)")],
@@ -1717,6 +1710,8 @@ async function askModel(text){
   const named = cropsIn(text); // related answers count as evidence for months or numbers only when they are about the same crop
   const facts = (kb.loose ? kb.filter(r => named.some(c => (r.q + r.a).includes(c.bn))) : kb).map(r => r.a).join("\n");
   const fallback = !!farming && !tool.text && !weather;
+  // only a made-up pesticide product or dose is taken out (safety); chat has none, so there only repeats and emoji go
+  const clean = (t) => chat ? {text: dropRepeats(t).replace(EMOJI, ""), dropped: 0} : numberGuard(dropRepeats(t), facts);
   const msgs = chat ? [{role:"system", content:CHAT_PROMPT}, ...CHAT_SHOTS, ...past, {role:"user", content:userMsg}]
     : fallback ? [{role:"system", content: FARM_PROMPT + (facts ? `\nকাছাকাছি প্রশ্নের সরকারি তথ্য (একই বিষয় হলে কাজে লাগাবে):\n${facts}` : "")}, ...FARM_SHOTS, {role:"user", content:userMsg}]
     : [{role:"system", content:systemPrompt(tool.text, weather, kb, text)}, ...past, {role:"user", content:userMsg}];
@@ -1734,11 +1729,10 @@ async function askModel(text){
         const data = line.slice(5).trim(); if (data === "[DONE]") continue;
         try { slot.text += JSON.parse(data).choices?.[0]?.delta?.content || ""; } catch (e) {}
       }
-      const node = el(); if (node){ node.innerHTML = llmHtml(slot); scroller.scrollTop = scroller.scrollHeight; }
+      const node = el(); if (node){ node.innerHTML = llmHtml({...slot, text: clean(slot.text).text}); /* checked while it streams, so nothing shows and then vanishes */ scroller.scrollTop = scroller.scrollHeight; }
     }
-    // chat has no doses or dates to check (farming questions never reach this path), so only repeats and emoji go
-    const g = chat ? {text: dropRepeats(slot.text).replace(EMOJI, ""), dropped: 0} : numberGuard(dropRepeats(slot.text), facts), mg = chat ? {text: g.text, dropped: 0} : monthGuard(g.text, facts);
-    slot.text = mg.text.trim(); slot.dropped = g.dropped + mg.dropped;
+    const g = clean(slot.text);
+    slot.text = g.text.trim(); slot.dropped = g.dropped;
     if (!slot.text && slot.dropped){ slot.unverified = false; slot.text = L("এ বিষয়ে আমার কাছে যাচাই করা তথ্য নেই, তাই আন্দাজে বলব না। উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ ফোন করে জেনে নিন।", "I don't have verified information on this, so I won't guess. Please ask your upazila agriculture office or call the agriculture call centre at 16123."); slot.dropped = 0; slot.src = []; }
     if (!slot.text) throw new Error("empty");
     MODEL = "on"; renderStatus();
