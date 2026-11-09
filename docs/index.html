@@ -1774,32 +1774,88 @@ $("#toLeaf").addEventListener("click", pickPhoto);
 
 /* ---------- voice input (browser speech recognition; Chrome on Android supports Bangla) ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SR){
+let SR_OK = !!SR; // turned off after the browser's speech service fails (Edge, Brave, some phones)
+const REC_OK = LIVE_MODEL && !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder && window.OfflineAudioContext);
+// Speech to text: the browser's own recognizer first (Google's Bangla on Chrome), else record and let Gemma 4 on the model server write it down.
+// h: {interim(text), busy(), done(text), fail(why)}; returns {stop()} to finish listening now.
+function hear(h){
+  const ctl = {stop(){}};
+  if (!SR_OK){ if (REC_OK) recordVoice(h, ctl); else h.fail("none"); return ctl; }
+  const rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
+  let said = "", broke = false;
+  rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); h.interim(said); };
+  rec.onerror = e => { if (e.error === "not-allowed") h.fail("mic"); else if (REC_OK && /network|service-not-allowed|language-not-supported|audio-capture/.test(e.error)){ SR_OK = false; broke = true; } };
+  rec.onend = () => broke ? recordVoice(h, ctl) : h.done(said);
+  ctl.stop = () => rec.stop(); rec.start(); return ctl;
+}
+async function recordVoice(h, ctl){
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); } catch (e) { return h.fail("mic"); }
+  const ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 1024; ac.createMediaStreamSource(stream).connect(an);
+  const mr = new MediaRecorder(stream), parts = []; mr.ondataavailable = e => e.data.size && parts.push(e.data);
+  let ended = false, spoke = false, quiet = 0; const t0 = performance.now(), buf = new Uint8Array(an.fftSize);
+  const end = () => { if (ended) return; ended = true; clearInterval(timer); if (mr.state !== "inactive") mr.stop(); };
+  ctl.stop = end;
+  const timer = setInterval(() => { // stops by itself after 1.5 s of quiet once the farmer has spoken, or after 15 s
+    an.getByteTimeDomainData(buf); let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+    const now = performance.now(); if (peak > 12){ spoke = true; quiet = now; }
+    if ((spoke && now - quiet > 1500) || now - t0 > 15000) end();
+  }, 100);
+  mr.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop()); ac.close();
+    if (!spoke || !parts.length) return h.done("");
+    h.busy?.();
+    try { h.done(await transcribe(new Blob(parts, {type: mr.mimeType}))); } catch (e) { h.fail("server"); }
+  };
+  mr.start(250); h.interim("");
+}
+async function transcribe(blob){ // any recording -> 16 kHz mono WAV -> Gemma 4 writes down what was said
+  const raw = await new OfflineAudioContext(1, 1, 16000).decodeAudioData(await blob.arrayBuffer());
+  const oc = new OfflineAudioContext(1, Math.ceil(raw.duration * 16000), 16000), src = oc.createBufferSource();
+  src.buffer = raw; src.connect(oc.destination); src.start();
+  const pcm = (await oc.startRendering()).getChannelData(0), dv = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+  const str = (o, t) => [...t].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); dv.setUint32(4, 36 + pcm.length * 2, true); str(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, 16000, true); dv.setUint32(28, 32000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); str(36, "data"); dv.setUint32(40, pcm.length * 2, true);
+  pcm.forEach((x, i) => dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, x)) * 0x7fff, true));
+  const bytes = new Uint8Array(dv.buffer); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({
+    messages:[{role:"system", content: L("এটি বাংলাদেশের একজন কৃষকের মুখে বলা প্রশ্ন, সাধারণত ফসল, ধান, সবজি, পোকা, রোগ, সার বা ওষুধ নিয়ে। অডিওতে যা বলা হয়েছে হুবহু বাংলা লিপিতে লিখে দাও। উত্তর দেবে না, ব্যাখ্যা দেবে না, শুধু কথাগুলো লিখবে।",
+      "This is a farmer in Bangladesh asking a question out loud. Write down exactly what was said, in the language it was said in. Do not answer or explain.")},
+      {role:"user", content:[{type:"input_audio", input_audio:{data: btoa(bin), format:"wav"}}]}],
+    temperature:0, max_tokens:120, lora:[{id:0, scale:0}], chat_template_kwargs:{enable_thinking:false}})});
+  if (!r.ok) throw new Error(r.status);
+  return ((await r.json()).choices?.[0]?.message?.content || "").replace(/^["“”']+|["“”']+$/g, "").trim();
+}
+const HEAR_FAIL = {mic: ["মাইক ব্যবহারের অনুমতি দিন", "Allow the microphone"], none: ["এই ব্রাউজারে মুখে বলা যাচ্ছে না, লিখে পাঠান", "Speaking isn't supported in this browser, please type"],
+  server: ["কথাটা লেখা গেল না, আবার বলুন বা লিখে পাঠান", "Couldn't write that down, please try again or type"], quiet: ["কথা শোনা যায়নি, আবার চেষ্টা করুন", "Could not hear you, please try again"]};
+if (SR || REC_OK){
   const mic = document.createElement("button");
   mic.type = "button"; mic.className = "icon-btn"; mic.id = "mic";
   mic.dataset.titleBn = "মুখে বলুন"; mic.dataset.titleEn = "Speak your question"; mic.title = "মুখে বলুন"; mic.setAttribute("aria-label", "মুখে বলুন");
   mic.innerHTML = '<svg width="22" height="22"><use href="#i-mic"/></svg>';
   $("#askForm .send").before(mic);
-  let rec = null;
+  let cur = null;
   mic.addEventListener("click", () => {
-    if (rec){ rec.stop(); return; }
-    rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
-    const q = $("#q"), base = q.value.trim();
-    rec.onresult = e => { q.value = (base + " " + [...e.results].map(r => r[0].transcript).join("")).trim(); q.dispatchEvent(new Event("input")); };
-    rec.onerror = () => toast(L("কথা শোনা যায়নি, আবার চেষ্টা করুন","Could not hear you, please try again"));
-    rec.onend = () => { rec = null; mic.classList.remove("on"); q.focus(); };
-    mic.classList.add("on"); rec.start();
+    if (cur){ cur.stop(); return; }
+    const q = $("#q"), base = q.value.trim(), ph = q.placeholder;
+    const put = (t) => { q.value = (base + " " + t).trim(); q.dispatchEvent(new Event("input")); };
+    const fin = () => { cur = null; mic.classList.remove("on"); q.placeholder = ph; q.focus(); };
+    mic.classList.add("on");
+    cur = hear({interim: t => { put(t); if (!t) q.placeholder = L("শুনছি… বলা শেষ হলে একটু থামুন", "Listening… pause when you're done"); },
+      busy: () => { q.placeholder = L("লিখছি…", "Writing it down…"); },
+      done: t => { fin(); if (t) put(t); else toast(L(...HEAR_FAIL.quiet)); },
+      fail: why => { fin(); toast(L(...HEAR_FAIL[why])); }});
   });
 }
 
 /* ---------- voice mode: talk and hear the answer, hands-free ---------- */
-if (SR && TTS){
+if ((SR || REC_OK) && TTS){
   const vb = document.createElement("button");
   vb.type = "button"; vb.className = "icon-btn"; vb.id = "voiceBtn";
   vb.dataset.titleBn = "ভয়েস মোড: কথা বলুন, উত্তর শুনুন"; vb.dataset.titleEn = "Voice mode: talk and hear the answer"; vb.title = vb.dataset.titleBn; vb.setAttribute("aria-label", "Voice mode");
   vb.innerHTML = '<svg width="22" height="22"><use href="#i-wave"/></svg>';
   $("#askForm .send").before(vb);
-  const ov = $("#vmode"); let on = false, rec = null;
+  const ov = $("#vmode"); let on = false, rec = null; // rec: the current hear() handle
   const state = (k, heard = "") => {
     const T = {listen:["শুনছি… বলুন","Listening… go ahead"], think:["ভাবছি…","Thinking…"], talk:["বলছি… থামাতে বৃত্তে চাপ দিন","Speaking… tap the circle to stop"], idle:["কথা বলতে বৃত্তে চাপ দিন","Tap the circle to talk"]}[k];
     ov.dataset.state = k; $("#vmState").textContent = L(...T); $("#vmHeard").textContent = heard;
@@ -1818,19 +1874,16 @@ if (SR && TTS){
   function listen(){
     if (!on) return;
     stopSpeak(); state("listen");
-    rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
-    let said = "";
-    rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); $("#vmHeard").textContent = said; };
-    rec.onerror = e => { if (e.error === "not-allowed") { toast(L("মাইক ব্যবহারের অনুমতি দিন","Allow the microphone")); stop(); } };
-    rec.onend = async () => {
-      rec = null; if (!on) return;
-      if (!said.trim()) return state("idle");
-      state("think", said); go("chat"); await ask(said); if (!on) return;
-      state("talk", said); speak(spoken(), () => on && listen());
-    };
-    rec.start();
+    rec = hear({interim: t => { $("#vmHeard").textContent = t; }, busy: () => state("think"),
+      fail: why => { rec = null; toast(L(...HEAR_FAIL[why])); if (why === "mic" || why === "none") stop(); else state("idle"); },
+      done: async (said) => {
+        rec = null; if (!on) return;
+        if (!said.trim()) return state("idle");
+        state("think", said); go("chat"); await ask(said); if (!on) return;
+        state("talk", said); speak(spoken(), () => on && listen());
+      }});
   }
-  function stop(){ on = VOICE = false; ov.hidden = true; rec?.abort(); stopSpeak(); }
+  function stop(){ on = VOICE = false; ov.hidden = true; const r = rec; rec = null; r?.stop(); stopSpeak(); }
   vb.onclick = () => { if (cloud.guest) return botSay(cloud.gateHTML(L("ভয়েস মোডে কথা বলতে অ্যাকাউন্ট লাগে।","Voice mode needs an account."))); on = VOICE = true; ov.hidden = false; listen(); };
   $("#vmStop").onclick = stop;
   $("#vmOrb").onclick = () => ov.dataset.state === "listen" ? rec?.stop() : listen(); // talking or idle: start listening; listening: send now
