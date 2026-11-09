@@ -1519,14 +1519,14 @@ function systemPrompt(evidence, weather, kb, q = ""){
 ৮. মাত্রার প্রশ্নে উত্তর হবে এভাবে: কোন পণ্য, তার নিবন্ধিত মাত্রা, আর কৃষকের জমির মোট পরিমাণ দেওয়া থাকলে সেটা। নিজে কোনো হিসাব করবে না।
 ৯. কৃষক যেভাবে সম্ভাষণ করেন সেভাবেই ফিরিয়ে দেবে: হাই বা হ্যালো বললে "হ্যালো", সালাম দিলে "ওয়ালাইকুম আসসালাম"। নিজে থেকে নমস্কার বা সালাম দিয়ে শুরু করবে না। সম্ভাষণ না থাকলে সরাসরি উত্তর দেবে।
 ১০. কৃষক যা জিজ্ঞেস করেছেন শুধু তারই উত্তর দেবে। প্রশ্নের সাথে সম্পর্ক নেই এমন কথা, তথ্য বা উপদেশ যোগ করবে না। একই কথা দুবার লিখবে না। কৃষকের নাম লিখবে না।
-১১. চাষের সময়, জাত, পরিচর্যা, রোগ বা পোকার লক্ষণের মতো প্রশ্নে শুধু নিচের "যাচাই করা তথ্য" থেকে উত্তর দেবে। সেখানে উত্তর না থাকলে মাস, তারিখ, জাত বা পরিমাণ অনুমান করে বলবে না; বলবে এ বিষয়ে নিশ্চিত তথ্য হাতে নেই, উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ জিজ্ঞেস করতে।
+১১. কৃষির যেকোনো প্রশ্নের উত্তর দেবে: কী কারণে হতে পারে, কীভাবে চিনবে, কী পরিচর্যা আর কী করণীয়। তবে মাস বা তারিখ, জাতের নাম, সার বা ওষুধের পরিমাণ শুধু নিচের তথ্য থেকে বলবে, নিজে বানাবে না; এগুলো তথ্যে না থাকলে বলবে সঠিক সময় বা মাত্রার জন্য উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ জেনে নিতে।
 ১২. DAE তালিকার তথ্য দেওয়া থাকলে সরাসরি দুই-তিনটি পণ্যের নাম ও নিবন্ধিত মাত্রা বলবে। জমির মাপ বা কত দিন ধরে সমস্যা, এমন প্রশ্ন করবে না; পুরো তালিকা কৃষক নিচের কার্ডে দেখবেন।`,
 `আজ ${b.d} ${BN_MONTHS[b.m]} ${b.y} বঙ্গাব্দ, ${s.bn}।`,
 prof ? `এই কৃষক নিজে জানিয়েছেন: ${prof}। এগুলো মাথায় রেখে উত্তর দেবে।` : "এই কৃষকের খামারের তথ্য জানা নেই।",
 evidence ? `DAE নিবন্ধিত বালাইনাশক তালিকা থেকে এই প্রশ্নের তথ্য (ওষুধের নাম ও মাত্রা শুধু এখান থেকে নেবে; পুরো তালিকাটি কৃষককে আলাদা কার্ডে দেখানো হবে, তাই তুমি তালিকা আবার লিখবে না, এক-দুটি পণ্য নিজের কথায় বলবে):\n${evidence}`
   : "এই প্রশ্নের জন্য DAE তালিকা থেকে কোনো তথ্য দেওয়া হয়নি, তাই কোনো বালাইনাশকের নাম বা মাত্রা বলবে না।",
 weather ? `কৃষকের জেলার আবহাওয়া:\n${weather}` : "",
-kb?.length ? `যাচাই করা তথ্য (সরকারি কৃষি প্রকাশনা থেকে; প্রশ্নের সাথে যা মেলে শুধু সেটুকু ব্যবহার করবে):\n${kb.map(r => `- প্রশ্ন: ${r.q}\n  উত্তর: ${r.a}`).join("\n")}`
+kb?.length ? `${kb.loose ? "কাছাকাছি প্রশ্নের তথ্য (সরকারি কৃষি প্রকাশনা থেকে, তবে হুবহু এই প্রশ্নের নয়; একই ফসল আর একই বিষয় হলে তবেই ব্যবহার করবে)" : "যাচাই করা তথ্য (সরকারি কৃষি প্রকাশনা থেকে; প্রশ্নের সাথে যা মেলে শুধু সেটুকু ব্যবহার করবে)"}:\n${kb.map(r => `- প্রশ্ন: ${r.q}\n  উত্তর: ${r.a}`).join("\n")}`
   : evidence || weather ? "" : "এই প্রশ্নের জন্য কোনো যাচাই করা তথ্য পাওয়া যায়নি। তাই কোনো মাস, তারিখ, জাত বা পরিমাণ বলবে না (নিয়ম ১১)।",
 lang === "en" ? "The farmer is using the English version: reply in English." : "",
 VOICE && lang === "bn" ? VOICE_RULE : ""].filter(Boolean).join("\n\n");
@@ -1653,14 +1653,16 @@ const TOPICS = [[/কখন|কোন সময়|কোন মাসে|when/i
   [/মাটি|soil/i, /মাটি|soil|দোআঁশ|বেলে|এঁটেল/i]];
 // the answer must hold what was asked, and its own question must not be about a different topic (fertilizer, variety...)
 const fitsTopic = (q, a, kq = "") => TOPICS.every(([ask, need], i) => (!ask.test(q) || need.test(a)) && (i === 0 || !ask.test(kq) || ask.test(q)));
-async function kbSearch(q){
+async function kbSearch(q, loose = false){ // loose: up to 3 related answers as background for the model, not shown as the answer
   const p = pestIn(q), terms = [...cropsIn(q).flatMap(c => [c.bn, c.en, ...(c.kw || [])]), ...(p ? [p.bn, p.en, ...p.kw] : [])];
   try {
     const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/search", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({q, terms, k: 12}), signal: AbortSignal.timeout(6000)});
     if (!r.ok) return [];
     const mine = [...words(q, terms)];
     const shares = (a, b) => a.startsWith(b) || b.startsWith(a); // word stems: "রোপণ" and "রোপণের"
-    return ((await r.json()).results || []).map(x => {
+    const all = (await r.json()).results || [];
+    if (loose) return Object.assign(all.slice(0, 3), {loose: true});
+    return all.map(x => {
       const theirs = [...words(x.q + " " + x.a, terms)], text = (x.q + " " + x.a).toLowerCase();
       const problem = mine.filter(w => theirs.some(t => shares(w, t))).length;   // the farmer's problem words found in it
       const named = terms.filter(t => t && text.includes(t.toLowerCase())).length; // their crop and pest names found in it
@@ -1690,22 +1692,20 @@ async function askModel(text){
   if (farming){
     const slot = {role:"bot", q:text, html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat();
     const kb = await kbSearch(text);
-    const general = !kb.length && !cropsIn(text).length && !pestIn(text); // "how to control pests safely": general advice, no crop to look up
-    const card = general && generalCard(text);
-    if (card){ slot.html = card; slot.streaming = false; renderChat(); return; }
-    if (!general){ slot.html = (kb.length ? kbHtml(kb) : noVerified()) + (tool.html || ""); slot.streaming = false; renderChat(); return; }
-    history.splice(history.indexOf(slot), 1);
+    const card = !kb.length && !cropsIn(text).length && !pestIn(text) && generalCard(text); // "how to control pests safely"
+    if (kb.length || card){ slot.html = (card || kbHtml(kb)) + (tool.html || ""); slot.streaming = false; renderChat(); return; }
+    history.splice(history.indexOf(slot), 1); // nothing verified fits: the fine-tuned model answers, marked as unverified, with dates, varieties and doses checked
   }
   const weather = WEATHER_Q.test(text) && WX ? $("#wAdvice").innerText.replace(/\s+/g, " ") : "";
   const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.heard || m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
   history.push(slot); renderChat();
   const chat = !farming && !tool.text && !weather;
-  const kb = chat ? [] : await kbSearch(text);
+  const kb = chat ? [] : await kbSearch(text, !!farming);
   const said = [...history].reverse().find(m => m.role === "user")?.text || text;
   const userMsg = said !== text ? `${text}\n(কৃষক ইংরেজি অক্ষরে লিখেছেন: ${said})` : text; // the rough Banglish conversion can miss a word
-  slot.src = [...new Set(kb.map(r => r.src).filter(Boolean))].slice(0, 2);
-  slot.unverified = !kb.length && !!(cropsIn(text).length || pestIn(text)); // a farming answer with nothing verified behind it says so
+  slot.src = kb.loose ? [] : [...new Set(kb.map(r => r.src).filter(Boolean))].slice(0, 2);
+  slot.unverified = !!farming && !tool.text; // a farming answer with nothing verified behind it says so
   const el = () => document.getElementById("m" + history.indexOf(slot));
   try {
     const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
@@ -1723,7 +1723,8 @@ async function askModel(text){
       }
       const node = el(); if (node){ node.innerHTML = llmHtml(slot); scroller.scrollTop = scroller.scrollHeight; }
     }
-    const facts = kb.map(r => r.a).join("\n");
+    const named = cropsIn(text); // related answers count as evidence for months or numbers only when they are about the same crop
+    const facts = (kb.loose ? kb.filter(r => named.some(c => (r.q + r.a).includes(c.bn))) : kb).map(r => r.a).join("\n");
     // chat has no doses or dates to check (farming questions never reach this path), so only repeats and emoji go
     const g = chat ? {text: dropRepeats(slot.text).replace(EMOJI, ""), dropped: 0} : numberGuard(dropRepeats(slot.text), facts), mg = chat ? {text: g.text, dropped: 0} : monthGuard(g.text, facts);
     slot.text = mg.text.trim(); slot.dropped = g.dropped + mg.dropped;
