@@ -1499,6 +1499,13 @@ const CHAT_SHOTS = [["তুমি কি রোবট?","হ্যাঁ, আ�
   ["বৃষ্টিতে আজ বাইরে যেতে পারলাম না","বৃষ্টির দিনে ঘরে বসে থাকা একটু বিরক্তিকর লাগে। আজ একটু বিশ্রাম নিয়ে নিন, কাল হয়তো রোদ উঠবে।"],
   ["Who made you?","Nadim Mahmud, a software engineering student in Bangladesh, built me to help farmers. I run on an open AI model fine-tuned for farm advice."]
 ].flatMap(([u, a]) => [{role:"user", content:u}, {role:"assistant", content:a}]);
+// farming questions with no verified answer: answer like an extension officer, with no dates, varieties, product names or amounts.
+// The long main prompt and the farm LoRA made the small model ask questions back instead of answering (tested live, Nov 2026).
+const FARM_PROMPT = `তুমি কৃষিগার্ড, বাংলাদেশের একজন অভিজ্ঞ উপসহকারী কৃষি কর্মকর্তার মতো। কৃষকের প্রশ্নের সরাসরি উত্তর দেবে।
+- পাল্টা প্রশ্ন করবে না। আগে সম্ভাব্য কারণ এক-দুই বাক্যে, তারপর ৩ থেকে ৫টি করণীয় "-" দিয়ে আলাদা লাইনে।
+- কোনো মাস, তারিখ, জাতের নাম, ওষুধের নাম বা সার-ওষুধের পরিমাণ বলবে না। এগুলো দরকার হলে শেষে এক লাইনে উপজেলা কৃষি অফিস বা ১৬১২৩-এ জেনে নিতে বলবে।
+- সহজ বাংলায়, ১২০ শব্দের মধ্যে। প্রশ্ন ইংরেজিতে হলে ইংরেজিতে। ইমোজি নয়।`;
+const FARM_SHOTS = [{role:"user", content:"বেগুন গাছের পাতা হলুদ হয়ে যাচ্ছে কেন?"}, {role:"assistant", content:"পাতা হলুদ হওয়ার সাধারণ কারণ পুষ্টির ঘাটতি, গোড়ায় পানি জমে থাকা বা শিকড়ে পোকা-রোগ।\n- গোড়ায় পানি জমে থাকলে নালা কেটে পানি বের করে দিন।\n- নিচের পাতা আগে হলুদ হলে নাইট্রোজেনের ঘাটতি হতে পারে, পরিমিত সার দিন।\n- একটা গাছ তুলে শিকড় দেখুন, পচা বা গিঁট থাকলে আক্রান্ত গাছ সরিয়ে ফেলুন।\n- পাতার নিচে পোকা আছে কিনা দেখুন।\nসারের সঠিক পরিমাণের জন্য উপজেলা কৃষি অফিস বা ১৬১২৩-এ জেনে নিন।"}];
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu;
 
 function systemPrompt(evidence, weather, kb, q = ""){
@@ -1707,9 +1714,15 @@ async function askModel(text){
   slot.src = kb.loose ? [] : [...new Set(kb.map(r => r.src).filter(Boolean))].slice(0, 2);
   slot.unverified = !!farming && !tool.text; // a farming answer with nothing verified behind it says so
   const el = () => document.getElementById("m" + history.indexOf(slot));
+  const named = cropsIn(text); // related answers count as evidence for months or numbers only when they are about the same crop
+  const facts = (kb.loose ? kb.filter(r => named.some(c => (r.q + r.a).includes(c.bn))) : kb).map(r => r.a).join("\n");
+  const fallback = !!farming && !tool.text && !weather;
+  const msgs = chat ? [{role:"system", content:CHAT_PROMPT}, ...CHAT_SHOTS, ...past, {role:"user", content:userMsg}]
+    : fallback ? [{role:"system", content: FARM_PROMPT + (facts ? `\nকাছাকাছি প্রশ্নের সরকারি তথ্য (একই বিষয় হলে কাজে লাগাবে):\n${facts}` : "")}, ...FARM_SHOTS, {role:"user", content:userMsg}]
+    : [{role:"system", content:systemPrompt(tool.text, weather, kb, text)}, ...past, {role:"user", content:userMsg}];
   try {
     const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({messages:[{role:"system", content: chat ? CHAT_PROMPT : systemPrompt(tool.text, weather, kb, text)}, ...(chat ? CHAT_SHOTS : []), ...past, {role:"user", content:userMsg}], stream:true, temperature:0.3, repeat_penalty:1.15, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale: chat ? 0 : LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
+      body: JSON.stringify({messages:msgs, stream:true, temperature:0.3, repeat_penalty:1.15, max_tokens: VOICE ? 160 : 450, lora:[{id:0, scale: chat || fallback ? 0 : LORA_SCALE}], chat_template_kwargs:{enable_thinking:false}})});
     if (!r.ok || !r.body) throw new Error(r.status);
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;){
@@ -1723,8 +1736,6 @@ async function askModel(text){
       }
       const node = el(); if (node){ node.innerHTML = llmHtml(slot); scroller.scrollTop = scroller.scrollHeight; }
     }
-    const named = cropsIn(text); // related answers count as evidence for months or numbers only when they are about the same crop
-    const facts = (kb.loose ? kb.filter(r => named.some(c => (r.q + r.a).includes(c.bn))) : kb).map(r => r.a).join("\n");
     // chat has no doses or dates to check (farming questions never reach this path), so only repeats and emoji go
     const g = chat ? {text: dropRepeats(slot.text).replace(EMOJI, ""), dropped: 0} : numberGuard(dropRepeats(slot.text), facts), mg = chat ? {text: g.text, dropped: 0} : monthGuard(g.text, facts);
     slot.text = mg.text.trim(); slot.dropped = g.dropped + mg.dropped;
