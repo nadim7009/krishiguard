@@ -7,3 +7,7 @@ const cases=[["ধানের জমিতে ১০ লিটার পান�
 const got=await p.evaluate(c=>c.map(([q])=>{const h=ratioCalc(q);return h&&h.replace(/<[^>]+>/g,"");}),cases);
 let ok=!e.length; cases.forEach(([q,w],i)=>{const g=got[i]; const pass= w===null? g===null : !!g&&g.includes(w); if(!pass){ok=false;} console.log(pass?"ok  ":"MISS",q.slice(0,40),"=>",g&&g.slice(0,120));});
 console.log(ok?"calc ok":"calc FAILED",e);process.exitCode=ok?0:1;await b.close();})();
+// general card: run after the main check
+(async()=>{const {chromium}=require('playwright');const b=await chromium.launch();const p=await b.newPage();await p.route(/jsdelivr|hf.space|google/,r=>r.abort());await p.goto('http://localhost:8765/');await p.waitForTimeout(800);
+const g=await p.evaluate(()=>[!!generalCard("ফসলের পোকা দমনে কীভাবে নিরাপদ পদ্ধতি ব্যবহার করা যায়?"),!!generalCard("জৈব উপায়ে পোকা দমন"),!generalCard("ধানের পাতা হলুদ কেন")]);
+console.log(g.every(Boolean)?"general ok":"general FAILED",g);if(!g.every(Boolean))process.exitCode=1;await b.close();})();

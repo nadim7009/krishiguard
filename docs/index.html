@@ -1539,6 +1539,26 @@ const UNITS = [ // [pattern, dimension, size in the base unit, Bangla name, Engl
   [/গ্রাম|grams?|\bgm?\b/i, "wt", 1, "গ্রাম", "g", "গ্রামে"], [/কেজি|kgs?\b|kilo/i, "wt", 1000, "কেজি", "kg", "কেজিতে"], [/মণ|maunds?/i, "wt", 40000, "মণ", "maund", "মণে"], [/টন|tons?|tonnes?/i, "wt", 1e6, "টন", "ton", "টনে"],
   [/চামচ|spoons?/i, "spoon", 1, "চামচ", "spoon", "চামচে"], [/ক্যাপ|caps?\b|ঢাকনা/i, "cap", 1, "ক্যাপ", "cap", "ক্যাপে"], [/গাছ|plants?|trees?/i, "plant", 1, "গাছ", "plants", "গাছে"], [/ট্যাংক|tanks?/i, "tank", 1, "ট্যাংক", "tank", "ট্যাংকে"]];
 const NUM_WORDS = {"আধা":0.5, "এক":1, "দুই":2, "তিন":3, "চার":4, "পাঁচ":5, "ছয়":6, "সাত":7, "আট":8, "নয়":9, "দশ":10, "one":1, "two":2, "three":3, "four":4, "five":5, "ten":10};
+// general farming questions with a fixed, well-known answer (DAE integrated pest management advice); no numbers, so nothing to get wrong
+const GENERAL = [
+  [/(নিরাপদ|সমন্বিত|জৈব|প্রাকৃতিক|বিষ ছাড়া|কীটনাশক ছাড়া|ipm|safe|organic|without (pesticide|chemical)).*(পোকা|রোগ|বালাই|দমন|pest)|(পোকা|বালাই|pest).*(নিরাপদ|সমন্বিত|জৈব|প্রাকৃতিক|ipm|safe|organic)/i,
+    () => L(`<p>নিরাপদে পোকা দমনের জন্য কৃষি সম্প্রসারণ অধিদপ্তর সমন্বিত বালাই ব্যবস্থাপনা (IPM) মেনে চলতে বলে। কীটনাশক থাকে একেবারে শেষ উপায় হিসেবে।</p>
+<ul><li>রোগ-পোকা সহনশীল জাত আর সুস্থ বীজ বা চারা ব্যবহার করুন। সময়মতো বপন করুন।</li>
+<li>জমি ও আইল পরিষ্কার রাখুন, আক্রান্ত পাতা, ডগা বা ফল তুলে মাটিতে পুঁতে ফেলুন।</li>
+<li>হাতজাল দিয়ে পোকা ধরুন, আলোর ফাঁদ আর ফেরোমন ফাঁদ বসান।</li>
+<li>ধানখেতে ডাল বা কঞ্চি পুঁতে দিন (পার্চিং), পাখি এসে পোকা খায়।</li>
+<li>মাকড়সা, লেডিবার্ড বিটলের মতো উপকারী পোকা মারবেন না।</li>
+<li>পরিমিত সার দিন, বিশেষ করে ইউরিয়া বেশি দিলে পোকা বাড়ে।</li>
+<li>নিয়মিত জমি ঘুরে দেখুন। ক্ষতি বেশি হলে তবেই নিবন্ধিত কীটনাশক দিন, লেবেলের মাত্রা মেনে, মুখোশ ও দস্তানা পরে, বাতাসের উল্টো দিকে না দাঁড়িয়ে।</li></ul>
+<p class="muted small">নির্দিষ্ট ফসল আর পোকার নাম লিখলে নিবন্ধিত ওষুধ ও মাত্রা দেখাব। আরও জানতে কৃষি কল সেন্টার ১৬১২৩।</p>`,
+`<p>For safe pest control, Bangladesh's Department of Agricultural Extension recommends integrated pest management (IPM), with pesticides as the last resort.</p>
+<ul><li>Use tolerant varieties and healthy seed or seedlings, and sow on time.</li><li>Keep fields and bunds clean; remove infested leaves, shoots or fruit and bury them.</li>
+<li>Catch insects with a hand net, and set light traps and pheromone traps.</li><li>Put branches in rice fields (perching) so birds can eat the insects.</li>
+<li>Don't kill helpful insects like spiders and lady beetles.</li><li>Use fertilizer in moderation; too much urea brings more pests.</li>
+<li>Check the field often. Spray a registered pesticide only when damage is high, at the label dose, with a mask and gloves, and not facing into the wind.</li></ul>
+<p class="muted small">Name the crop and pest to see registered pesticides and doses. Krishi call centre: 16123.</p>`)]];
+const generalCard = (q) => GENERAL.find(([re]) => re.test(q))?.[1]();
+
 function ratioCalc(q){
   const t = String(q).replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d)).replace(/(\d),(\d{3})/g, "$1$2").replace(/(প্রতি|per)\s+/gi, "1 ");
   if (!/কত|how much|how many/i.test(t)) return null;
@@ -1671,6 +1691,8 @@ async function askModel(text){
     const slot = {role:"bot", q:text, html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat();
     const kb = await kbSearch(text);
     const general = !kb.length && !cropsIn(text).length && !pestIn(text); // "how to control pests safely": general advice, no crop to look up
+    const card = general && generalCard(text);
+    if (card){ slot.html = card; slot.streaming = false; renderChat(); return; }
     if (!general){ slot.html = (kb.length ? kbHtml(kb) : noVerified()) + (tool.html || ""); slot.streaming = false; renderChat(); return; }
     history.splice(history.indexOf(slot), 1);
   }
