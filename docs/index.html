@@ -782,10 +782,11 @@ koto,kto:কত kotodin,kotdin:কতদিন din:দিন= mas,mash:মাস
 ami,mui:আমি amar,amr,mor,amgo:আমার amader,amra:আমাদের apni:আপনি tumi:তুমি tomar,tmr:তোমার apnar:আপনার ei,ai,eita,eta,ata:এই oi,oita,ota:ওই ar,aar:আর na,nah:না nai,nei,nai:নেই ache,ase,ase,asey,ache:আছে acho,aso:আছ achen,asen:আছেন ekhon,akhon,ekhn:এখন aj,aaj:আজ kal,kalke:কাল ebong:এবং kintu,kintuk:কিন্তু jodi,jdi:যদি tahole,taile,tahle:তাহলে dorkar,dorkar:দরকার lagbe,lagbo:লাগবে bolen,bolo,bolun:বলুন janan,janao,jan:জানান jante:জানতে chai,cai:চাই vai,bhai:ভাই apa:আপা dhonnobad,dhonyobad,donnobad:ধন্যবাদ
 bristi,brishti:বৃষ্টি abohawa,abhawa,obohawa:আবহাওয়া rod,rood:রোদ thanda,tanda:ঠান্ডা gorom,garam:গরম kuasa,kuasha:কুয়াশা bonna,bonya:বন্যা bigha:বিঘা sotok,shotok,sotangso,shotangsho:শতক kezi,keji,kg:কেজি=
 majra,mojra:মাজরা karent,current:কারেন্ট= leda:লেদা jab:জাব machi,masi,mashi:মাছি ui,uipoka:উইপোকা idur,indur:ইঁদুর blast:ব্লাস্ট= dhosa,dhosha,dhasa:ধসা nabi:নাবি agam:আগাম morok,morak:মড়ক khol:খোল pora,pura:পোড়া tungro:টুংরো pamri:পামরি gandhi:গান্ধি makor,makorsa:মাকড় agacha,agasa,agaca:আগাছা ghas,ghash:ঘাস
+hi,hii:হাই= hello,helo,hlw:হ্যালো= hey:হেই= salam,slm:সালাম assalamualaikum,assalamu,aslamualaikum,asalamualaikum:আসসালামু-আলাইকুম obostha,obosta,abostha,obsta:অবস্থা tor,tur:তোর tui:তুই tomake:তোমাকে khobor,khbr,khabar:খবর cholche,colse,cholse,choltese:চলছে nam,naam:নাম ke:কে paro,paren,parba,paros:পারো jano,janen,janis:জানো achi,asi:আছি thik:ঠিক acha,accha,acca:আচ্ছা hafej,hafez:হাফেজ allah:আল্লাহ khoda:খোদা bidai,biday:বিদায় pore:পরে kotha:কথা
 geche,gese,gelo,gece:গেছে lagse,lagche,legeche,lagce:লেগেছে lage:লাগে jonno,jonne,jnno:জন্য kita,kitha:কী bunbo,bunmu,bunum:বুনব por:পর manus,manush:মানুষ kaj:কাজ khub:খুব`;
 const bnNorm = (w) => w.toLowerCase().replace(/z/g,"j").replace(/ph/g,"f").replace(/bh/g,"v").replace(/sh/g,"s").replace(/ee/g,"i").replace(/oo/g,"u").replace(/(.)\1+/g,"$1");
 const BANGLISH = new Map(); // normalised word -> [Bangla, alsoEnglish]
-for (const pair of BANGLISH_WORDS.split(/\s+/)){ const [keys, val] = pair.split(":"); for (const k of keys.split(",")) if (!BANGLISH.has(bnNorm(k))) BANGLISH.set(bnNorm(k), [val.replace("=",""), val.endsWith("=")]); }
+for (const pair of BANGLISH_WORDS.split(/\s+/)){ const [keys, val] = pair.replace(/-/g, " ").split(":"); for (const k of keys.split(",")) if (!BANGLISH.has(bnNorm(k))) BANGLISH.set(bnNorm(k), [val.replace("=",""), val.endsWith("=")]); }
 const SUFFIX = [["gulo","গুলো"],["guli","গুলি"],["der","দের"],["ter","তের"],["er","ের"],["te","তে"],["ta","টা"],["ti","টি"],["ke","কে"],["e","ে"],["r","র"]];
 const ENGLISH = /^(the|is|are|am|my|what|how|why|when|which|do|does|to|of|in|on|for|and|with|it|this|that|leaves?|plants?|crops?|disease|pest|yellow|spots?|i|you|please|can|should|best|time|dose)$/i;
 // letter-by-letter fallback for words not in the list (rough, but close enough for the search to match)
@@ -916,6 +917,22 @@ const SELF_HARM = /আত্মহত্যা|মরতে চাই|মরে 
 const HARM_OTHERS = /খাইয়ে মার|মানুষ মার|কাউকে মার|kill (someone|a person)|poison (someone|a person)/i;
 const GREET = /^(হ্যালো|হেলো|হাই|আসসালামু|সালাম|নমস্কার|আদাব|শুভ সকাল|কেমন আছ|as+alam|salam|slm\b|hel+o+|hlw|hi+\b|hey+|হায়|হেই|good morning|how are you)/i;
 const THANKS = /ধন্যবাদ|থ্যাংক|শুকরিয়া|thank/i;
+// everyday chat answered on the page: the small model turns these into "tell me your crop problem"
+const OFFER = () => L(" ফসল, পোকা, রোগ, ওষুধ বা সার নিয়ে কিছু জানতে চাইলে লিখুন।", " Ask me anything about crops, pests, diseases, pesticides or fertilizer.");
+const CHAT = [
+  [/কী অবস্থা|কি অবস্থা|কেমন আছ|কেমন আছো|কেমন চলছে|কী খবর|কি খবর|খবর কী|খবর কি|how are you|what'?s up|how'?s it going|how r u/i,
+    () => L("আমি ভালো আছি, ধন্যবাদ। আপনি কেমন আছেন?", "I'm well, thank you. How are you?") + OFFER()],
+  [/তুমি কে|তুই কে|আপনি কে|তোমার নাম|তোর নাম|আপনার নাম|who are you|your name/i,
+    () => L("আমি কৃষিগার্ড, বাংলাদেশের কৃষকদের জন্য বানানো একটি এআই সহকারী। ফসলের রোগ-পোকা চেনা, ওষুধের সরকারি নিবন্ধিত মাত্রা, সার আর আবহাওয়া নিয়ে সাহায্য করি।", "I'm KrishiGuard, an AI assistant for farmers in Bangladesh. I help with crop pests and diseases, registered pesticide doses, fertilizer and weather.")],
+  [/কী করতে পার|কি করতে পার|কী কী পার|কি কি পার|কী জানো|কি জানো|what can you do|how can you help/i,
+    () => L("আমি পাতার ছবি দেখে রোগ-পোকা চিনতে পারি, সরকারি তালিকা থেকে ওষুধের নাম ও মাত্রা বলতে পারি, জমির মাপ অনুযায়ী সারের হিসাব আর আপনার জেলার আবহাওয়া জানাতে পারি।", "I can spot pests and diseases from a leaf photo, give pesticide names and doses from the government list, work out fertilizer for your land, and show your district's weather.")],
+  [/^(আমি )?(ভালো আছি|ভালো|আলহামদুলিল্লাহ|alhamdulillah|fine|good|i'?m (fine|good|ok))[\s.!।]*$/i,
+    () => L("শুনে ভালো লাগলো।", "Glad to hear it.") + OFFER()],
+  [/আল্লাহ ?হাফেজ|খোদা ?হাফেজ|allah ?hafez|khoda ?hafez/i, () => L("আল্লাহ হাফেজ। ভালো থাকবেন।", "Allah Hafez. Take care.")],
+  [/বিদায়|(পরে|পড়ে) কথা হবে|শুভ রাত্রি|\bbye\b|good ?night|see you/i, () => L("ভালো থাকবেন। দরকার হলে আবার লিখবেন।", "Take care. Write again any time.")],
+  [/^(ঠিক আছে|আচ্ছা|ওকে|ok(ay)?|hm+|হুম+)[\s.!।]*$/i, () => L("আচ্ছা।", "Okay.") + OFFER()],
+];
+const chatReply = (q) => { const c = CHAT.find(([re]) => re.test(q)); return c && `<p>${hello()}${c[1]()}</p>`; };
 const FEEL = /মন খারাপ|মন ভালো না|চিন্তায় আছি|দুশ্চিন্তা|টেনশন|কষ্টে আছি|কষ্ট হচ্ছে|লোকসান|ক্ষতি হয়ে গেছে|সব শেষ|ঋণ|দেনা|টাকা নেই|ভালো লাগছে না|হতাশ|একা লাগ|\bsad\b|worried|stress|\bloss\b|\bdebt\b|lonely/i;
 const hello = () => PROFILE.name ? `${esc(PROFILE.name)}, ` : "";
 function greetBack(q){ // answer a greeting with the same kind of greeting, by name; never start a religious greeting on our own
@@ -925,7 +942,7 @@ function greetBack(q){ // answer a greeting with the same kind of greeting, by n
   const how = /কেমন আছ|how are you/i.test(q) ? L(" আমি ভালো আছি, ধন্যবাদ।", " I'm well, thank you.") : "";
   return `<p>${w}${nm}!${how} ${L("আজ কী জানতে চান? ফসল, পোকা, রোগ, ওষুধের মাত্রা, সার বা আবহাওয়া, যা দরকার লিখুন বা ছবি পাঠান।","What would you like to know today? Ask about crops, pests, diseases, pesticide doses, fertilizer or weather, or send a photo.")}</p>`;
 }
-const smallTalk = (q) => q.length < 40 && (GREET.test(q) || THANKS.test(q)) && !(cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q));
+const smallTalk = (q) => (q.length < 40 && (GREET.test(q) || THANKS.test(q)) || q.length < 60 && !!chatReply(q)) && !(cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q));
 
 function answer(q){
   q = q.trim();
@@ -936,6 +953,7 @@ function answer(q){
   if (!DAE) return `<p>${L("বালাইনাশক তালিকা লোড হয়নি। পাতাটি আবার খুলুন।","The pesticide list did not load. Reload the page.")}</p>`;
   const farmy = cropsIn(q).length || pestIn(q) || brandIn(q) || ingIn(q);
   if (!farmy && GREET.test(q) && q.length < 40) return greetBack(q);
+  if (!farmy && !GREET.test(q) && q.length < 60 && chatReply(q)) return chatReply(q);
   if (!farmy && THANKS.test(q) && q.length < 40) return `<p>${hello()}${L("আপনাকেও ধন্যবাদ। আর কিছু জানতে চাইলে লিখুন। ভালো ফলন হোক।","Thank you too. Write any time you need something. I hope the harvest goes well.")}</p>`;
   const feelings = () => `<p>${hello()}${L("শুনে খারাপ লাগছে। ফসলের ক্ষতি আর টাকার চাপ অনেক ভারী জিনিস, আর এটা নিয়ে কথা বলা ঠিক কাজ।","I'm sorry to hear that. Crop losses and money worries are heavy, and it's good that you're talking about it.")}</p>
       <p>${L("চাইলে খুলে বলুন কী হয়েছে, আমি শুনছি। জমির কিছু বাঁচানো গেলে একসাথে দেখি। ক্ষতির কথা উপজেলা কৃষি অফিসেও জানান, সেখানে পরামর্শ বা সহায়তার খবর পাওয়া যায় কিনা জিজ্ঞেস করুন। মন বেশি ভারী লাগলে পরিবারের কারও সাথে কথা বলুন।","Tell me what happened if you want to; I'm listening. If something in the field can still be saved, let's look at it together. Also report the loss to your upazila agriculture office and ask whether any advice or support is available. If it feels too heavy, talk to someone in your family.")}</p>`;

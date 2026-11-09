@@ -6,7 +6,7 @@ const cases=[["amar dhaner pata holud hoye jacche keno","আমার ধান�
  ["tomato gacher pata kukre jacche ki korbo","টমেটো গাছের পাতা কুঁকড়ে যাচ্ছে কী করব"],["Begun e poka dhorse, osud ki dimu","বেগুনে পোকা ধরছে, ওষুধ কী দিব"],
  ["kemon achen","কেমন আছেন"],["what is the dose of tomato blight spray","what is the dose of tomato blight spray"],["hi","hi"],["dhonnobad vai","ধন্যবাদ ভাই"]];
 const got=await p.evaluate(c=>c.map(([q])=>fromBanglish(q)),cases);
-const crops=await p.evaluate(()=>[cropsIn(fromBanglish("amar aloo te morok lagse")).map(c=>c.k), !!pestIn(fromBanglish("aloo te nabi dhosa")), smallTalk(fromBanglish("kemon achen"))]);
+const crops=await p.evaluate(()=>[cropsIn(fromBanglish("amar aloo te morok lagse")).map(c=>c.k), !!pestIn(fromBanglish("aloo te nabi dhosa")), smallTalk(fromBanglish("kemon achen")), smallTalk(fromBanglish("Tor ki obostha")) && /ভালো আছি/.test(answer(fromBanglish("Tor ki obostha"))), smallTalk(fromBanglish("tumi ke"))]);
 let ok=e.length===0; cases.forEach(([q,want],i)=>{ if(got[i]!==want){ok=false;console.log("MISS",q,"=>",got[i]);} });
-if(crops[0][0]!=="potato"||!crops[1]||!crops[2]){ok=false;console.log("checks",crops);}
+if(crops[0][0]!=="potato"||!crops[1]||!crops[2]||!crops[3]||!crops[4]){ok=false;console.log("checks",crops);}
 console.log(ok?"banglish ok":"banglish FAILED", e); process.exitCode=ok?0:1; await b.close();})();
