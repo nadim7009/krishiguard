@@ -10,3 +10,7 @@ const crops=await p.evaluate(()=>[cropsIn(fromBanglish("amar aloo te morok lagse
 let ok=e.length===0; cases.forEach(([q,want],i)=>{ if(got[i]!==want){ok=false;console.log("MISS",q,"=>",got[i]);} });
 if(crops[0][0]!=="potato"||!crops[1]||!crops[2]||!crops[3]||!crops[4]){ok=false;console.log("checks",crops);}
 console.log(ok?"banglish ok":"banglish FAILED", e); process.exitCode=ok?0:1; await b.close();})();
+// everyday English words are not product names: "message" must not open the Message 2.5EC card
+(async()=>{const {chromium}=require('playwright');const b=await chromium.launch();const p=await b.newPage();await p.route(/jsdelivr|hf.space|google/,r=>r.abort());await p.goto('http://localhost:8765/');await p.waitForTimeout(1500);
+const r=await p.evaluate(()=>[brandIn(fromBanglish("bhalo kore por ager message ki bolsi")), brandIn("Message 2.5EC ধানে কত দিব"), fromBanglish("Shifat ekjon farmer,ore kisu tips deo")]);
+const ok=r[0]===null&&r[1]==="Message 2.5EC"&&r[2]==="Shifat একজন farmer,ওকে কিছু tips দাও"; console.log(ok?"brand ok":"brand FAILED",r); if(!ok)process.exitCode=1; await b.close();})();
