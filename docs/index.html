@@ -1531,6 +1531,37 @@ kb?.length ? `যাচাই করা তথ্য (সরকারি কৃ�
 lang === "en" ? "The farmer is using the English version: reply in English." : "",
 VOICE && lang === "bn" ? VOICE_RULE : ""].filter(Boolean).join("\n\n");
 }
+/* ---------- "10 L needs 20 ml, how much for 15 L?" worked out exactly, never by the model ---------- */
+const UNITS = [ // [pattern, dimension, size in the base unit, Bangla name, English name, Bangla "in ..." form]
+  [/শতক|শতাংশ|ডেসিমেল|decimals?/i, "land", 1, "শতক", "decimal", "শতকে"], [/একর|acres?/i, "land", 100, "একর", "acre", "একরে"],
+  [/বিঘা|bighas?/i, "land", 33, "বিঘা", "bigha", "বিঘায়"], [/হেক্টর|hectares?|\bha\b/i, "land", 247.1, "হেক্টর", "hectare", "হেক্টরে"], [/কাঠা|kathas?/i, "land", 1.65, "কাঠা", "katha", "কাঠায়"],
+  [/মিলি|ml\b/i, "vol", 1, "মিলি", "ml", "মিলিতে"], [/লিটার|liters?|litres?|\bl\b/i, "vol", 1000, "লিটার", "L", "লিটারে"],
+  [/গ্রাম|grams?|\bgm?\b/i, "wt", 1, "গ্রাম", "g", "গ্রামে"], [/কেজি|kgs?\b|kilo/i, "wt", 1000, "কেজি", "kg", "কেজিতে"], [/মণ|maunds?/i, "wt", 40000, "মণ", "maund", "মণে"], [/টন|tons?|tonnes?/i, "wt", 1e6, "টন", "ton", "টনে"],
+  [/চামচ|spoons?/i, "spoon", 1, "চামচ", "spoon", "চামচে"], [/ক্যাপ|caps?\b|ঢাকনা/i, "cap", 1, "ক্যাপ", "cap", "ক্যাপে"], [/গাছ|plants?|trees?/i, "plant", 1, "গাছ", "plants", "গাছে"], [/ট্যাংক|tanks?/i, "tank", 1, "ট্যাংক", "tank", "ট্যাংকে"]];
+const NUM_WORDS = {"আধা":0.5, "এক":1, "দুই":2, "তিন":3, "চার":4, "পাঁচ":5, "ছয়":6, "সাত":7, "আট":8, "নয়":9, "দশ":10, "one":1, "two":2, "three":3, "four":4, "five":5, "ten":10};
+function ratioCalc(q){
+  const t = String(q).replace(/[০-৯]/g, d => BN_DIGITS.indexOf(d)).replace(/(\d),(\d{3})/g, "$1$2").replace(/(প্রতি|per)\s+/gi, "1 ");
+  if (!/কত|how much|how many/i.test(t)) return null;
+  const qs = [], re = /(\d+(?:\.\d+)?|আধা|এক|দুই|তিন|চার|পাঁচ|ছয়|সাত|আট|নয়|দশ|one|two|three|four|five|ten)\s*([A-Za-z\u0980-\u09FF]+)/gi;
+  for (const m of t.matchAll(re)){
+    const u = UNITS.find(([r]) => r.test(m[2]) && m[2].search(r) === 0);
+    if (u) qs.push({n: NUM_WORDS[m[1].toLowerCase()] ?? parseFloat(m[1]), dim: u[1], f: u[2], bn: u[3], en: u[4], loc: u[5]});
+  }
+  if (qs.length !== 3) return null;
+  const [a, b, c] = qs; // usually "a needs b, how much for c?"; with water and medicine both in litres or ml, a is the water
+  const [base, rate] = a.dim === b.dim && b.dim === c.dim ? [a, b] : a.dim === c.dim ? [a, b] : b.dim === c.dim ? [b, a] : [];
+  if (!base || !base.n) return null;
+  const asked = UNITS.find(([r, d]) => d === rate.dim && new RegExp("(কত|how (much|many))\\s*(" + r.source + ")", "i").test(t)); // "কত কেজি" picks the unit of the answer
+  const out = asked ? {f: asked[2], bn: asked[3], en: asked[4]} : rate;
+  const v = rate.n * rate.f * (c.n * c.f) / (base.n * base.f) / out.f, r = Math.round(v * 100) / 100;
+  const rd = (x) => Math.round(x * 100) / 100, cb = rd(c.n * c.f / base.f), w = rd(rate.n * cb / base.n); // c in the same unit as base
+  const q2 = (x) => `${num(x.n)} ${L(x.bn, x.en)}`, at = (x) => `${num(x.n)} ${x.loc}`;
+  const conv = base.f !== c.f ? `<p class="muted small">${L("হিসাবে ধরা হয়েছে", "Taken as")}: ${[base, c].filter((x, i, A) => A.findIndex(y => y.bn === x.bn) === i && x.dim === "land" && x.f !== 1)
+    .map(x => `১ ${L(x.bn, x.en)} = ${num(Math.round(x.f * 100) / 100)} ${L("শতক", "decimal")}`).join(", ") || L("একক বদলে মেলানো হয়েছে", "units converted to match")}।</p>` : "";
+  return `<p>${L(`${at(base)} ${q2(rate)} লাগলে, ${at(c)} লাগবে <b>${num(r)} ${out.bn}</b>।`, `If ${q2(base)} needs ${q2(rate)}, then ${q2(c)} needs <b>${r} ${out.en}</b>.`)}</p>
+    <p class="muted small">${L("হিসাব", "Working")}: ${num(rate.n)} × ${num(cb)} ÷ ${num(base.n)} = ${num(w)} ${L(rate.bn, rate.en)}${out.f !== rate.f ? ` = ${num(r)} ${L(out.bn, out.en)}` : ""}</p>${conv}`;
+}
+
 function toolPart(q){ // the deterministic DAE card for this message, and the same facts as plain lines for the prompt
   const html = answer(q);
   if (html && html.includes('class="wcard"')) return {html, text: $("#wAdvice").innerText.replace(/\s+/g, " ")};
@@ -1628,6 +1659,8 @@ const noVerified = () => `<p>${L("এ প্রশ্নের যাচাই �
   + `<li>${L("উপজেলা কৃষি অফিস বা কৃষি কল সেন্টার ১৬১২৩-এ ফোন করুন (বিনা খরচে)।", "Call your upazila agriculture office or the agriculture call centre at 16123 (free).")}</li></ul>`;
 const dropRepeats = (t) => { const seen = new Set(); return t.split(/(?<=[।!?\n])/).filter(sn => { const k = sn.replace(/\s+/g, " ").trim(); if (!k || k.length < 12) return true; if (seen.has(k)) return false; seen.add(k); return true; }).join(""); };
 async function askModel(text){
+  const calc = ratioCalc(text);
+  if (calc){ history.push({role:"bot", q:text, html:calc}); renderChat(); return; }
   let tool = toolPart(text);
   if (!tool.html){ const r = rotation(text); if (r && r.text) tool = r; }
   // these cards are already the exact answer; a small model retelling them added mistakes, so they are shown as they are.
@@ -1637,13 +1670,15 @@ async function askModel(text){
   if (farming){
     const slot = {role:"bot", q:text, html:`<span class="typing"><i></i><i></i><i></i></span>`, streaming:true}; history.push(slot); renderChat();
     const kb = await kbSearch(text);
-    slot.html = (kb.length ? kbHtml(kb) : noVerified()) + (tool.html || ""); slot.streaming = false; renderChat(); return;
+    const general = !kb.length && !cropsIn(text).length && !pestIn(text); // "how to control pests safely": general advice, no crop to look up
+    if (!general){ slot.html = (kb.length ? kbHtml(kb) : noVerified()) + (tool.html || ""); slot.streaming = false; renderChat(); return; }
+    history.splice(history.indexOf(slot), 1);
   }
   const weather = WEATHER_Q.test(text) && WX ? $("#wAdvice").innerText.replace(/\s+/g, " ") : "";
   const past = history.slice(-11, -1).filter(m => m.role === "user" || m.text).map(m => ({role: m.role === "user" ? "user" : "assistant", content: m.role === "user" ? m.heard || m.text : m.text}));
   const slot = {role:"bot", llm:true, q:text, text:"", tool:tool.html, streaming:true};
   history.push(slot); renderChat();
-  const chat = !tool.text && !weather;
+  const chat = !farming && !tool.text && !weather;
   const kb = chat ? [] : await kbSearch(text);
   const said = [...history].reverse().find(m => m.role === "user")?.text || text;
   const userMsg = said !== text ? `${text}\n(কৃষক ইংরেজি অক্ষরে লিখেছেন: ${said})` : text; // the rough Banglish conversion can miss a word
