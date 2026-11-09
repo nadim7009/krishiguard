@@ -1782,23 +1782,29 @@ function hear(h){
   const ctl = {stop(){}};
   if (!SR_OK){ if (REC_OK) recordVoice(h, ctl); else h.fail("none"); return ctl; }
   const rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
-  let said = "", broke = false;
-  rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); h.interim(said); };
+  let said = "", broke = false, last = 0; const t0 = performance.now();
+  rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); last = performance.now(); h.interim(said); };
+  // phones with background noise never end on their own: stop 1.8 s after the words stop changing, 7 s with no words, or 12 s in all
+  const guard = setInterval(() => { const now = performance.now(); if ((last && now - last > 1800) || (!last && now - t0 > 7000) || now - t0 > 12000) rec.stop(); }, 200);
   rec.onerror = e => { if (e.error === "not-allowed") h.fail("mic"); else if (REC_OK && /network|service-not-allowed|language-not-supported|audio-capture/.test(e.error)){ SR_OK = false; broke = true; } };
-  rec.onend = () => broke ? recordVoice(h, ctl) : h.done(said);
+  rec.onend = () => { clearInterval(guard); broke ? recordVoice(h, ctl) : h.done(said); };
   ctl.stop = () => rec.stop(); rec.start(); return ctl;
 }
 async function recordVoice(h, ctl){
   let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); } catch (e) { return h.fail("mic"); }
-  const ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 1024; ac.createMediaStreamSource(stream).connect(an);
+  const ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 2048; ac.createMediaStreamSource(stream).connect(an);
   const mr = new MediaRecorder(stream), parts = []; mr.ondataavailable = e => e.data.size && parts.push(e.data);
-  let ended = false, spoke = false, quiet = 0; const t0 = performance.now(), buf = new Uint8Array(an.fftSize);
+  let ended = false, spoke = false, quiet = 0, floor = 0, n = 0; const t0 = performance.now(), buf = new Float32Array(an.fftSize);
   const end = () => { if (ended) return; ended = true; clearInterval(timer); if (mr.state !== "inactive") mr.stop(); };
   ctl.stop = end;
-  const timer = setInterval(() => { // stops by itself after 1.5 s of quiet once the farmer has spoken, or after 15 s
-    an.getByteTimeDomainData(buf); let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
-    const now = performance.now(); if (peak > 12){ spoke = true; quiet = now; }
-    if ((spoke && now - quiet > 1500) || now - t0 > 15000) end();
+  // the first half second measures the room's own noise; speech is anything well above it. Stops after 1.2 s back at the
+  // room's level once the farmer has spoken, after 7 s with no speech, or after 12 s in all
+  const timer = setInterval(() => {
+    an.getFloatTimeDomainData(buf); let sum = 0; for (const v of buf) sum += v * v;
+    const rms = Math.sqrt(sum / buf.length), now = performance.now();
+    if (now - t0 < 500){ floor = (floor * n + rms) / ++n; return; }
+    if (rms > Math.max(floor * 2.5, 0.012)){ spoke = true; quiet = now; }
+    if ((spoke && now - quiet > 1200) || (!spoke && now - t0 > 7000) || now - t0 > 12000) end();
   }, 100);
   mr.onstop = async () => {
     stream.getTracks().forEach(t => t.stop()); ac.close();
@@ -1841,7 +1847,7 @@ if (SR || REC_OK){
     const put = (t) => { q.value = (base + " " + t).trim(); q.dispatchEvent(new Event("input")); };
     const fin = () => { cur = null; mic.classList.remove("on"); q.placeholder = ph; q.focus(); };
     mic.classList.add("on");
-    cur = hear({interim: t => { put(t); if (!t) q.placeholder = L("শুনছি… বলা শেষ হলে একটু থামুন", "Listening… pause when you're done"); },
+    cur = hear({interim: t => { put(t); if (!t) q.placeholder = L("শুনছি… বলা শেষ হলে মাইকে আবার চাপুন", "Listening… tap the mic again when you're done"); },
       busy: () => { q.placeholder = L("লিখছি…", "Writing it down…"); },
       done: t => { fin(); if (t) put(t); else toast(L(...HEAR_FAIL.quiet)); },
       fail: why => { fin(); toast(L(...HEAR_FAIL[why])); }});
@@ -1857,7 +1863,7 @@ if ((SR || REC_OK) && TTS){
   $("#askForm .send").before(vb);
   const ov = $("#vmode"); let on = false, rec = null; // rec: the current hear() handle
   const state = (k, heard = "") => {
-    const T = {listen:["শুনছি… বলুন","Listening… go ahead"], think:["ভাবছি…","Thinking…"], talk:["বলছি… থামাতে বৃত্তে চাপ দিন","Speaking… tap the circle to stop"], idle:["কথা বলতে বৃত্তে চাপ দিন","Tap the circle to talk"]}[k];
+    const T = {listen:["শুনছি… বলা শেষ হলে বৃত্তে চাপ দিন","Listening… tap the circle when you are done"], think:["ভাবছি…","Thinking…"], talk:["বলছি… থামাতে বৃত্তে চাপ দিন","Speaking… tap the circle to stop"], idle:["কথা বলতে বৃত্তে চাপ দিন","Tap the circle to talk"]}[k];
     ov.dataset.state = k; $("#vmState").textContent = L(...T); $("#vmHeard").textContent = heard;
   };
   // what to read aloud: the model's own words, else the start of the DAE answer
