@@ -301,7 +301,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--forest);outline:none;
 .vmode{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
   padding:max(24px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));text-align:center}
 .vm-orb{width:168px;height:168px;border-radius:50%;border:0;display:grid;place-items:center;color:var(--forest-ink);background:radial-gradient(circle at 35% 30%,var(--leaf),var(--forest) 70%);box-shadow:0 0 0 0 color-mix(in srgb,var(--forest) 40%,transparent);transition:transform .3s}
-.vmode[data-state="listen"] .vm-orb{animation:vmPulse 1.4s ease-out infinite}
+.vmode[data-state="listen"] .vm-orb{animation:vmPulse 1.4s ease-out infinite;scale:calc(1 + var(--lvl, 0));transition:scale .1s}
 .vmode[data-state="think"] .vm-orb{animation:vmBreathe 1.2s ease-in-out infinite;opacity:.85}
 .vmode[data-state="talk"] .vm-orb{animation:vmTalk .5s ease-in-out infinite alternate;background:radial-gradient(circle at 35% 30%,var(--mustard),var(--forest) 75%)}
 @keyframes vmPulse{to{box-shadow:0 0 0 34px transparent}}
@@ -1779,23 +1779,30 @@ $("#toLeaf").addEventListener("click", pickPhoto);
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let SR_OK = !!SR; // turned off after the browser's speech service fails (Edge, Brave, some phones)
 const REC_OK = LIVE_MODEL && !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder && window.OfflineAudioContext);
-// Speech to text: the browser's own recognizer first (Google's Bangla on Chrome), else record and let Gemma 4 on the model server write it down.
+// Speech to text, like ChatGPT's voice: record here, Gemma 4 on the model server writes it down. The browser's own recognizer
+// is only a fallback: on phones it often starts, hears nothing and reports no error (reproduced in tests/voice_mode.js).
 // h: {interim(text), busy(), done(text), fail(why)}; returns {stop()} to finish listening now.
 function hear(h){
   const ctl = {stop(){}};
-  if (!SR_OK){ if (REC_OK) recordVoice(h, ctl); else h.fail("none"); return ctl; }
+  if (REC_OK){ recordVoice(h, ctl); return ctl; }
+  if (!SR_OK){ h.fail("none"); return ctl; }
   const rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
-  let said = "", broke = false, last = 0; const t0 = performance.now();
+  let said = "", last = 0; const t0 = performance.now();
   rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); last = performance.now(); h.interim(said); };
   // phones with background noise never end on their own: stop 1.8 s after the words stop changing, 7 s with no words, or 12 s in all
-  const guard = setInterval(() => { const now = performance.now(); if ((last && now - last > 1800) || (!last && now - t0 > 7000) || now - t0 > 12000) rec.stop(); }, 200);
-  rec.onerror = e => { if (e.error === "not-allowed") h.fail("mic"); else if (REC_OK && /network|service-not-allowed|language-not-supported|audio-capture/.test(e.error)){ SR_OK = false; broke = true; } };
-  rec.onend = () => { clearInterval(guard); broke ? recordVoice(h, ctl) : h.done(said); };
-  ctl.stop = () => rec.stop(); rec.start(); return ctl;
+  const guard = setInterval(() => { const now = performance.now(); if ((last && now - last > 1800) || (!last && now - t0 > 7000) || now - t0 > 12000){ clearInterval(guard); stop0(); } }, 200);
+  rec.onerror = e => { if (e.error === "not-allowed"){ over = true; clearInterval(guard); h.fail("mic"); } };
+  let over = false; const finish = () => { if (over) return; over = true; clearInterval(guard); h.done(said); };
+  rec.onend = finish;
+  const stop0 = () => { try { rec.stop(); } catch (e) {} setTimeout(() => { try { rec.abort(); } catch (e) {} finish(); }, 1500); }; // some phones never send "end"
+  ctl.stop = stop0; rec.start(); return ctl;
 }
+// one audio context, made on the farmer's tap and reused: phones keep a context made later (after an answer) silent
+let VOICE_AC = null;
+function voiceAudio(){ try { VOICE_AC ||= new AudioContext(); VOICE_AC.resume(); } catch (e) {} return VOICE_AC; }
 async function recordVoice(h, ctl){
   let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); } catch (e) { return h.fail("mic"); }
-  const ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 2048; ac.createMediaStreamSource(stream).connect(an);
+  const ac = voiceAudio(), an = ac.createAnalyser(), src = ac.createMediaStreamSource(stream); an.fftSize = 2048; src.connect(an);
   const mr = new MediaRecorder(stream), parts = []; mr.ondataavailable = e => e.data.size && parts.push(e.data);
   let ended = false, spoke = false, quiet = 0, floor = 0, n = 0; const t0 = performance.now(), buf = new Float32Array(an.fftSize);
   const end = () => { if (ended) return; ended = true; clearInterval(timer); if (mr.state !== "inactive") mr.stop(); };
@@ -1807,10 +1814,11 @@ async function recordVoice(h, ctl){
     const rms = Math.sqrt(sum / buf.length), now = performance.now();
     if (now - t0 < 500){ floor = (floor * n + rms) / ++n; return; }
     if (rms > Math.max(floor * 2.5, 0.012)){ spoke = true; quiet = now; }
+    h.level?.(Math.min(0.25, Math.max(0, rms - floor) * 4)); // the circle grows with the voice, so the farmer sees they are heard
     if ((spoke && now - quiet > 1200) || (!spoke && now - t0 > 7000) || now - t0 > 12000) end();
   }, 100);
   mr.onstop = async () => {
-    stream.getTracks().forEach(t => t.stop()); ac.close();
+    stream.getTracks().forEach(t => t.stop()); src.disconnect();
     if (!spoke || !parts.length) return h.done("");
     h.busy?.();
     try { h.done(await transcribe(new Blob(parts, {type: mr.mimeType}))); } catch (e) { h.fail("server"); }
@@ -1846,6 +1854,7 @@ if (SR || REC_OK){
   let cur = null;
   mic.addEventListener("click", () => {
     if (cur){ cur.stop(); return; }
+    voiceAudio();
     const q = $("#q"), base = q.value.trim(), ph = q.placeholder;
     const put = (t) => { q.value = (base + " " + t).trim(); q.dispatchEvent(new Event("input")); };
     const fin = () => { cur = null; mic.classList.remove("on"); q.placeholder = ph; q.focus(); };
@@ -1880,22 +1889,25 @@ if ((SR || REC_OK) && TTS){
     return [first, d && `${d.querySelector(".nm")?.innerText}, ${d.querySelector(".amt")?.innerText.replace(/\n/g, " ")}`, d?.querySelector(".mine")?.innerText,
       el.querySelectorAll(".dose").length > 1 && L("বাকি পণ্যগুলো স্ক্রিনে দেখুন", "The other products are on the screen")].filter(Boolean).join("। ");
   };
+  let empty = 0; // quiet rounds in a row; after two the circle waits for a tap instead of listening to an empty room
   function listen(){
     if (!on) return;
     stopSpeak(); state("listen");
-    rec = hear({interim: t => { $("#vmHeard").textContent = t; }, busy: () => state("think"),
+    rec = hear({interim: t => { $("#vmHeard").textContent = t; }, busy: () => { ov.style.setProperty("--lvl", 0); state("think"); },
+      level: v => ov.style.setProperty("--lvl", v.toFixed(3)),
       fail: why => { rec = null; toast(L(...HEAR_FAIL[why])); if (why === "mic" || why === "none") stop(); else state("idle"); },
       done: async (said) => {
         rec = null; if (!on) return;
-        if (!said.trim()) return state("idle");
+        if (!said.trim()) return ++empty < 2 ? listen() : (empty = 0, state("idle"));
+        empty = 0;
         state("think", said); go("chat"); await ask(said); if (!on) return;
         state("talk", said); speak(spoken(), () => on && listen());
       }});
   }
   function stop(){ on = VOICE = false; ov.hidden = true; const r = rec; rec = null; r?.stop(); stopSpeak(); }
-  vb.onclick = () => { if (cloud.guest) return botSay(cloud.gateHTML(L("ভয়েস মোডে কথা বলতে অ্যাকাউন্ট লাগে।","Voice mode needs an account."))); on = VOICE = true; ov.hidden = false; listen(); };
+  vb.onclick = () => { voiceAudio(); if (cloud.guest) return botSay(cloud.gateHTML(L("ভয়েস মোডে কথা বলতে অ্যাকাউন্ট লাগে।","Voice mode needs an account."))); on = VOICE = true; ov.hidden = false; listen(); };
   $("#vmStop").onclick = stop;
-  $("#vmOrb").onclick = () => ov.dataset.state === "listen" ? rec?.stop() : listen(); // talking or idle: start listening; listening: send now
+  $("#vmOrb").onclick = () => { voiceAudio(); ov.dataset.state === "listen" ? rec?.stop() : listen(); }; // talking or idle: start listening; listening: send now
   addEventListener("keydown", e => { if (e.key === "Escape" && on) stop(); });
 }
 
