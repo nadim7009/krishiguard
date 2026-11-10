@@ -1218,7 +1218,17 @@ async function speak(text, done){
     const parts = t.split(/(?<=[।?!])\s*/).filter(x => x.trim()).slice(0, 8);
     const get = (x) => fetch(ENDPOINT.replace(/\/$/, "") + "/tts", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({text: x})})
       .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status)));
-    const play = (blob) => new Promise(ok => { const url = URL.createObjectURL(blob); AUDIO = new Audio(url);
+    // iPhones only play sound started by a tap. The answer arrives seconds later, so it is played through the audio context
+    // the farmer's tap already unlocked (voiceAudio); an <audio> element is used only when there is none.
+    const play = (blob) => new Promise(async ok => {
+      if (VOICE_AC && VOICE_AC.state !== "closed"){
+        try {
+          await VOICE_AC.resume(); const buf = await VOICE_AC.decodeAudioData(await blob.arrayBuffer()), src = VOICE_AC.createBufferSource();
+          src.buffer = buf; src.connect(VOICE_AC.destination); AUDIO = {pause(){ try { src.stop(); } catch (e) {} }};
+          src.onended = () => { AUDIO = null; ok(); }; src.start(); return;
+        } catch (e) {}
+      }
+      const url = URL.createObjectURL(blob); AUDIO = new Audio(url);
       AUDIO.onended = AUDIO.onerror = () => { URL.revokeObjectURL(url); AUDIO = null; ok(); }; AUDIO.play().catch(() => ok()); });
     let next = get(parts[0]).catch(() => null), started = false;
     for (let k = 0; k < parts.length; k++){
@@ -1241,6 +1251,7 @@ const replyText = (i) => (document.getElementById("m" + i)?.innerText || "").rep
 document.addEventListener("click", e => {
   const sp = e.target.closest("[data-speak]"), cp = e.target.closest("[data-copy]");
   if (sp){
+    voiceAudio();
     const was = sp.classList.contains("on");
     stopSpeak(); document.querySelectorAll(".act.on").forEach(b => b.classList.remove("on"));
     if (was) return;
@@ -1807,7 +1818,7 @@ function hear(h){
 }
 // one audio context, made on the farmer's tap and reused: phones keep a context made later (after an answer) silent
 let VOICE_AC = null;
-function voiceAudio(){ try { VOICE_AC ||= new AudioContext(); VOICE_AC.resume(); } catch (e) {} return VOICE_AC; }
+function voiceAudio(){ try { VOICE_AC ||= new (window.AudioContext || window.webkitAudioContext)(); VOICE_AC.resume(); } catch (e) {} return VOICE_AC; }
 async function recordVoice(h, ctl){
   // echo cancellation keeps the phone from hearing its own spoken answer; noise suppression keeps fans and traffic out
   let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); } catch (e) { return h.fail("mic"); }
