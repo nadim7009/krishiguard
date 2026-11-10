@@ -1779,20 +1779,28 @@ $("#toLeaf").addEventListener("click", pickPhoto);
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let SR_OK = !!SR; // turned off after the browser's speech service fails (Edge, Brave, some phones)
 const REC_OK = LIVE_MODEL && !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder && window.OfflineAudioContext);
-// Speech to text, like ChatGPT's voice: record here, Gemma 4 on the model server writes it down. The browser's own recognizer
-// is only a fallback: on phones it often starts, hears nothing and reports no error (reproduced in tests/voice_mode.js).
+// Speech to text: Google's Bangla recognizer in Chrome and Android first (far better Bangla than the 2B model, tested live
+// Nov 2026), with our own timeouts because it can keep listening in a noisy room. Where it is missing or fails (Firefox,
+// Brave, some Edge), record here and let Gemma 4 on the model server write it down.
 // h: {interim(text), busy(), done(text), fail(why)}; returns {stop()} to finish listening now.
 function hear(h){
   const ctl = {stop(){}};
-  if (REC_OK){ recordVoice(h, ctl); return ctl; }
-  if (!SR_OK){ h.fail("none"); return ctl; }
+  if (!SR_OK){ if (REC_OK) recordVoice(h, ctl); else h.fail("none"); return ctl; }
   const rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
-  let said = "", last = 0; const t0 = performance.now();
+  let said = "", last = 0, broke = false, audio = false; const t0 = performance.now();
+  rec.onaudiostart = () => { audio = true; };
   rec.onresult = e => { said = [...e.results].map(r => r[0].transcript).join(""); last = performance.now(); h.interim(said); };
   // phones with background noise never end on their own: stop 1.8 s after the words stop changing, 7 s with no words, or 12 s in all
   const guard = setInterval(() => { const now = performance.now(); if ((last && now - last > 1800) || (!last && now - t0 > 7000) || now - t0 > 12000){ clearInterval(guard); stop0(); } }, 200);
-  rec.onerror = e => { if (e.error === "not-allowed"){ over = true; clearInterval(guard); h.fail("mic"); } };
-  let over = false; const finish = () => { if (over) return; over = true; clearInterval(guard); h.done(said); };
+  rec.onerror = e => {
+    if (e.error === "not-allowed"){ over = true; clearInterval(guard); h.fail("mic"); }
+    else if (REC_OK && /network|service-not-allowed|language-not-supported|audio-capture/.test(e.error)){ SR_OK = false; broke = true; }
+  };
+  let over = false; const finish = () => {
+    if (over) return; over = true; clearInterval(guard);
+    if (!audio && !said && REC_OK){ SR_OK = false; broke = true; } // the recognizer never got the microphone: record instead from now on
+    broke ? recordVoice(h, ctl) : h.done(said);
+  };
   rec.onend = finish;
   const stop0 = () => { try { rec.stop(); } catch (e) {} setTimeout(() => { try { rec.abort(); } catch (e) {} finish(); }, 1500); }; // some phones never send "end"
   ctl.stop = stop0; rec.start(); return ctl;
@@ -1847,6 +1855,7 @@ async function transcribe(blob){ // any recording -> 16 kHz mono WAV -> Gemma 4 
     temperature:0, max_tokens:120, lora:[{id:0, scale:0}], chat_template_kwargs:{enable_thinking:false}})});
   if (!r.ok) throw new Error(r.status);
   const t = ((await r.json()).choices?.[0]?.message?.content || "").replace(/^["“”'\s-]+|["“”'\s-]+$/g, "").trim();
+  if (/[^\u0980-\u09FF\u0020-\u007E\u00A0-\u00FF।’‘“”–]/.test(t)) return ""; // letters from another script (Amharic, Hindi...): the model misheard, ask again
   return t.replace(/[\s.,।?!-]/g, "").length < 2 ? "" : t; // "-" or a stray letter: nothing was said
 }
 const HEAR_FAIL = {mic: ["মাইক ব্যবহারের অনুমতি দিন", "Allow the microphone"], none: ["এই ব্রাউজারে মুখে বলা যাচ্ছে না, লিখে পাঠান", "Speaking isn't supported in this browser, please type"],

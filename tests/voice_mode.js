@@ -1,5 +1,5 @@
 // Whole voice mode on a phone-sized page: fake microphone (speech inside room noise), model server mocked.
-// The browser recognizer is unavailable here, so this goes through the recorder path. Expect: listen -> think -> answer -> talk -> listen again.
+// Forces the recorder path (headless Chromium's recognizer has no speech service). Expect: listen -> think -> answer -> talk -> listen again.
 // Run: python -m http.server 8765 -d docs  then  node tests/voice_mode.js
 const {chromium, devices}=require('playwright'), fs=require('fs'), os=require('os'), path=require('path');
 const sr=16000; let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;}; const gauss=()=>Math.sqrt(-2*Math.log(rnd()+1e-9))*Math.cos(2*Math.PI*rnd());
@@ -19,7 +19,7 @@ const tiny=(()=>{const n=1600,d=Buffer.alloc(44+n*2);d.write('RIFF',0);d.writeUI
    if(body.includes('"stream":true')) return r.fulfill({status:200,contentType:'text/event-stream',body:'data: '+JSON.stringify({choices:[{delta:{content:'আমি ভালো আছি।'}}]})+'\n\ndata: [DONE]\n\n'});
    return r.fulfill({status:200,contentType:'application/json',body:'{}'}); });
  await p.goto('http://localhost:8765/#chat'); await p.waitForTimeout(1500);
- await p.evaluate(()=>{ Object.defineProperty(cloud,'guest',{get:()=>false}); window.STATES=[]; const ov=document.getElementById('vmode');
+ await p.evaluate(()=>{ Object.defineProperty(cloud,'guest',{get:()=>false}); SR_OK=false; /* the recorder path; headless Chromium's recognizer has no speech service */ window.STATES=[]; const ov=document.getElementById('vmode');
    new MutationObserver(()=>STATES.push(Math.round(performance.now())+':'+ov.dataset.state)).observe(ov,{attributes:true,attributeFilter:['data-state']}); window.T0=performance.now(); });
  await p.evaluate(()=>{ const go=()=>{ const g=document.getElementById('authGate')||document.querySelector('.auth'); }; go(); document.getElementById('voiceBtn').click(); });
  await p.waitForTimeout(16000);
