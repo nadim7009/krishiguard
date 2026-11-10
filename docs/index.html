@@ -1801,25 +1801,30 @@ function hear(h){
 let VOICE_AC = null;
 function voiceAudio(){ try { VOICE_AC ||= new AudioContext(); VOICE_AC.resume(); } catch (e) {} return VOICE_AC; }
 async function recordVoice(h, ctl){
-  let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); } catch (e) { return h.fail("mic"); }
+  // echo cancellation keeps the phone from hearing its own spoken answer; noise suppression keeps fans and traffic out
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); } catch (e) { return h.fail("mic"); }
   const ac = voiceAudio(), an = ac.createAnalyser(), src = ac.createMediaStreamSource(stream); an.fftSize = 2048; src.connect(an);
   const mr = new MediaRecorder(stream), parts = []; mr.ondataavailable = e => e.data.size && parts.push(e.data);
-  let ended = false, spoke = false, quiet = 0, floor = 0, n = 0; const t0 = performance.now(), buf = new Float32Array(an.fftSize);
+  let ended = false, spoke = false, quiet = 0, run = 0, voiced = 0; const t0 = performance.now(), buf = new Float32Array(an.fftSize), seen = [];
   const end = () => { if (ended) return; ended = true; clearInterval(timer); if (mr.state !== "inactive") mr.stop(); };
   ctl.stop = end;
-  // the first half second measures the room's own noise; speech is anything well above it. Stops after 1.2 s back at the
-  // room's level once the farmer has spoken, after 7 s with no speech, or after 12 s in all
+  // The room's noise level is the quietest tenth of everything heard so far, so it is right even when the farmer starts
+  // talking at once. Speech is well above it and must last: 0.3 s in a row to start, 0.5 s in all to count, so a cough,
+  // a door or a passing horn is not sent as a question. Stops 1.2 s after the voice drops, 8 s with no speech, 15 s in all.
   const timer = setInterval(() => {
     an.getFloatTimeDomainData(buf); let sum = 0; for (const v of buf) sum += v * v;
     const rms = Math.sqrt(sum / buf.length), now = performance.now();
-    if (now - t0 < 500){ floor = (floor * n + rms) / ++n; return; }
-    if (rms > Math.max(floor * 2.5, 0.012)){ spoke = true; quiet = now; }
+    seen.push(rms); const floor = Math.min(0.02, [...seen].sort((a, b) => a - b)[Math.floor(seen.length / 10)]); // capped: a farmer talking from the first moment must not become "the room"
+    const loud = rms > Math.max(floor * 3, 0.015);
+    run = loud ? run + 1 : 0; if (loud) voiced += 100;
+    if (run >= 3) spoke = true;
+    if (loud && spoke) quiet = now;
     h.level?.(Math.min(0.25, Math.max(0, rms - floor) * 4)); // the circle grows with the voice, so the farmer sees they are heard
-    if ((spoke && now - quiet > 1200) || (!spoke && now - t0 > 7000) || now - t0 > 12000) end();
+    if ((spoke && now - quiet > 1200) || (!spoke && now - t0 > 8000) || now - t0 > 15000) end();
   }, 100);
   mr.onstop = async () => {
     stream.getTracks().forEach(t => t.stop()); src.disconnect();
-    if (!spoke || !parts.length) return h.done("");
+    if (!spoke || voiced < 500 || !parts.length) return h.done("");
     h.busy?.();
     try { h.done(await transcribe(new Blob(parts, {type: mr.mimeType}))); } catch (e) { h.fail("server"); }
   };
@@ -1836,12 +1841,13 @@ async function transcribe(blob){ // any recording -> 16 kHz mono WAV -> Gemma 4 
   pcm.forEach((x, i) => dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, x)) * 0x7fff, true));
   const bytes = new Uint8Array(dv.buffer); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   const r = await fetch(ENDPOINT.replace(/\/$/, "") + "/v1/chat/completions", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({
-    messages:[{role:"system", content: L("এটি বাংলাদেশের একজন কৃষকের মুখে বলা প্রশ্ন, সাধারণত ফসল, ধান, সবজি, পোকা, রোগ, সার বা ওষুধ নিয়ে। অডিওতে যা বলা হয়েছে হুবহু বাংলা লিপিতে লিখে দাও। উত্তর দেবে না, ব্যাখ্যা দেবে না, শুধু কথাগুলো লিখবে।",
-      "This is a farmer in Bangladesh asking a question out loud. Write down exactly what was said, in the language it was said in. Do not answer or explain.")},
+    messages:[{role:"system", content: L("এটি বাংলাদেশের একজন কৃষকের মুখে বলা প্রশ্ন, সাধারণত ফসল, ধান, সবজি, পোকা, রোগ, সার বা ওষুধ নিয়ে। অডিওতে যা বলা হয়েছে হুবহু বাংলা লিপিতে লিখে দাও। উত্তর দেবে না, ব্যাখ্যা দেবে না, শুধু কথাগুলো লিখবে। অডিওতে স্পষ্ট কোনো মানুষের কথা না থাকলে, শুধু আওয়াজ বা গান থাকলে, কিছু বানাবে না, শুধু লিখবে: -",
+      "This is a farmer in Bangladesh asking a question out loud. Write down exactly what was said, in the language it was said in. Do not answer or explain. If there is no clear human speech, only noise or music, do not invent anything; write only: -")},
       {role:"user", content:[{type:"input_audio", input_audio:{data: btoa(bin), format:"wav"}}]}],
     temperature:0, max_tokens:120, lora:[{id:0, scale:0}], chat_template_kwargs:{enable_thinking:false}})});
   if (!r.ok) throw new Error(r.status);
-  return ((await r.json()).choices?.[0]?.message?.content || "").replace(/^["“”']+|["“”']+$/g, "").trim();
+  const t = ((await r.json()).choices?.[0]?.message?.content || "").replace(/^["“”'\s-]+|["“”'\s-]+$/g, "").trim();
+  return t.replace(/[\s.,।?!-]/g, "").length < 2 ? "" : t; // "-" or a stray letter: nothing was said
 }
 const HEAR_FAIL = {mic: ["মাইক ব্যবহারের অনুমতি দিন", "Allow the microphone"], none: ["এই ব্রাউজারে মুখে বলা যাচ্ছে না, লিখে পাঠান", "Speaking isn't supported in this browser, please type"],
   server: ["কথাটা লেখা গেল না, আবার বলুন বা লিখে পাঠান", "Couldn't write that down, please try again or type"], quiet: ["কথা শোনা যায়নি, আবার চেষ্টা করুন", "Could not hear you, please try again"]};
@@ -1889,7 +1895,9 @@ if ((SR || REC_OK) && TTS){
     return [first, d && `${d.querySelector(".nm")?.innerText}, ${d.querySelector(".amt")?.innerText.replace(/\n/g, " ")}`, d?.querySelector(".mine")?.innerText,
       el.querySelectorAll(".dose").length > 1 && L("বাকি পণ্যগুলো স্ক্রিনে দেখুন", "The other products are on the screen")].filter(Boolean).join("। ");
   };
-  let empty = 0; // quiet rounds in a row; after two the circle waits for a tap instead of listening to an empty room
+  // what the assistant itself said last: if the phone picks that up again, it is not the farmer's question
+  let lastSaid = "";
+  const echoOf = (t) => { const w = new Set(lastSaid.split(/\s+/)), x = t.split(/\s+/).filter(Boolean); return x.length >= 3 && x.filter(y => w.has(y)).length / x.length > 0.6; };
   function listen(){
     if (!on) return;
     stopSpeak(); state("listen");
@@ -1898,10 +1906,9 @@ if ((SR || REC_OK) && TTS){
       fail: why => { rec = null; toast(L(...HEAR_FAIL[why])); if (why === "mic" || why === "none") stop(); else state("idle"); },
       done: async (said) => {
         rec = null; if (!on) return;
-        if (!said.trim()) return ++empty < 2 ? listen() : (empty = 0, state("idle"));
-        empty = 0;
+        if (!said.trim() || echoOf(said)) return state("idle", L("কিছু শোনা যায়নি। বৃত্তে চাপ দিয়ে আবার বলুন।", "Didn't catch that. Tap the circle and try again."));
         state("think", said); go("chat"); await ask(said); if (!on) return;
-        state("talk", said); speak(spoken(), () => on && listen());
+        state("talk", said); lastSaid = spoken(); speak(lastSaid, () => on && setTimeout(listen, 700)); // a pause, so the end of the answer is not heard as a question
       }});
   }
   function stop(){ on = VOICE = false; ov.hidden = true; const r = rec; rec = null; r?.stop(); stopSpeak(); }

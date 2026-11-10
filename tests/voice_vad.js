@@ -6,7 +6,7 @@ function wav(file, secs, speechFrom, speechTo){ const n=sr*secs, d=Buffer.alloc(
   d.write('RIFF',0); d.writeUInt32LE(36+n*2,4); d.write('WAVEfmt ',8); d.writeUInt32LE(16,16); d.writeUInt16LE(1,20); d.writeUInt16LE(1,22); d.writeUInt32LE(sr,24); d.writeUInt32LE(sr*2,28); d.writeUInt16LE(2,32); d.writeUInt16LE(16,34); d.write('data',36); d.writeUInt32LE(n*2,40);
   for(let i=0;i<n;i++){ const t=i/sr; let x=0.03*gauss(); if(t>=speechFrom&&t<speechTo) x+=0.25*Math.sin(2*Math.PI*220*t)*(0.6+0.4*Math.sin(2*Math.PI*3*t)); d.writeInt16LE(Math.max(-32767,Math.min(32767,Math.round(x*32767))),44+i*2);} fs.writeFileSync(file,d); }
 (async()=>{ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vad-')); let ok=true;
- for (const [name, from, to, check] of [['noisy_speech',1,3,r=>/done@(\d+):আমার/.test(r.join())&&+r.join().match(/done@(\d+)/)[1]<6000], ['noise_only',99,99,r=>/^done@(\d+):$/.test(r[r.length-1])]]){
+ for (const [name, from, to, check] of [['noisy_speech',1,3,r=>/done@(\d+):আমার/.test(r.join())&&+r.join().match(/done@(\d+)/)[1]<6000], ['noise_only',99,99,r=>/^done@(\d+):$/.test(r[r.length-1])], ['talks_at_once',0,2.5,r=>/done@(\d+):আমার/.test(r.join())], ['short_bang',2,2.2,r=>/^done@(\d+):$/.test(r[r.length-1])]]){
   const f=path.join(dir,name+'.wav'); wav(f,20,from,to);
   const b=await chromium.launch({args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--use-file-for-fake-audio-capture='+f]});
   const p=await (await b.newContext({permissions:['microphone']})).newPage(); await p.route(/jsdelivr|google/,r=>r.abort());
