@@ -1221,6 +1221,13 @@ async function speak(text, done){
     // iPhones only play sound started by a tap. The answer arrives seconds later, so it is played through the audio context
     // the farmer's tap already unlocked (voiceAudio); an <audio> element is used only when there is none.
     const play = (blob) => new Promise(async ok => {
+      audioSession("playback");
+      if (PLAYER){ // unlocked by the tap: reuse it
+        const url = URL.createObjectURL(blob), el = PLAYER; AUDIO = el;
+        const end = () => { el.onended = el.onerror = null; URL.revokeObjectURL(url); if (AUDIO === el) AUDIO = null; ok(); };
+        el.onended = el.onerror = end; el.src = url;
+        try { await el.play(); return; } catch (e) { el.onended = el.onerror = null; URL.revokeObjectURL(url); AUDIO = null; }
+      }
       if (VOICE_AC && VOICE_AC.state !== "closed"){
         try {
           await VOICE_AC.resume(); const buf = await VOICE_AC.decodeAudioData(await blob.arrayBuffer()), src = VOICE_AC.createBufferSource();
@@ -1795,7 +1802,7 @@ const REC_OK = LIVE_MODEL && !!(navigator.mediaDevices?.getUserMedia && window.M
 // Brave, some Edge), record here and let Gemma 4 on the model server write it down.
 // h: {interim(text), busy(), done(text), fail(why)}; returns {stop()} to finish listening now.
 function hear(h){
-  const ctl = {stop(){}};
+  const ctl = {stop(){}}; audioSession("play-and-record");
   if (!SR_OK){ if (REC_OK) recordVoice(h, ctl); else h.fail("none"); return ctl; }
   const rec = new SR(); rec.lang = lang === "bn" ? "bn-BD" : "en-US"; rec.interimResults = true;
   let said = "", last = 0, broke = false, audio = false; const t0 = performance.now();
@@ -1818,9 +1825,22 @@ function hear(h){
 }
 // one audio context, made on the farmer's tap and reused: phones keep a context made later (after an answer) silent
 let VOICE_AC = null;
-function voiceAudio(){ try { VOICE_AC ||= new (window.AudioContext || window.webkitAudioContext)(); VOICE_AC.resume(); } catch (e) {} return VOICE_AC; }
+// iPhone: Web Audio is muted by the silent switch and, after the microphone was on, may go to the quiet ear speaker. An
+// <audio> element started once by the tap (with a silent clip) can be reused later for the answer and plays out loud.
+let PLAYER = null;
+function silentClip(){ const dv = new DataView(new ArrayBuffer(44 + 1600)); const w = (o, t) => [...t].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + 1600, true); w(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, 8000, true); dv.setUint32(28, 16000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, 1600, true);
+  return URL.createObjectURL(new Blob([dv.buffer], {type:"audio/wav"})); }
+function voiceAudio(){
+  try { VOICE_AC ||= new (window.AudioContext || window.webkitAudioContext)(); VOICE_AC.resume(); } catch (e) {}
+  try { if (!PLAYER){ PLAYER = new Audio(); PLAYER.playsInline = true; } if (PLAYER.paused){ PLAYER.src = silentClip(); PLAYER.play().catch(() => {}); } } catch (e) {}
+  return VOICE_AC;
+}
+const audioSession = (type) => { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {} }; // iOS 17+: "playback" ignores the silent switch
 async function recordVoice(h, ctl){
   // echo cancellation keeps the phone from hearing its own spoken answer; noise suppression keeps fans and traffic out
+  audioSession("play-and-record");
   let stream; try { stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); } catch (e) { return h.fail("mic"); }
   const ac = voiceAudio(), an = ac.createAnalyser(), src = ac.createMediaStreamSource(stream); an.fftSize = 2048; src.connect(an);
   const mr = new MediaRecorder(stream), parts = []; mr.ondataavailable = e => e.data.size && parts.push(e.data);
